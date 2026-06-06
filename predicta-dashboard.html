@@ -379,6 +379,48 @@
   .ba-value.after { color: var(--violet); }
   .ba-arrow { font-size: 32px; color: var(--violet); padding: 0 10px; }
 
+  /* ===== LESSON MODAL ===== */
+  .lesson-modal-backdrop {
+    position: fixed; inset: 0; background: rgba(28,25,23,0.55); z-index: 1000;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    animation: fadeIn 0.2s ease;
+  }
+  .lesson-modal {
+    background: var(--card); border-radius: var(--radius); max-width: 640px; width: 100%;
+    max-height: 88vh; overflow-y: auto; box-shadow: 0 24px 64px rgba(108,92,231,0.18), 0 4px 16px rgba(0,0,0,0.12);
+    animation: modalIn 0.3s cubic-bezier(.2,1.2,.5,1);
+  }
+  @keyframes modalIn { from{transform:scale(0.94) translateY(12px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+  .lesson-modal-header {
+    padding: 28px 28px 0; display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .lesson-modal-body { padding: 20px 28px 28px; }
+  .lesson-modal-close {
+    width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border);
+    background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: var(--text-sec); font-size: 18px; flex-shrink: 0; transition: all 0.2s; margin-left: 12px;
+  }
+  .lesson-modal-close:hover { background: var(--error-light); color: var(--error); border-color: var(--error); }
+  .lesson-science {
+    background: var(--violet-light); border-radius: 14px; padding: 16px 18px; margin: 16px 0;
+    border-left: 4px solid var(--violet); font-size: 14px; line-height: 1.7; color: var(--text);
+  }
+  .lesson-science strong { color: var(--violet); }
+  .lesson-section { margin: 18px 0; }
+  .lesson-section-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--text-sec); margin-bottom: 8px;
+  }
+  .lesson-section-body { font-size: 14px; line-height: 1.75; color: var(--text); }
+  .lesson-action {
+    background: linear-gradient(135deg, rgba(108,92,231,0.08), rgba(234,88,12,0.06));
+    border: 1.5px solid var(--violet); border-radius: 14px; padding: 16px 18px; margin-top: 20px;
+  }
+  .lesson-action-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--orange); margin-bottom: 6px; }
+  .lesson-action-text { font-size: 14px; line-height: 1.65; color: var(--text); font-weight: 500; }
+  .lesson-modal-cta { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; }
+  .lesson-modal-cta p { font-size: 13px; color: var(--text-sec); margin-bottom: 14px; }
+
   /* ===== TOAST ===== */
   #toastContainer { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
   .toast {
@@ -913,59 +955,71 @@
         <div class="card">
           <div class="card-title">Profil cognitif</div>
           <div class="card-sub" style="margin-bottom:16px;">Radar de tes 5 axes clés</div>
-          <div class="radar-wrap">
-            <!-- SVG 320x290, center (160,145), r=85. Labels have full room on all sides -->
-            <svg width="320" height="290" viewBox="0 0 320 290" xmlns="http://www.w3.org/2000/svg">
+          <div class="radar-wrap" style="overflow:visible;">
+            <!-- SVG 340x310, center (170,155), r=88. Labels with rect backgrounds -->
+            <svg width="340" height="310" viewBox="0 0 340 310" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
               <defs>
                 <radialGradient id="radarGrad" cx="50%" cy="50%" r="50%">
                   <stop offset="0%" stop-color="#6C5CE7" stop-opacity="0.25"/>
                   <stop offset="100%" stop-color="#6C5CE7" stop-opacity="0.05"/>
                 </radialGradient>
               </defs>
-              <!-- Grid circles (center 160,145 r=85) -->
-              <circle cx="160" cy="145" r="85" fill="none" stroke="#F0EBE3" stroke-width="1"/>
-              <circle cx="160" cy="145" r="63.75" fill="none" stroke="#F0EBE3" stroke-width="1"/>
-              <circle cx="160" cy="145" r="42.5" fill="none" stroke="#F0EBE3" stroke-width="1"/>
-              <circle cx="160" cy="145" r="21.25" fill="none" stroke="#F0EBE3" stroke-width="1"/>
-              <!-- Axes: top(270°), TR(342°), BR(54°), BL(126°), TL(198°) -->
-              <!-- top:    (160, 145-85)=(160,60) -->
-              <!-- TR:     (160+85*sin72, 145-85*cos72)=(160+80.9,145-26.3)=(240.9,118.7) -->
-              <!-- BR:     (160+85*sin144,145-85*cos144)=(160+49.9,145+68.8)=(209.9,213.8) -->
-              <!-- BL:     (160-85*sin144,145-85*cos144)=(160-49.9,145+68.8)=(110.1,213.8) -->
-              <!-- TL:     (160-85*sin72, 145-85*cos72)=(160-80.9,145-26.3)=(79.1,118.7) -->
-              <line x1="160" y1="145" x2="160" y2="60" stroke="#F0EBE3" stroke-width="1"/>
-              <line x1="160" y1="145" x2="240.9" y2="118.7" stroke="#F0EBE3" stroke-width="1"/>
-              <line x1="160" y1="145" x2="209.9" y2="213.8" stroke="#F0EBE3" stroke-width="1"/>
-              <line x1="160" y1="145" x2="110.1" y2="213.8" stroke="#F0EBE3" stroke-width="1"/>
-              <line x1="160" y1="145" x2="79.1" y2="118.7" stroke="#F0EBE3" stroke-width="1"/>
-              <!-- Data [75%,60%,55%,80%,65%] × r=85:
-                   Concentration 75%→63.75 → (160,145-63.75)=(160,81.25)
-                   Mémoire       60%→51    → (160+51*0.951,145-51*0.309)=(160+48.5,145-15.8)=(208.5,129.2)
-                   Régulation    55%→46.75 → (160+46.75*0.588,145+46.75*0.809)=(160+27.5,145+37.8)=(187.5,182.8)
-                   Régularité    80%→68    → (160-68*0.588,145+68*0.809)=(160-40,145+55)=(120,200)
-                   Récupération  65%→55.25 → (160-55.25*0.951,145-55.25*0.309)=(160-52.5,145-17.1)=(107.5,127.9)
+              <!-- Grid circles: center (170,155), r=88 -->
+              <circle cx="170" cy="155" r="88" fill="none" stroke="#F0EBE3" stroke-width="1.5"/>
+              <circle cx="170" cy="155" r="66" fill="none" stroke="#F0EBE3" stroke-width="1"/>
+              <circle cx="170" cy="155" r="44" fill="none" stroke="#F0EBE3" stroke-width="1"/>
+              <circle cx="170" cy="155" r="22" fill="none" stroke="#F0EBE3" stroke-width="1"/>
+              <!-- 5 axes from center (170,155) to outer circle r=88
+                   top(90°→270°):   (170, 155-88)=(170, 67)
+                   TR (342°):       (170+88*sin72°, 155-88*cos72°)=(170+83.7,155-27.2)=(253.7,127.8)
+                   BR (54°→144°):   (170+88*sin144°,155-88*cos144°)=(170+51.8,155+71.2)=(221.8,226.2)
+                   BL (126°→216°):  (170-88*sin144°,155+88*cos144°) wait...
+                   BL (216°):       (170-51.8, 155+71.2)=(118.2,226.2)
+                   TL (288°→198°):  (170-83.7,155-27.2)=(86.3,127.8)
+              -->
+              <line x1="170" y1="155" x2="170" y2="67" stroke="#E5DFF5" stroke-width="1.5"/>
+              <line x1="170" y1="155" x2="253.7" y2="127.8" stroke="#E5DFF5" stroke-width="1.5"/>
+              <line x1="170" y1="155" x2="221.8" y2="226.2" stroke="#E5DFF5" stroke-width="1.5"/>
+              <line x1="170" y1="155" x2="118.2" y2="226.2" stroke="#E5DFF5" stroke-width="1.5"/>
+              <line x1="170" y1="155" x2="86.3" y2="127.8" stroke="#E5DFF5" stroke-width="1.5"/>
+              <!-- Data polygon [75%,60%,55%,80%,65%] × r=88:
+                   Concentration 75%→66  → (170,155-66)=(170,89)
+                   Mémoire       60%→52.8→ (170+52.8*0.951,155-52.8*0.309)=(170+50.2,155-16.3)=(220.2,138.7)
+                   Régulation    55%→48.4→ (170+48.4*0.588,155+48.4*0.809)=(170+28.5,155+39.2)=(198.5,194.2)
+                   Régularité    80%→70.4→ (170-70.4*0.588,155+70.4*0.809)=(170-41.4,155+56.9)=(128.6,211.9)
+                   Récupération  65%→57.2→ (170-57.2*0.951,155-57.2*0.309)=(170-54.4,155-17.7)=(115.6,137.3)
               -->
               <polygon
-                points="160,81.25 208.5,129.2 187.5,182.8 120,200 107.5,127.9"
-                fill="url(#radarGrad)" stroke="#6C5CE7" stroke-width="2" stroke-linejoin="round"/>
+                points="170,89 220.2,138.7 198.5,194.2 128.6,211.9 115.6,137.3"
+                fill="url(#radarGrad)" stroke="#6C5CE7" stroke-width="2.5" stroke-linejoin="round" opacity="0.9"/>
               <!-- Data dots -->
-              <circle cx="160" cy="81.25" r="4" fill="#6C5CE7" stroke="#fff" stroke-width="1.5"/>
-              <circle cx="208.5" cy="129.2" r="4" fill="#6C5CE7" stroke="#fff" stroke-width="1.5"/>
-              <circle cx="187.5" cy="182.8" r="4" fill="#6C5CE7" stroke="#fff" stroke-width="1.5"/>
-              <circle cx="120" cy="200" r="4" fill="#6C5CE7" stroke="#fff" stroke-width="1.5"/>
-              <circle cx="107.5" cy="127.9" r="4" fill="#6C5CE7" stroke="#fff" stroke-width="1.5"/>
-              <!-- Axis labels — positioned well outside the grid -->
-              <text x="160" y="44" text-anchor="middle" font-size="12" font-weight="700" fill="#1C1917" font-family="DM Sans, sans-serif">Concentration</text>
-              <text x="260" y="116" text-anchor="start" font-size="12" font-weight="700" fill="#1C1917" font-family="DM Sans, sans-serif">Mémoire</text>
-              <text x="215" y="232" text-anchor="middle" font-size="12" font-weight="700" fill="#1C1917" font-family="DM Sans, sans-serif">Régulation</text>
-              <text x="108" y="232" text-anchor="middle" font-size="12" font-weight="700" fill="#1C1917" font-family="DM Sans, sans-serif">Régularité</text>
-              <text x="60" y="116" text-anchor="end" font-size="12" font-weight="700" fill="#1C1917" font-family="DM Sans, sans-serif">Récupération</text>
-              <!-- % values near dots -->
-              <text x="172" y="78" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace" font-weight="700">75%</text>
-              <text x="213" y="127" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace" font-weight="700">60%</text>
-              <text x="191" y="196" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace" font-weight="700">55%</text>
-              <text x="94" y="213" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace" font-weight="700">80%</text>
-              <text x="68" y="125" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace" font-weight="700">65%</text>
+              <circle cx="170" cy="89" r="5" fill="#6C5CE7" stroke="#fff" stroke-width="2"/>
+              <circle cx="220.2" cy="138.7" r="5" fill="#6C5CE7" stroke="#fff" stroke-width="2"/>
+              <circle cx="198.5" cy="194.2" r="5" fill="#6C5CE7" stroke="#fff" stroke-width="2"/>
+              <circle cx="128.6" cy="211.9" r="5" fill="#6C5CE7" stroke="#fff" stroke-width="2"/>
+              <circle cx="115.6" cy="137.3" r="5" fill="#6C5CE7" stroke="#fff" stroke-width="2"/>
+              <!-- Labels with white pill backgrounds for full visibility -->
+              <!-- Concentration (top) -->
+              <rect x="120" y="44" width="100" height="20" rx="6" fill="white" opacity="0.95"/>
+              <text x="170" y="59" text-anchor="middle" font-size="12" font-weight="700" fill="#1C1917" font-family="DM Sans,sans-serif">Concentration</text>
+              <!-- Mémoire (top-right) -->
+              <rect x="258" y="116" width="72" height="20" rx="6" fill="white" opacity="0.95"/>
+              <text x="294" y="131" text-anchor="middle" font-size="12" font-weight="700" fill="#1C1917" font-family="DM Sans,sans-serif">Mémoire</text>
+              <!-- Régulation (bottom-right) -->
+              <rect x="210" y="234" width="78" height="20" rx="6" fill="white" opacity="0.95"/>
+              <text x="249" y="249" text-anchor="middle" font-size="12" font-weight="700" fill="#1C1917" font-family="DM Sans,sans-serif">Régulation</text>
+              <!-- Régularité (bottom-left) -->
+              <rect x="53" y="234" width="76" height="20" rx="6" fill="white" opacity="0.95"/>
+              <text x="91" y="249" text-anchor="middle" font-size="12" font-weight="700" fill="#1C1917" font-family="DM Sans,sans-serif">Régularité</text>
+              <!-- Récupération (top-left) -->
+              <rect x="0" y="116" width="90" height="20" rx="6" fill="white" opacity="0.95"/>
+              <text x="45" y="131" text-anchor="middle" font-size="12" font-weight="700" fill="#1C1917" font-family="DM Sans,sans-serif">Récupération</text>
+              <!-- % value badges -->
+              <text x="183" y="87" font-size="10" fill="#6C5CE7" font-family="Space Mono,monospace" font-weight="700">75%</text>
+              <text x="224" y="136" font-size="10" fill="#6C5CE7" font-family="Space Mono,monospace" font-weight="700">60%</text>
+              <text x="202" y="208" font-size="10" fill="#6C5CE7" font-family="Space Mono,monospace" font-weight="700">55%</text>
+              <text x="104" y="224" font-size="10" fill="#6C5CE7" font-family="Space Mono,monospace" font-weight="700">80%</text>
+              <text x="86" y="134" font-size="10" fill="#6C5CE7" font-family="Space Mono,monospace" font-weight="700">65%</text>
             </svg>
           </div>
         </div>
@@ -1463,45 +1517,190 @@ function selectPill(btn) {
   btn.classList.add('selected');
 }
 
-// ===== All 30 Lessons Data =====
+// ===== All 30 Lessons Data with full content =====
 const allLessons = [
-  // Theme A — Attention
-  { id:'A1', theme:'A', label:'Thème A', color:'badge-violet', title:"L'attention n'est pas infinie", dur:'2 min', status:'done' },
-  { id:'A2', theme:'A', label:'Thème A', color:'badge-violet', title:"Le focus se construit, il ne s'allume pas", dur:'2 min', status:'done' },
-  { id:'A3', theme:'A', label:'Thème A', color:'badge-violet', title:"Pourquoi ton esprit part dans tous les sens", dur:'2 min', status:'done' },
-  { id:'A4', theme:'A', label:'Thème A', color:'badge-violet', title:"L'ennemi invisible du focus : le coût de transition", dur:'2 min', status:'done' },
-  { id:'A5', theme:'A', label:'Thème A', color:'badge-violet', title:"Ton cerveau a une fenêtre de génie quotidienne", dur:'2 min', status:'done' },
-  // Theme B — Distraction
-  { id:'B1', theme:'B', label:'Thème B', color:'badge-orange', title:"La dopamine n'est pas ce que tu crois", dur:'2 min', status:'done' },
-  { id:'B2', theme:'B', label:'Thème B', color:'badge-orange', title:"Pourquoi les notifications sont du poison neurologique", dur:'2 min', status:'done' },
-  { id:'B3', theme:'B', label:'Thème B', color:'badge-orange', title:"Le scroll reprogramme ton cerveau", dur:'2 min', status:'todo' },
-  { id:'B4', theme:'B', label:'Thème B', color:'badge-orange', title:"L'illusion du multitâche", dur:'2 min', status:'todo' },
-  { id:'B5', theme:'B', label:'Thème B', color:'badge-orange', title:"Pourquoi tu reviens toujours sur les réseaux", dur:'2 min', status:'todo' },
-  // Theme C — Mémoire
-  { id:'C1', theme:'C', label:'Thème C', color:'badge-green', title:"Pourquoi tu oublies presque tout", dur:'2 min', status:'locked' },
-  { id:'C2', theme:'C', label:'Thème C', color:'badge-green', title:"Comment le sommeil grave tes souvenirs", dur:'2 min', status:'locked' },
-  { id:'C3', theme:'C', label:'Thème C', color:'badge-green', title:"La répétition espacée : l'arme la plus sous-utilisée", dur:'2 min', status:'locked' },
-  { id:'C4', theme:'C', label:'Thème C', color:'badge-green', title:"L'émotion grave plus profond que la logique", dur:'2 min', status:'locked' },
-  { id:'C5', theme:'C', label:'Thème C', color:'badge-green', title:"Pourquoi expliquer est la meilleure technique de rétention", dur:'2 min', status:'locked' },
-  // Theme D — Calme
-  { id:'D1', theme:'D', label:'Thème D', color:'badge-green', title:"Ce qui se passe dans ton cerveau quand tu es submergé", dur:'2 min', status:'locked' },
-  { id:'D2', theme:'D', label:'Thème D', color:'badge-green', title:"Pourquoi la respiration change ton état en secondes", dur:'2 min', status:'locked' },
-  { id:'D3', theme:'D', label:'Thème D', color:'badge-green', title:"La surcharge cognitive : quand trop d'onglets sont ouverts", dur:'2 min', status:'locked' },
-  { id:'D4', theme:'D', label:'Thème D', color:'badge-green', title:"Pourquoi le silence est un entraînement cognitif", dur:'2 min', status:'locked' },
-  { id:'D5', theme:'D', label:'Thème D', color:'badge-green', title:"Le corps est le support du cerveau", dur:'2 min', status:'locked' },
-  // Theme E — Procrastination
-  { id:'E1', theme:'E', label:'Thème E', color:'badge-green', title:"La procrastination n'est pas un problème de temps", dur:'2 min', status:'locked' },
-  { id:'E2', theme:'E', label:'Thème E', color:'badge-green', title:"Pourquoi les perfectionnistes procrastinent le plus", dur:'2 min', status:'locked' },
-  { id:'E3', theme:'E', label:'Thème E', color:'badge-green', title:"L'effet Zeigarnik : pourquoi commencer suffit", dur:'2 min', status:'locked' },
-  { id:'E4', theme:'E', label:'Thème E', color:'badge-green', title:"Comment ton environnement décide avant toi", dur:'2 min', status:'locked' },
-  { id:'E5', theme:'E', label:'Thème E', color:'badge-green', title:"La procrastination du soir n'est pas de la paresse", dur:'2 min', status:'locked' },
-  // Theme F — Neuroplasticité
-  { id:'F1', theme:'F', label:'Thème F', color:'badge-green', title:"Ton cerveau change jusqu'à la mort", dur:'2 min', status:'locked' },
-  { id:'F2', theme:'F', label:'Thème F', color:'badge-green', title:"Comment les habitudes s'installent neurologiquement", dur:'2 min', status:'locked' },
-  { id:'F3', theme:'F', label:'Thème F', color:'badge-green', title:"Pourquoi 66 jours et pas 21", dur:'2 min', status:'locked' },
-  { id:'F4', theme:'F', label:'Thème F', color:'badge-green', title:"Tu t'améliores pendant que tu dors", dur:'2 min', status:'locked' },
-  { id:'F5', theme:'F', label:'Thème F', color:'badge-green', title:"Mesurer son attention, c'est déjà l'entraîner", dur:'2 min', status:'locked' },
+  { id:'A1', theme:'A', label:'Thème A', color:'badge-violet', title:"L'attention n'est pas infinie", dur:'2 min', status:'done',
+    science:"En 1998, <strong>Roy Baumeister</strong> a démontré que résister à une tentation épuise la même réserve mentale que résoudre des problèmes complexes — ce qu'il a appelé <strong>l'épuisement de l'ego</strong>.",
+    mechanism:"Chaque décision, chaque résistance grignote ta réserve cognitive. Quand tu te sens vidé sans avoir rien fait — c'est ça.",
+    truth:"La majorité des gens dépensent leur capital d'attention sur des décisions triviales et n'ont plus rien pour ce qui compte vraiment.",
+    action:"La nuit précédente, prépare ta journée. Réduis tes décisions du matin. Garde ta réserve pour ce qui compte vraiment." },
+
+  { id:'A2', theme:'A', label:'Thème A', color:'badge-violet', title:"Le focus se construit, il ne s'allume pas", dur:'2 min', status:'done',
+    science:"<strong>Marcus Raichle</strong> a découvert en 2001 que le cerveau bascule entre deux réseaux : le <strong>réseau par défaut</strong> (repos) et le <strong>réseau attentionnel</strong> (focus). Ce basculement prend 15 à 20 minutes — neurologiquement obligatoire.",
+    mechanism:"Les premières minutes difficiles ne sont pas un problème. C'est le processus de transition entre deux modes cérébraux distincts.",
+    truth:"Attendre que le focus arrive avant de commencer, c'est attendre que le moteur chauffe sans jamais tourner la clé.",
+    action:"Ne juge jamais tes 15 premières minutes. Tiens. Le focus arrive après le démarrage, jamais avant." },
+
+  { id:'A3', theme:'A', label:'Thème A', color:'badge-violet', title:"Pourquoi ton esprit part dans tous les sens", dur:'2 min', status:'done',
+    science:"Le <strong>réseau par défaut</strong> surveille constamment les menaces et opportunités — câblé ainsi depuis 200 000 ans d'évolution. Il ne sait pas distinguer la savane africaine d'un bureau en 2026.",
+    mechanism:"Nommer le phénomène le réduit immédiatement — prouvé par l'UCLA. Le simple fait de mettre des mots sur une distraction active le cortex préfrontal.",
+    truth:"Ton cerveau n'est pas défaillant. Il est conçu pour la survie, pas pour les tableurs. Travailler avec lui, pas contre lui.",
+    action:"Quand tu te disperses, dis : \"Mon réseau par défaut s'est allumé.\" Cette phrase seule active le cortex préfrontal et réduit la dispersion." },
+
+  { id:'A4', theme:'A', label:'Thème A', color:'badge-violet', title:"L'ennemi invisible du focus : le coût de transition", dur:'2 min', status:'done',
+    science:"<strong>Gloria Mark</strong> (UC Irvine) a chronométré des travailleurs pendant des années. Résultat : <strong>23 minutes</strong> pour retrouver un focus profond après une interruption. <strong>Sophie Leroy</strong> a nommé ce phénomène l'attention résiduelle.",
+    mechanism:"Une notification = 23 minutes perdues. Pas 30 secondes. L'attention reste partiellement accrochée à la distraction précédente même après y avoir répondu.",
+    truth:"4 heures fragmentées valent moins qu'un bloc de 90 minutes intact. La plupart des journées entières ne produisent rien de profond.",
+    action:"Un bloc de 90 minutes intact vaut plus que 4 heures fragmentées. Protège tes blocs comme s'ils valaient de l'or." },
+
+  { id:'A5', theme:'A', label:'Thème A', color:'badge-violet', title:"Ton cerveau a une fenêtre de génie quotidienne", dur:'2 min', status:'done',
+    science:"Le <strong>Cortisol Awakening Response</strong> — pic de cortisol 30 à 45 minutes après le réveil — mobilise l'attention et la mémoire de travail pendant 2 à 4 heures. Après, la fatigue décisionnelle s'installe.",
+    mechanism:"La majorité des gens utilisent cette fenêtre pour les réseaux sociaux, les emails, et les tâches administratives — les choses les moins exigeantes cognitivement.",
+    truth:"Tu utilises ta Rolls-Royce pour faire des courses au coin de la rue. Et tu prends le vélo pour aller au sommet.",
+    action:"Identifie ta fenêtre cognitive de pointe. Protège-la. C'est là que tu fais le travail qui change ta vie." },
+
+  { id:'B1', theme:'B', label:'Thème B', color:'badge-orange', title:"La dopamine n'est pas ce que tu crois", dur:'2 min', status:'done',
+    science:"En 1954, <strong>Olds et Milner</strong> ont découvert que des rats stimulaient leur noyau accumbens jusqu'à mourir d'épuisement — cherchant l'anticipation du plaisir, pas le plaisir lui-même. <strong>La dopamine dit \"ça pourrait être bon\"</strong>, jamais \"c'est bon.\"",
+    mechanism:"C'est exactement ce qui se passe quand tu scrolles. Tu poses le téléphone insatisfait — le circuit n'est jamais comblé, seulement relancé. L'insatisfaction est le moteur, pas l'accident.",
+    truth:"La volonté ne suffit pas contre la dopamine. Personne ne gagne contre son propre circuit neurologique à la force du poignet.",
+    action:"Modifie l'environnement. Supprime l'accès. Crée de la friction. La volonté est une ressource limitée — l'environnement, lui, ne se fatigue pas." },
+
+  { id:'B2', theme:'B', label:'Thème B', color:'badge-orange', title:"Pourquoi les notifications sont du poison neurologique", dur:'2 min', status:'done',
+    science:"<strong>Adrian Ward</strong> (UT Austin, 2017) : le simple fait que le téléphone soit <em>visible</em> réduit les performances cognitives — même sans le regarder. Le cerveau maintient une <strong>surveillance active inconsciente</strong> de l'appareil.",
+    mechanism:"Une partie du cortex préfrontal est constamment allouée à \"surveiller\" le téléphone. Cette charge cognitive partielle réduit les ressources disponibles pour tout le reste.",
+    truth:"Tu crois travailler à 100% parce que tu ne regardes pas ton téléphone. Mais avec le téléphone sur la table, tu travailles à 70%.",
+    action:"Téléphone dans une autre pièce pendant les sessions. Pas en silencieux — dans une autre pièce. La distance physique est la seule vraie solution." },
+
+  { id:'B3', theme:'B', label:'Thème B', color:'badge-orange', title:"Le scroll reprogramme ton cerveau", dur:'2 min', status:'todo',
+    science:"Consommer du contenu ultra-court en rafale recalibre les circuits de récompense vers <strong>plus de vitesse et moins de profondeur</strong>. Des études d'imagerie montrent une réduction de densité dans le cortex préfrontal chez les grands consommateurs.",
+    mechanism:"Ton cerveau s'adapte à ce qu'on lui donne répétitivement. Nourri de stimuli rapides, il perd la capacité à soutenir l'attention sur des tâches longues.",
+    truth:"Chaque heure de scroll ne te vole pas qu'une heure. Elle réduit ta capacité à te concentrer les heures suivantes — et progressivement, de façon plus durable.",
+    action:"30 minutes sans contenu court avant chaque session. Laisse ton circuit de récompense retrouver son calibrage naturel." },
+
+  { id:'B4', theme:'B', label:'Thème B', color:'badge-orange', title:"L'illusion du multitâche", dur:'2 min', status:'todo',
+    science:"<strong>Clifford Nass</strong> (Stanford) a découvert que les grands multitâches sont les moins capables de filtrer les informations non pertinentes et de maintenir un focus profond. Le multitâche n'existe pas neurologiquement.",
+    mechanism:"C'est du <strong>task-switching rapide</strong> avec un coût neurologique à chaque transition. Le cerveau n'exécute jamais deux tâches en parallèle — il alterne très vite entre elles, avec une perte à chaque switch.",
+    truth:"Ce que tu appelles multitâche, c'est faire plusieurs choses à moitié. Le résultat : aucune d'elles n'est vraiment bien faite.",
+    action:"Une chose à la fois. Toujours. C'est aligner son comportement sur l'architecture réelle du cerveau." },
+
+  { id:'B5', theme:'B', label:'Thème B', color:'badge-orange', title:"Pourquoi tu reviens toujours sur les réseaux", dur:'2 min', status:'todo',
+    science:"<strong>Tristan Harris</strong> (ex-Google) a révélé que des centaines d'ingénieurs ont pour seul objectif de maximiser le temps passé dans l'app — en utilisant le <strong>schéma de récompense variable</strong>, le mécanisme le plus addictif connu en psychologie comportementale.",
+    mechanism:"Chaque ouverture de l'app est un tirage au sort : parfois quelque chose d'intéressant, souvent rien. Cette incertitude est plus addictive que la récompense certaine. C'est le principe des machines à sous.",
+    truth:"Tu ne luttes pas contre une mauvaise habitude. Tu luttes contre une industrie entière, financée par des milliards, conçue pour te garder accroché.",
+    action:"Supprime les apps des réseaux de ton téléphone. Accède-y uniquement depuis un navigateur. La friction réduit le comportement de 30%." },
+
+  { id:'C1', theme:'C', label:'Thème C', color:'badge-green', title:"Pourquoi tu oublies presque tout", dur:'2 min', status:'locked',
+    science:"<strong>Hermann Ebbinghaus</strong> (1885) : 50% oublié en 1 heure, 70% en 24 heures, 90% en une semaine. <strong>Oublier est une fonction</strong> — le cerveau efface ce qui n'est pas réutilisé.",
+    mechanism:"Mais chaque révision au bon moment aplatit la courbe. Le souvenir devient de plus en plus résistant à l'oubli. C'est la courbe de l'oubli inversée.",
+    truth:"Des heures d'étude sans révision espacée, c'est remplir un seau percé. Le problème n'est pas la quantité de travail — c'est le timing.",
+    action:"Revoir dans les 24 heures ce qu'on a appris. Pas relire — se souvenir activement, sans regarder. La lutte pour se souvenir est le mécanisme d'ancrage." },
+
+  { id:'C2', theme:'C', label:'Thème C', color:'badge-green', title:"Comment le sommeil grave tes souvenirs", dur:'2 min', status:'locked',
+    science:"<strong>Matthew Walker</strong> : les souvenirs ne sont pas stockés pendant l'apprentissage — ils sont <strong>transférés pendant le sommeil</strong>. L'hippocampe rejoue la journée en sommeil profond et transfère vers le néocortex.",
+    mechanism:"Le manque de sommeil réduit la capacité à former de nouveaux souvenirs de 40%. Rester éveillé pour étudier plus, c'est remplir un seau percé.",
+    truth:"Chaque heure de sommeil sacrifiée pour étudier détruit une partie de ce que tu as appris dans la journée. C'est mathématiquement contre-productif.",
+    action:"Ne jamais sacrifier le sommeil pour étudier plus. Le sommeil est la deuxième moitié du travail." },
+
+  { id:'C3', theme:'C', label:'Thème C', color:'badge-green', title:"La répétition espacée : l'arme la plus sous-utilisée", dur:'2 min', status:'locked',
+    science:"Réviser 4 fois en 30 jours avec des intervalles croissants produit <strong>200% de rétention supplémentaire</strong> vs réviser 10 fois dans la même semaine. Principe utilisé par les champions de mémoire, pilotes d'avion, chirurgiens.",
+    mechanism:"Chaque révision au bon moment — juste avant que le souvenir s'efface — force le cerveau à reconstruire la connexion neuronale, la rendant plus forte.",
+    truth:"La plupart des gens révisent quand c'est facile de se souvenir. Or c'est quand c'est difficile que ça grave vraiment.",
+    action:"Après chaque session, note 3 points clés. Relis-les à J+1, J+3, J+7. Ces 4 révisions valent plus que des heures de relecture." },
+
+  { id:'C4', theme:'C', label:'Thème C', color:'badge-green', title:"L'émotion grave plus profond que la logique", dur:'2 min', status:'locked',
+    science:"<strong>Joseph LeDoux</strong> : l'amygdale libère de la noradrénaline lors d'expériences émotionnelles fortes — signalant à l'hippocampe <strong>\"grave ça, c'est important.\"</strong> Information sans ancrage émotionnel = biologiquement difficile à retenir.",
+    mechanism:"Ton cerveau priorise les souvenirs en fonction de leur charge émotionnelle. C'est un système de survie : ce qui t'a ému ou choqué mérite d'être retenu.",
+    truth:"Des cours neutres, des textes plats, des informations sans contexte — ton cerveau les juge inutiles et les efface. Ce n'est pas un manque d'intelligence, c'est de la biologie.",
+    action:"Connecter chaque nouvelle information à son vécu personnel. L'émotion générée autour d'une idée est la colle qui la fixe." },
+
+  { id:'C5', theme:'C', label:'Thème C', color:'badge-green', title:"Pourquoi expliquer est la meilleure technique de rétention", dur:'2 min', status:'locked',
+    science:"<strong>Roediger & Karpicke</strong> (2006) : les étudiants qui essayaient de <strong>se souvenir sans notes</strong> avaient 50% de rétention en plus vs ceux qui relisaient. La lutte pour récupérer l'information est ce qui grave le souvenir.",
+    mechanism:"Relire crée une illusion de maîtrise. Le texte est devant toi, tout semble familier. Mais ferme le livre — rien ne revient. La reconnaissance n'est pas le rappel.",
+    truth:"Si tu ne peux pas l'expliquer simplement, tu ne l'as pas vraiment compris. Tu as juste une impression de familiarité.",
+    action:"Après chaque leçon, ferme-la. Explique à voix haute dans tes propres mots. Là où tu bloques — c'est là que tu n'as pas vraiment compris." },
+
+  { id:'D1', theme:'D', label:'Thème D', color:'badge-green', title:"Ce qui se passe dans ton cerveau quand tu es submergé", dur:'2 min', status:'locked',
+    science:"<strong>Daniel Goleman</strong> : le <strong>détournement amygdalien</strong> redirige le flux sanguin vers les zones de survie et met le cortex préfrontal hors ligne. Quand tu es stressé, ton cerveau pensant est biologiquement éteint.",
+    mechanism:"En état de stress intense, tu ne peux littéralement pas prendre de bonnes décisions — pas par manque de volonté, mais parce que la partie du cerveau qui décide est désactivée.",
+    truth:"Essayer de résoudre un problème complexe quand tu es en surcharge, c'est essayer de conduire avec les yeux bandés. Les résultats sont prévisibles.",
+    action:"Quand tu es submergé, la première étape n'est pas de résoudre. C'est de nommer : \"Je suis en surcharge.\" Nommer réactive le cortex préfrontal." },
+
+  { id:'D2', theme:'D', label:'Thème D', color:'badge-green', title:"Pourquoi la respiration change ton état en secondes", dur:'2 min', status:'locked',
+    science:"<strong>Stephen Porges</strong> (théorie polyvagale) : allonger l'expiration active directement le système nerveux parasympathique via le nerf vague. En quelques cycles, le cortisol chute, le rythme cardiaque ralentit.",
+    mechanism:"Tu possèdes un interrupteur neurologique vers le calme. Il s'appelle ta respiration. C'est le seul système autonome que tu peux contrôler consciemment.",
+    truth:"Des techniques coûtant des milliers d'euros en coaching reproduisent ce que tu peux faire gratuitement, seul, en 60 secondes.",
+    action:"4 secondes d'inspiration. 6 secondes d'expiration. 5 cycles. Avant toute session importante — ou quand tu décroches." },
+
+  { id:'D3', theme:'D', label:'Thème D', color:'badge-green', title:"La surcharge cognitive : quand trop d'onglets sont ouverts", dur:'2 min', status:'locked',
+    science:"<strong>George Miller</strong> (1956) : la mémoire de travail ne gère que <strong>7 éléments (±2)</strong> simultanément. <strong>John Sweller</strong> (théorie de la charge cognitive) : au-delà, le système ralentit et se bloque.",
+    mechanism:"Ce sentiment de paralysie devant une longue liste — c'est une limite biologique réelle, pas de la faiblesse. Ton cerveau est saturé, il ne peut pas prioriser.",
+    truth:"La solution n'est pas de \"travailler plus dur\" ou de \"se concentrer davantage\". C'est de réduire la charge avant de commencer.",
+    action:"Brain dump avant de commencer — tout sur papier. Tu travailles ensuite avec un cerveau entier, pas à moitié occupé." },
+
+  { id:'D4', theme:'D', label:'Thème D', color:'badge-green', title:"Pourquoi le silence est un entraînement cognitif", dur:'2 min', status:'locked',
+    science:"Étude 2013 (Brain Structure & Function) : <strong>2 heures de silence par jour</strong> produisaient la croissance de nouvelles cellules dans l'hippocampe. Aucune autre condition testée — musique relaxante incluse — n'avait produit cet effet.",
+    mechanism:"Le silence n'est pas l'absence de stimulation. C'est un état actif dans lequel le cerveau consolide, organise, et répare. C'est le mode maintenance.",
+    truth:"Nous avons transformé chaque silence en opportunité de consommer du contenu. Et nous nous demandons pourquoi nous sommes épuisés et incapables de penser clairement.",
+    action:"10 minutes de silence complet par jour. Pas de musique, pas de podcast, pas de téléphone. L'inconfort du début est exactement ça — l'entraînement." },
+
+  { id:'D5', theme:'D', label:'Thème D', color:'badge-green', title:"Le corps est le support du cerveau", dur:'2 min', status:'locked',
+    science:"<strong>John Ratey</strong> (Harvard) : l'exercice déclenche la libération de <strong>BDNF</strong> — l'engrais du cerveau — qui stimule la croissance neuronale et améliore le cortex préfrontal. Une étude Stanford : marcher augmente la créativité de <strong>81%</strong>.",
+    mechanism:"L'exercice n'est pas un bonus pour la santé physique. C'est un outil de performance cognitive directe. Le cerveau et le corps partagent la même infrastructure biologique.",
+    truth:"Sauter une session de marche pour \"avoir plus de temps pour travailler\" est une des erreurs les plus coûteuses cognitivement.",
+    action:"20 minutes de mouvement avant le travail cognitif le plus important. Marcher suffit. Tu ne prépares pas ton corps. Tu prépares ton cerveau." },
+
+  { id:'E1', theme:'E', label:'Thème E', color:'badge-green', title:"La procrastination n'est pas un problème de temps", dur:'2 min', status:'locked',
+    science:"<strong>Sirois & Pychyl</strong> (2013) : la procrastination est un <strong>problème de régulation émotionnelle</strong>, pas de gestion du temps. Tu procrastines parce que la tâche déclenche une émotion négative que le cerveau veut fuir immédiatement.",
+    mechanism:"Le soulagement de ne pas commencer est réel et immédiat. La conséquence est abstraite et lointaine. Le cerveau choisit toujours le soulagement immédiat.",
+    truth:"Les apps de productivité, les to-do lists, les techniques de time-blocking ne règlent pas la procrastination. Elles organisent ce que tu ne feras quand même pas.",
+    action:"Avant toute tâche repoussée, demande : \"Quelle émotion est-ce que j'évite ?\" Nommer l'émotion suffit souvent à la désamorcer." },
+
+  { id:'E2', theme:'E', label:'Thème E', color:'badge-green', title:"Pourquoi les perfectionnistes procrastinent le plus", dur:'2 min', status:'locked',
+    science:"<strong>Flett & Hewitt</strong> (30 ans de recherche) : les perfectionnistes sont souvent les moins productifs. La peur de ne pas faire parfaitement bloque le démarrage.",
+    mechanism:"Le perfectionnisme est de la peur du jugement portant un costume respectable. Il se présente comme un standard élevé, mais c'est une stratégie d'évitement.",
+    truth:"Le travail imparfait livré vaut infiniment plus que le travail parfait qui n'existe que dans ta tête.",
+    action:"Avant chaque tâche, définis ton standard \"assez bien\". Commence avec ça comme cible. La qualité vient de la répétition, pas de l'attente." },
+
+  { id:'E3', theme:'E', label:'Thème E', color:'badge-green', title:"L'effet Zeigarnik : pourquoi commencer suffit", dur:'2 min', status:'locked',
+    science:"<strong>Bluma Zeigarnik</strong> (1927) : les tâches inachevées restent actives en mémoire, créant une <strong>tension cognitive vers la complétion</strong>. Une fois commencée, même brièvement, la tâche crée une impulsion neurologique vers la fin.",
+    mechanism:"C'est pourquoi tu penses à une tâche non commencée toute la journée — et pourquoi, une fois lancé, il est difficile de s'arrêter.",
+    truth:"Le problème n'est jamais de finir. Le problème est toujours de commencer. Une fois que tu as mis la main à la pâte, ton cerveau veut naturellement terminer.",
+    action:"Pour toute tâche évitée : engage-toi uniquement pour 2 minutes. Pas pour finir. Juste pour ouvrir. Dans 80% des cas, tu continueras." },
+
+  { id:'E4', theme:'E', label:'Thème E', color:'badge-green', title:"Comment ton environnement décide avant toi", dur:'2 min', status:'locked',
+    science:"<strong>BJ Fogg</strong> (Stanford) : la majorité des comportements sont <strong>déclenchés par des signaux environnementaux</strong> avant toute décision consciente. Tu n'ouvres pas Instagram parce que tu as décidé — tu ouvres Instagram parce que tu as pris ton téléphone.",
+    mechanism:"Lutter contre son environnement avec sa seule volonté, c'est apporter un couteau à une guerre de fusils. L'environnement gagne à chaque fois.",
+    truth:"Tu n'as pas besoin de plus de discipline. Tu as besoin d'un meilleur environnement. Les deux ne sont pas la même chose.",
+    action:"Conçois ton espace pour que le focus soit le chemin de moindre résistance. Chaque friction ajoutée à la distraction réduit le comportement de 30 à 50%." },
+
+  { id:'E5', theme:'E', label:'Thème E', color:'badge-green', title:"La procrastination du soir n'est pas de la paresse", dur:'2 min', status:'locked',
+    science:"<strong>Baumeister</strong> (fatigue décisionnelle) : chaque décision de la journée réduit la qualité des suivantes. Obama et Zuckerberg portaient les mêmes vêtements chaque jour pour éliminer les décisions inutiles.",
+    mechanism:"Le soir, ton cortex préfrontal est épuisé. L'incapacité à commencer n'est pas un manque de motivation — c'est une limite biologique.",
+    truth:"Te juger pour ne rien faire le soir alors que tu t'es épuisé toute la journée, c'est te juger pour ne pas pouvoir courir avec une jambe cassée.",
+    action:"Travail le plus important le matin. Le soir, prépare les 3 tâches prioritaires du lendemain. Tu décides maintenant pour ton futur toi épuisé." },
+
+  { id:'F1', theme:'F', label:'Thème F', color:'badge-green', title:"Ton cerveau change jusqu'à la mort", dur:'2 min', status:'locked',
+    science:"<strong>Eleanor Maguire</strong> (UCL) : les hippocampes des chauffeurs de taxi londoniens étaient significativement plus grands que la moyenne — et plus développés avec les années d'expérience. Le cerveau se réorganise physiquement en réponse à l'utilisation.",
+    mechanism:"La neuroplasticité est active à tout âge. Ce n'est pas une capacité réservée à l'enfance. Chaque expérience répétée remodèle physiquement les connexions neuronales.",
+    truth:"La concentration n'est pas un trait de personnalité. Ce n'est pas quelque chose que tu as ou que tu n'as pas. C'est une compétence. Donc ça s'apprend.",
+    action:"Chaque session de focus renforce littéralement les circuits neuronaux du focus. Tu construis le cerveau d'une personne qui se concentre." },
+
+  { id:'F2', theme:'F', label:'Thème F', color:'badge-green', title:"Comment les habitudes s'installent neurologiquement", dur:'2 min', status:'locked',
+    science:"<strong>Ann Graybiel</strong> (MIT) : les comportements répétés sont pris en charge progressivement par les <strong>ganglions de la base</strong> — le processus de chunking. La résistance ressentie en créant une habitude, c'est le temps que prend cette restructuration.",
+    mechanism:"Une habitude bien installée ne demande presque plus de ressources cognitives. C'est pourquoi les experts semblent faire sans effort ce qui épuise les débutants.",
+    truth:"La difficulté en créant une habitude n'est pas le signe que ça ne marchera pas. C'est le signe que la restructuration est en cours. Continuer, c'est le seul chemin.",
+    action:"Même heure, même endroit, même déclencheur pour les sessions. La constance du contexte accélère la création du schéma automatique." },
+
+  { id:'F3', theme:'F', label:'Thème F', color:'badge-green', title:"Pourquoi 66 jours et pas 21", dur:'2 min', status:'locked',
+    science:"Le mythe des 21 jours vient d'un chirurgien plasticien des années 60 — aucune étude derrière. <strong>Phillippa Lally</strong> (UCL, 2010) : entre <strong>18 et 254 jours</strong> selon les personnes, moyenne 66 jours.",
+    mechanism:"Si tu as abandonné après 3 semaines — tu t'es arrêté exactement quand ça commençait à fonctionner. La résistance maximale se situe souvent entre J21 et J45.",
+    truth:"Le mythe des 21 jours a tué plus de bonnes habitudes que la paresse. Il donne une fausse ligne d'arrivée trop tôt.",
+    action:"Engagement minimum de 90 jours. Ne juger rien avant. La difficulté n'est pas le signe que ça ne marche pas — c'est le signe que la restructuration est en cours." },
+
+  { id:'F4', theme:'F', label:'Thème F', color:'badge-green', title:"Tu t'améliores pendant que tu dors", dur:'2 min', status:'locked',
+    science:"<strong>Matthew Walker</strong> : après une session d'apprentissage, les performances plafonnent. Après une nuit de sommeil sans pratique supplémentaire, elles s'améliorent de <strong>20 à 30%</strong>. L'amélioration se produit pendant le sommeil paradoxal.",
+    mechanism:"Le cerveau consolide, réorganise et optimise les circuits pendant le sommeil. Ce n'est pas du repos passif — c'est un processus actif de consolidation.",
+    truth:"Faire confiance au processus même sans progression immédiate visible. La stagnation apparent peut cacher une consolidation profonde.",
+    action:"Dormir après avoir appris n'est pas du repos — c'est la deuxième moitié du travail. Ne jamais sacrifier le sommeil pour \"pratiquer plus\"." },
+
+  { id:'F5', theme:'F', label:'Thème F', color:'badge-green', title:"Mesurer son attention, c'est déjà l'entraîner", dur:'2 min', status:'locked',
+    science:"<strong>Dunning-Kruger</strong> (1999) : la compétence développe la capacité à voir ses propres lacunes. Des décennies de recherche sur la métacognition : les apprenants qui <strong>s'observent progressent bien plus vite</strong> que ceux qui ne le font pas.",
+    mechanism:"Ce que tu mesures, tu le contrôles progressivement. L'observation crée une distance entre toi et le comportement — et cette distance est le premier pas vers le changement.",
+    truth:"La plupart des gens ne savent pas exactement combien de temps ils se concentrent vraiment. Cette ignorance rend l'amélioration impossible.",
+    action:"Chaque fin de semaine : sur 10, comment était ma qualité de focus ? Qu'est-ce qui m'a le plus perturbé ? Qu'est-ce qui a le mieux marché ? L'acte de mesurer change ce qui est mesuré." },
 ];
+
+const lessonMap = Object.fromEntries(allLessons.map(l => [l.id, l]));
 
 function renderLessons(filter) {
   const grid = document.getElementById('lessonsGrid');
@@ -1529,8 +1728,42 @@ function renderLessons(filter) {
 }
 
 function openLesson(id) {
-  showToast('Redirection vers la page d\'inscription...', 'info');
-  setTimeout(() => { window.location.href = 'predicta-landing.html#cta'; }, 800);
+  const l = lessonMap[id];
+  if (!l) return;
+  const modal = document.createElement('div');
+  modal.className = 'lesson-modal-backdrop';
+  modal.innerHTML = `
+    <div class="lesson-modal">
+      <div class="lesson-modal-header">
+        <div>
+          <span class="stat-badge ${l.color}" style="font-size:11px;margin-bottom:10px;display:inline-flex;">${l.label}</span>
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:4px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;">Leçon ${l.id} · ⏱ ${l.dur}</div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:20px;color:var(--text);line-height:1.3;">${l.title}</div>
+        </div>
+        <button class="lesson-modal-close" onclick="this.closest('.lesson-modal-backdrop').remove()">×</button>
+      </div>
+      <div class="lesson-modal-body">
+        <div class="lesson-science"><strong>📖 L'expérience scientifique</strong><br><br>${l.science}</div>
+        <div class="lesson-section">
+          <div class="lesson-section-title">⚙️ Le mécanisme</div>
+          <div class="lesson-section-body">${l.mechanism}</div>
+        </div>
+        <div class="lesson-section">
+          <div class="lesson-section-title">💡 La vérité difficile</div>
+          <div class="lesson-section-body">${l.truth}</div>
+        </div>
+        <div class="lesson-action">
+          <div class="lesson-action-label">✦ Action concrète</div>
+          <div class="lesson-action-text">${l.action}</div>
+        </div>
+        <div class="lesson-modal-cta">
+          <p>Prêt à transformer ta façon de te concentrer ?</p>
+          <button class="btn-full" onclick="window.location.href='predicta-landing.html#cta'">Commencer gratuitement →</button>
+        </div>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
 }
 
 // ===== Theme tab filtering =====
