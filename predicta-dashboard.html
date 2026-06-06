@@ -454,10 +454,11 @@
   <div class="sidebar-logo">
     <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
       <rect width="34" height="34" rx="10" fill="#6C5CE7" opacity="0.12"/>
-      <path d="M17 7C13.5 7 10.5 9.2 9.5 12.3C8.2 12.8 7 14.1 7 15.8C7 17.7 8.4 19.3 10.2 19.6C10.8 21.6 12.7 23 15 23H19C21.3 23 23.2 21.6 23.8 19.6C25.6 19.3 27 17.7 27 15.8C27 14.1 25.8 12.8 24.5 12.3C23.5 9.2 20.5 7 17 7Z" fill="#6C5CE7" opacity="0.8"/>
-      <circle cx="14" cy="16" r="1.5" fill="#fff"/>
-      <circle cx="20" cy="16" r="1.5" fill="#fff"/>
-      <path d="M14 19.5C14.5 20.5 15.5 21 17 21C18.5 21 19.5 20.5 20 19.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M17 6C12.8 6 9.4 8.6 8.2 12.2C6.7 12.7 5.5 14.2 5.5 16C5.5 18.1 7 19.9 9 20.3L9.5 22.5C9.8 23.4 10.7 24 11.7 24H22.3C23.3 24 24.2 23.4 24.5 22.5L25 20.3C27 19.9 28.5 18.1 28.5 16C28.5 14.2 27.3 12.7 25.8 12.2C24.6 8.6 21.2 6 17 6Z" fill="#6C5CE7" opacity="0.85"/>
+      <line x1="17" y1="12" x2="17" y2="18" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="14" y1="14" x2="20" y2="16" stroke="white" stroke-width="1.3" stroke-linecap="round" opacity="0.7"/>
+      <line x1="14" y1="17" x2="20" y2="15" stroke="white" stroke-width="1.3" stroke-linecap="round" opacity="0.7"/>
+      <circle cx="17" cy="20" r="1.5" fill="white" opacity="0.9"/>
     </svg>
     <span class="sidebar-logo-text">Prédicta</span>
   </div>
@@ -913,54 +914,58 @@
           <div class="card-title">Profil cognitif</div>
           <div class="card-sub" style="margin-bottom:16px;">Radar de tes 5 axes clés</div>
           <div class="radar-wrap">
-            <svg width="260" height="260" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
+            <!-- SVG 320x290, center (160,145), r=85. Labels have full room on all sides -->
+            <svg width="320" height="290" viewBox="0 0 320 290" xmlns="http://www.w3.org/2000/svg">
               <defs>
                 <radialGradient id="radarGrad" cx="50%" cy="50%" r="50%">
                   <stop offset="0%" stop-color="#6C5CE7" stop-opacity="0.25"/>
                   <stop offset="100%" stop-color="#6C5CE7" stop-opacity="0.05"/>
                 </radialGradient>
               </defs>
-              <!-- Grid circles -->
-              <circle cx="130" cy="130" r="90" fill="none" stroke="#F0EBE3" stroke-width="1"/>
-              <circle cx="130" cy="130" r="67.5" fill="none" stroke="#F0EBE3" stroke-width="1"/>
-              <circle cx="130" cy="130" r="45" fill="none" stroke="#F0EBE3" stroke-width="1"/>
-              <circle cx="130" cy="130" r="22.5" fill="none" stroke="#F0EBE3" stroke-width="1"/>
-              <!-- Axes (5 axes: top, top-right, bot-right, bot-left, top-left) -->
-              <line x1="130" y1="130" x2="130" y2="40" stroke="#F0EBE3" stroke-width="1"/>
-              <line x1="130" y1="130" x2="215.5" y2="101.8" stroke="#F0EBE3" stroke-width="1"/>
-              <line x1="130" y1="130" x2="183.9" y2="206.9" stroke="#F0EBE3" stroke-width="1"/>
-              <line x1="130" y1="130" x2="76.1" y2="206.9" stroke="#F0EBE3" stroke-width="1"/>
-              <line x1="130" y1="130" x2="44.5" y2="101.8" stroke="#F0EBE3" stroke-width="1"/>
-              <!-- Data polygon: [75,60,55,80,65] → scale to 90 max radius -->
-              <!-- Concentration(top) 75%→67.5, Mémoire(TR) 60%→54, Régulation(BR) 55%→49.5, Régularité(BL) 80%→72, Récupération(TL) 65%→58.5 -->
-              <!-- Points calc from center (130,130):
-                   top: 130, 130-67.5 = 130,62.5
-                   top-right: 130+54*sin72, 130-54*cos72 = 130+51.35, 130-16.68 = 181.35, 113.32
-                   bot-right: 130+49.5*sin144, 130-49.5*cos144 = 130+29.09, 130+40.06 = 159.09, 170.06
-                   bot-left: 130-72*sin144, 130-72*cos144 = 130-42.31, 130+58.27 = 87.69, 188.27
-                   top-left: 130-58.5*sin72, 130-58.5*cos72 = 130-55.63, 130-18.1 = 74.37, 111.9
+              <!-- Grid circles (center 160,145 r=85) -->
+              <circle cx="160" cy="145" r="85" fill="none" stroke="#F0EBE3" stroke-width="1"/>
+              <circle cx="160" cy="145" r="63.75" fill="none" stroke="#F0EBE3" stroke-width="1"/>
+              <circle cx="160" cy="145" r="42.5" fill="none" stroke="#F0EBE3" stroke-width="1"/>
+              <circle cx="160" cy="145" r="21.25" fill="none" stroke="#F0EBE3" stroke-width="1"/>
+              <!-- Axes: top(270°), TR(342°), BR(54°), BL(126°), TL(198°) -->
+              <!-- top:    (160, 145-85)=(160,60) -->
+              <!-- TR:     (160+85*sin72, 145-85*cos72)=(160+80.9,145-26.3)=(240.9,118.7) -->
+              <!-- BR:     (160+85*sin144,145-85*cos144)=(160+49.9,145+68.8)=(209.9,213.8) -->
+              <!-- BL:     (160-85*sin144,145-85*cos144)=(160-49.9,145+68.8)=(110.1,213.8) -->
+              <!-- TL:     (160-85*sin72, 145-85*cos72)=(160-80.9,145-26.3)=(79.1,118.7) -->
+              <line x1="160" y1="145" x2="160" y2="60" stroke="#F0EBE3" stroke-width="1"/>
+              <line x1="160" y1="145" x2="240.9" y2="118.7" stroke="#F0EBE3" stroke-width="1"/>
+              <line x1="160" y1="145" x2="209.9" y2="213.8" stroke="#F0EBE3" stroke-width="1"/>
+              <line x1="160" y1="145" x2="110.1" y2="213.8" stroke="#F0EBE3" stroke-width="1"/>
+              <line x1="160" y1="145" x2="79.1" y2="118.7" stroke="#F0EBE3" stroke-width="1"/>
+              <!-- Data [75%,60%,55%,80%,65%] × r=85:
+                   Concentration 75%→63.75 → (160,145-63.75)=(160,81.25)
+                   Mémoire       60%→51    → (160+51*0.951,145-51*0.309)=(160+48.5,145-15.8)=(208.5,129.2)
+                   Régulation    55%→46.75 → (160+46.75*0.588,145+46.75*0.809)=(160+27.5,145+37.8)=(187.5,182.8)
+                   Régularité    80%→68    → (160-68*0.588,145+68*0.809)=(160-40,145+55)=(120,200)
+                   Récupération  65%→55.25 → (160-55.25*0.951,145-55.25*0.309)=(160-52.5,145-17.1)=(107.5,127.9)
               -->
               <polygon
-                points="130,62.5 181.35,113.32 159.09,170.06 87.69,188.27 74.37,111.9"
+                points="160,81.25 208.5,129.2 187.5,182.8 120,200 107.5,127.9"
                 fill="url(#radarGrad)" stroke="#6C5CE7" stroke-width="2" stroke-linejoin="round"/>
-              <!-- Dots -->
-              <circle cx="130" cy="62.5" r="4" fill="#6C5CE7"/>
-              <circle cx="181.35" cy="113.32" r="4" fill="#6C5CE7"/>
-              <circle cx="159.09" cy="170.06" r="4" fill="#6C5CE7"/>
-              <circle cx="87.69" cy="188.27" r="4" fill="#6C5CE7"/>
-              <circle cx="74.37" cy="111.9" r="4" fill="#6C5CE7"/>
-              <!-- Labels -->
-              <text x="130" y="33" text-anchor="middle" font-size="11" fill="#1C1917" font-family="DM Sans, sans-serif" font-weight="600">Concentration</text>
-              <text x="230" y="108" text-anchor="start" font-size="11" fill="#1C1917" font-family="DM Sans, sans-serif" font-weight="600">Mémoire</text>
-              <text x="193" y="215" text-anchor="middle" font-size="11" fill="#1C1917" font-family="DM Sans, sans-serif" font-weight="600">Régulation</text>
-              <text x="65" y="222" text-anchor="middle" font-size="11" fill="#1C1917" font-family="DM Sans, sans-serif" font-weight="600">Régularité</text>
-              <text x="25" y="108" text-anchor="end" font-size="11" fill="#1C1917" font-family="DM Sans, sans-serif" font-weight="600">Récupération</text>
-              <!-- Pct labels near dots -->
-              <text x="147" y="60" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace">75%</text>
-              <text x="185" y="110" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace">60%</text>
-              <text x="163" y="183" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace">55%</text>
-              <text x="58" y="203" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace">80%</text>
-              <text x="38" y="108" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace">65%</text>
+              <!-- Data dots -->
+              <circle cx="160" cy="81.25" r="4" fill="#6C5CE7" stroke="#fff" stroke-width="1.5"/>
+              <circle cx="208.5" cy="129.2" r="4" fill="#6C5CE7" stroke="#fff" stroke-width="1.5"/>
+              <circle cx="187.5" cy="182.8" r="4" fill="#6C5CE7" stroke="#fff" stroke-width="1.5"/>
+              <circle cx="120" cy="200" r="4" fill="#6C5CE7" stroke="#fff" stroke-width="1.5"/>
+              <circle cx="107.5" cy="127.9" r="4" fill="#6C5CE7" stroke="#fff" stroke-width="1.5"/>
+              <!-- Axis labels — positioned well outside the grid -->
+              <text x="160" y="44" text-anchor="middle" font-size="12" font-weight="700" fill="#1C1917" font-family="DM Sans, sans-serif">Concentration</text>
+              <text x="260" y="116" text-anchor="start" font-size="12" font-weight="700" fill="#1C1917" font-family="DM Sans, sans-serif">Mémoire</text>
+              <text x="215" y="232" text-anchor="middle" font-size="12" font-weight="700" fill="#1C1917" font-family="DM Sans, sans-serif">Régulation</text>
+              <text x="108" y="232" text-anchor="middle" font-size="12" font-weight="700" fill="#1C1917" font-family="DM Sans, sans-serif">Régularité</text>
+              <text x="60" y="116" text-anchor="end" font-size="12" font-weight="700" fill="#1C1917" font-family="DM Sans, sans-serif">Récupération</text>
+              <!-- % values near dots -->
+              <text x="172" y="78" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace" font-weight="700">75%</text>
+              <text x="213" y="127" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace" font-weight="700">60%</text>
+              <text x="191" y="196" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace" font-weight="700">55%</text>
+              <text x="94" y="213" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace" font-weight="700">80%</text>
+              <text x="68" y="125" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace" font-weight="700">65%</text>
             </svg>
           </div>
         </div>
@@ -1033,89 +1038,17 @@
         </div>
       </div>
 
-      <div class="theme-tabs">
-        <button class="theme-tab active">Tous</button>
-        <button class="theme-tab">Thème A — Fondations</button>
-        <button class="theme-tab">Thème B — Distraction</button>
-        <button class="theme-tab">Thème C</button>
-        <button class="theme-tab">Thème D</button>
+      <div class="theme-tabs" id="themeTabs">
+        <button class="theme-tab active" data-filter="all">Tous</button>
+        <button class="theme-tab" data-filter="A">Thème A — Attention</button>
+        <button class="theme-tab" data-filter="B">Thème B — Distraction</button>
+        <button class="theme-tab" data-filter="C">Thème C — Mémoire</button>
+        <button class="theme-tab" data-filter="D">Thème D — Calme</button>
+        <button class="theme-tab" data-filter="E">Thème E — Procrastination</button>
+        <button class="theme-tab" data-filter="F">Thème F — Neuroplasticité</button>
       </div>
 
-      <div class="lessons-grid">
-        <!-- Theme A: done -->
-        <div class="lesson-card">
-          <div class="start-overlay"><span>Commencer →</span></div>
-          <span class="stat-badge badge-violet" style="font-size:10px;margin-bottom:8px;">Thème A</span>
-          <div class="lesson-num">Leçon A·01</div>
-          <div class="lesson-card-title">Le cerveau n'est pas une machine</div>
-          <div class="lesson-footer"><span class="lesson-dur">⏱ 2 min</span><span class="lesson-status">✅</span></div>
-        </div>
-        <div class="lesson-card">
-          <div class="start-overlay"><span>Commencer →</span></div>
-          <span class="stat-badge badge-violet" style="font-size:10px;margin-bottom:8px;">Thème A</span>
-          <div class="lesson-num">Leçon A·02</div>
-          <div class="lesson-card-title">Le mythe du multitâche</div>
-          <div class="lesson-footer"><span class="lesson-dur">⏱ 3 min</span><span class="lesson-status">✅</span></div>
-        </div>
-        <div class="lesson-card">
-          <div class="start-overlay"><span>Commencer →</span></div>
-          <span class="stat-badge badge-violet" style="font-size:10px;margin-bottom:8px;">Thème A</span>
-          <div class="lesson-num">Leçon A·03</div>
-          <div class="lesson-card-title">La fenêtre d'attention : 90 minutes</div>
-          <div class="lesson-footer"><span class="lesson-dur">⏱ 2 min</span><span class="lesson-status">✅</span></div>
-        </div>
-        <!-- Theme B: in progress -->
-        <div class="lesson-card">
-          <div class="start-overlay"><span>Commencer →</span></div>
-          <span class="stat-badge badge-orange" style="font-size:10px;margin-bottom:8px;">Thème B</span>
-          <div class="lesson-num">Leçon B·01</div>
-          <div class="lesson-card-title">Qu'est-ce que la distraction vraiment ?</div>
-          <div class="lesson-footer"><span class="lesson-dur">⏱ 2 min</span><span class="lesson-status">✅</span></div>
-        </div>
-        <div class="lesson-card">
-          <div class="start-overlay"><span>Commencer →</span></div>
-          <span class="stat-badge badge-orange" style="font-size:10px;margin-bottom:8px;">Thème B</span>
-          <div class="lesson-num">Leçon B·02</div>
-          <div class="lesson-card-title">La dopamine n'est pas ce que tu crois</div>
-          <div class="lesson-footer"><span class="lesson-dur">⏱ 2 min</span><span class="lesson-status">→</span></div>
-        </div>
-        <div class="lesson-card">
-          <div class="start-overlay"><span>Commencer →</span></div>
-          <span class="stat-badge badge-orange" style="font-size:10px;margin-bottom:8px;">Thème B</span>
-          <div class="lesson-num">Leçon B·03</div>
-          <div class="lesson-card-title">Les 4 déclencheurs de décrochage</div>
-          <div class="lesson-footer"><span class="lesson-dur">⏱ 3 min</span><span class="lesson-status">→</span></div>
-        </div>
-        <div class="lesson-card">
-          <div class="start-overlay"><span>Commencer →</span></div>
-          <span class="stat-badge badge-orange" style="font-size:10px;margin-bottom:8px;">Thème B</span>
-          <div class="lesson-num">Leçon B·04</div>
-          <div class="lesson-card-title">Environnement de focus optimal</div>
-          <div class="lesson-footer"><span class="lesson-dur">⏱ 2 min</span><span class="lesson-status">→</span></div>
-        </div>
-        <!-- Locked -->
-        <div class="lesson-card locked">
-          <span class="lock-icon">🔒</span>
-          <span class="stat-badge" style="font-size:10px;margin-bottom:8px;background:#f0ebe3;color:#78716c;">Thème C</span>
-          <div class="lesson-num">Leçon C·01</div>
-          <div class="lesson-card-title" style="color:var(--text-sec);">La mémoire de travail</div>
-          <div class="lesson-footer"><span class="lesson-dur">⏱ 3 min</span><span class="lesson-status">🔒</span></div>
-        </div>
-        <div class="lesson-card locked">
-          <span class="lock-icon">🔒</span>
-          <span class="stat-badge" style="font-size:10px;margin-bottom:8px;background:#f0ebe3;color:#78716c;">Thème C</span>
-          <div class="lesson-num">Leçon C·02</div>
-          <div class="lesson-card-title" style="color:var(--text-sec);">Charge cognitive et stratégie</div>
-          <div class="lesson-footer"><span class="lesson-dur">⏱ 2 min</span><span class="lesson-status">🔒</span></div>
-        </div>
-        <div class="lesson-card locked">
-          <span class="lock-icon">🔒</span>
-          <span class="stat-badge" style="font-size:10px;margin-bottom:8px;background:#f0ebe3;color:#78716c;">Thème D</span>
-          <div class="lesson-num">Leçon D·01</div>
-          <div class="lesson-card-title" style="color:var(--text-sec);">Régulation émotionnelle & focus</div>
-          <div class="lesson-footer"><span class="lesson-dur">⏱ 3 min</span><span class="lesson-status">🔒</span></div>
-        </div>
-      </div>
+      <div class="lessons-grid" id="lessonsGrid"></div>
     </div><!-- /page-lessons -->
 
     <!-- ===== PAGE: MA PROGRESSION ===== -->
@@ -1194,43 +1127,14 @@
         <div class="section-header">
           <div class="card-title">Historique des sessions</div>
           <div style="display:flex;gap:8px;">
-            <button class="theme-tab active" style="font-size:11px;padding:6px 12px;">Cette semaine</button>
-            <button class="theme-tab" style="font-size:11px;padding:6px 12px;">Ce mois</button>
+            <button class="history-filter-btn theme-tab active" style="font-size:11px;padding:6px 12px;" data-period="week" onclick="filterHistory('week',this)">Cette semaine</button>
+            <button class="history-filter-btn theme-tab" style="font-size:11px;padding:6px 12px;" data-period="month" onclick="filterHistory('month',this)">Ce mois</button>
           </div>
         </div>
         <div class="table-wrap" style="margin-top:12px;">
           <table>
-            <thead>
-              <tr>
-                <th>Date</th><th>Tâche</th><th>Durée</th><th>État</th><th>Focus</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>06/06 09h00</td><td style="color:var(--text-sec);">Business plan</td>
-                <td><span style="font-family:'Space Mono',monospace;font-size:12px;">47 min</span></td>
-                <td><span class="stat-badge badge-green" style="font-size:11px;">Complétée</span></td>
-                <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:82%"></div></div><span class="progress-pct">82%</span></div></td>
-              </tr>
-              <tr>
-                <td>05/06 10h15</td><td style="color:var(--text-sec);">Révision examen</td>
-                <td><span style="font-family:'Space Mono',monospace;font-size:12px;">25 min</span></td>
-                <td><span class="stat-badge badge-orange" style="font-size:11px;">Interrompue</span></td>
-                <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:54%"></div></div><span class="progress-pct">54%</span></div></td>
-              </tr>
-              <tr>
-                <td>04/06 08h30</td><td style="color:var(--text-sec);">Lecture / Recherche</td>
-                <td><span style="font-family:'Space Mono',monospace;font-size:12px;">60 min</span></td>
-                <td><span class="stat-badge badge-green" style="font-size:11px;">Complétée</span></td>
-                <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:91%"></div></div><span class="progress-pct">91%</span></div></td>
-              </tr>
-              <tr>
-                <td>02/06 14h00</td><td style="color:var(--text-sec);">Projet client</td>
-                <td><span style="font-family:'Space Mono',monospace;font-size:12px;">30 min</span></td>
-                <td><span class="stat-badge badge-green" style="font-size:11px;">Complétée</span></td>
-                <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:70%"></div></div><span class="progress-pct">70%</span></div></td>
-              </tr>
-            </tbody>
+            <thead><tr><th>Date</th><th>Tâche</th><th>Durée</th><th>État</th><th>Focus</th></tr></thead>
+            <tbody id="historyTableBody"></tbody>
           </table>
         </div>
       </div>
@@ -1317,6 +1221,8 @@ function navigate(pageId, navEl) {
   // Trigger page-specific init
   if (pageId === 'lessons') {
     setTimeout(() => { document.getElementById('lessonProgress').style.width = '60%'; }, 200);
+    const activeTab = document.querySelector('#themeTabs .theme-tab.active');
+    renderLessons(activeTab ? activeTab.dataset.filter : 'all');
   }
   if (pageId === 'progression') drawProgChart();
 }
@@ -1557,12 +1463,83 @@ function selectPill(btn) {
   btn.classList.add('selected');
 }
 
-// ===== Theme tabs =====
-document.querySelectorAll('.theme-tab').forEach(tab => {
-  tab.addEventListener('click', function() {
-    this.closest('.theme-tabs').querySelectorAll('.theme-tab').forEach(t => t.classList.remove('active'));
-    this.classList.add('active');
-  });
+// ===== All 30 Lessons Data =====
+const allLessons = [
+  // Theme A — Attention
+  { id:'A1', theme:'A', label:'Thème A', color:'badge-violet', title:"L'attention n'est pas infinie", dur:'2 min', status:'done' },
+  { id:'A2', theme:'A', label:'Thème A', color:'badge-violet', title:"Le focus se construit, il ne s'allume pas", dur:'2 min', status:'done' },
+  { id:'A3', theme:'A', label:'Thème A', color:'badge-violet', title:"Pourquoi ton esprit part dans tous les sens", dur:'2 min', status:'done' },
+  { id:'A4', theme:'A', label:'Thème A', color:'badge-violet', title:"L'ennemi invisible du focus : le coût de transition", dur:'2 min', status:'done' },
+  { id:'A5', theme:'A', label:'Thème A', color:'badge-violet', title:"Ton cerveau a une fenêtre de génie quotidienne", dur:'2 min', status:'done' },
+  // Theme B — Distraction
+  { id:'B1', theme:'B', label:'Thème B', color:'badge-orange', title:"La dopamine n'est pas ce que tu crois", dur:'2 min', status:'done' },
+  { id:'B2', theme:'B', label:'Thème B', color:'badge-orange', title:"Pourquoi les notifications sont du poison neurologique", dur:'2 min', status:'done' },
+  { id:'B3', theme:'B', label:'Thème B', color:'badge-orange', title:"Le scroll reprogramme ton cerveau", dur:'2 min', status:'todo' },
+  { id:'B4', theme:'B', label:'Thème B', color:'badge-orange', title:"L'illusion du multitâche", dur:'2 min', status:'todo' },
+  { id:'B5', theme:'B', label:'Thème B', color:'badge-orange', title:"Pourquoi tu reviens toujours sur les réseaux", dur:'2 min', status:'todo' },
+  // Theme C — Mémoire
+  { id:'C1', theme:'C', label:'Thème C', color:'badge-green', title:"Pourquoi tu oublies presque tout", dur:'2 min', status:'locked' },
+  { id:'C2', theme:'C', label:'Thème C', color:'badge-green', title:"Comment le sommeil grave tes souvenirs", dur:'2 min', status:'locked' },
+  { id:'C3', theme:'C', label:'Thème C', color:'badge-green', title:"La répétition espacée : l'arme la plus sous-utilisée", dur:'2 min', status:'locked' },
+  { id:'C4', theme:'C', label:'Thème C', color:'badge-green', title:"L'émotion grave plus profond que la logique", dur:'2 min', status:'locked' },
+  { id:'C5', theme:'C', label:'Thème C', color:'badge-green', title:"Pourquoi expliquer est la meilleure technique de rétention", dur:'2 min', status:'locked' },
+  // Theme D — Calme
+  { id:'D1', theme:'D', label:'Thème D', color:'badge-green', title:"Ce qui se passe dans ton cerveau quand tu es submergé", dur:'2 min', status:'locked' },
+  { id:'D2', theme:'D', label:'Thème D', color:'badge-green', title:"Pourquoi la respiration change ton état en secondes", dur:'2 min', status:'locked' },
+  { id:'D3', theme:'D', label:'Thème D', color:'badge-green', title:"La surcharge cognitive : quand trop d'onglets sont ouverts", dur:'2 min', status:'locked' },
+  { id:'D4', theme:'D', label:'Thème D', color:'badge-green', title:"Pourquoi le silence est un entraînement cognitif", dur:'2 min', status:'locked' },
+  { id:'D5', theme:'D', label:'Thème D', color:'badge-green', title:"Le corps est le support du cerveau", dur:'2 min', status:'locked' },
+  // Theme E — Procrastination
+  { id:'E1', theme:'E', label:'Thème E', color:'badge-green', title:"La procrastination n'est pas un problème de temps", dur:'2 min', status:'locked' },
+  { id:'E2', theme:'E', label:'Thème E', color:'badge-green', title:"Pourquoi les perfectionnistes procrastinent le plus", dur:'2 min', status:'locked' },
+  { id:'E3', theme:'E', label:'Thème E', color:'badge-green', title:"L'effet Zeigarnik : pourquoi commencer suffit", dur:'2 min', status:'locked' },
+  { id:'E4', theme:'E', label:'Thème E', color:'badge-green', title:"Comment ton environnement décide avant toi", dur:'2 min', status:'locked' },
+  { id:'E5', theme:'E', label:'Thème E', color:'badge-green', title:"La procrastination du soir n'est pas de la paresse", dur:'2 min', status:'locked' },
+  // Theme F — Neuroplasticité
+  { id:'F1', theme:'F', label:'Thème F', color:'badge-green', title:"Ton cerveau change jusqu'à la mort", dur:'2 min', status:'locked' },
+  { id:'F2', theme:'F', label:'Thème F', color:'badge-green', title:"Comment les habitudes s'installent neurologiquement", dur:'2 min', status:'locked' },
+  { id:'F3', theme:'F', label:'Thème F', color:'badge-green', title:"Pourquoi 66 jours et pas 21", dur:'2 min', status:'locked' },
+  { id:'F4', theme:'F', label:'Thème F', color:'badge-green', title:"Tu t'améliores pendant que tu dors", dur:'2 min', status:'locked' },
+  { id:'F5', theme:'F', label:'Thème F', color:'badge-green', title:"Mesurer son attention, c'est déjà l'entraîner", dur:'2 min', status:'locked' },
+];
+
+function renderLessons(filter) {
+  const grid = document.getElementById('lessonsGrid');
+  if (!grid) return;
+  const filtered = filter === 'all' ? allLessons : allLessons.filter(l => l.theme === filter);
+  grid.innerHTML = filtered.map(l => {
+    if (l.status === 'locked') {
+      return `<div class="lesson-card locked" data-theme="${l.theme}">
+        <span class="lock-icon">🔒</span>
+        <span class="stat-badge" style="font-size:10px;margin-bottom:8px;background:#f0ebe3;color:#78716c;">${l.label}</span>
+        <div class="lesson-num">Leçon ${l.id}</div>
+        <div class="lesson-card-title" style="color:var(--text-sec);">${l.title}</div>
+        <div class="lesson-footer"><span class="lesson-dur">⏱ ${l.dur}</span><span class="lesson-status">🔒</span></div>
+      </div>`;
+    }
+    const statusIcon = l.status === 'done' ? '✅' : '→';
+    return `<div class="lesson-card" data-theme="${l.theme}" onclick="openLesson('${l.id}')">
+      <div class="start-overlay"><span>Commencer →</span></div>
+      <span class="stat-badge ${l.color}" style="font-size:10px;margin-bottom:8px;">${l.label}</span>
+      <div class="lesson-num">Leçon ${l.id}</div>
+      <div class="lesson-card-title">${l.title}</div>
+      <div class="lesson-footer"><span class="lesson-dur">⏱ ${l.dur}</span><span class="lesson-status">${statusIcon}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function openLesson(id) {
+  showToast('Redirection vers la page d\'inscription...', 'info');
+  setTimeout(() => { window.location.href = 'predicta-landing.html#cta'; }, 800);
+}
+
+// ===== Theme tab filtering =====
+document.getElementById('themeTabs') && document.getElementById('themeTabs').addEventListener('click', function(e) {
+  const btn = e.target.closest('.theme-tab');
+  if (!btn) return;
+  this.querySelectorAll('.theme-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderLessons(btn.dataset.filter);
 });
 
 // ===== Toggle switch =====
@@ -1581,18 +1558,50 @@ function toggleSwitch(el) {
   }
 }
 
-// ===== History table filter tabs =====
-document.querySelectorAll('.theme-tab').forEach(tab => {
-  if (tab.closest('.card')) {
-    tab.addEventListener('click', function() {
-      const siblings = this.parentElement.querySelectorAll('.theme-tab');
-      if (siblings.length > 0) {
-        siblings.forEach(t => t.classList.remove('active'));
-        this.classList.add('active');
-      }
-    });
-  }
-});
+// ===== History table filter =====
+const historyData = {
+  week: [
+    { date:'06/06 09h00', task:'Business plan', dur:'47 min', state:'Complétée', badge:'badge-green', focus:82 },
+    { date:'05/06 10h15', task:'Révision examen', dur:'25 min', state:'Interrompue', badge:'badge-orange', focus:54 },
+    { date:'04/06 08h30', task:'Lecture / Recherche', dur:'60 min', state:'Complétée', badge:'badge-green', focus:91 },
+    { date:'03/06 14h00', task:'Projet client', dur:'30 min', state:'Complétée', badge:'badge-green', focus:70 },
+    { date:'02/06 09h45', task:'Rédaction rapport', dur:'45 min', state:'Complétée', badge:'badge-green', focus:78 },
+  ],
+  month: [
+    { date:'06/06 09h00', task:'Business plan', dur:'47 min', state:'Complétée', badge:'badge-green', focus:82 },
+    { date:'05/06 10h15', task:'Révision examen', dur:'25 min', state:'Interrompue', badge:'badge-orange', focus:54 },
+    { date:'04/06 08h30', task:'Lecture / Recherche', dur:'60 min', state:'Complétée', badge:'badge-green', focus:91 },
+    { date:'03/06 14h00', task:'Projet client', dur:'30 min', state:'Complétée', badge:'badge-green', focus:70 },
+    { date:'01/06 09h45', task:'Rédaction rapport', dur:'45 min', state:'Complétée', badge:'badge-green', focus:78 },
+    { date:'29/05 08h00', task:'Préparation présentation', dur:'90 min', state:'Complétée', badge:'badge-green', focus:88 },
+    { date:'27/05 10h30', task:'Révision cours', dur:'35 min', state:'Interrompue', badge:'badge-orange', focus:48 },
+    { date:'25/05 09h00', task:'Business plan', dur:'45 min', state:'Complétée', badge:'badge-green', focus:75 },
+    { date:'22/05 11h00', task:'Lecture / Recherche', dur:'20 min', state:'Interrompue', badge:'badge-orange', focus:40 },
+    { date:'20/05 08h30', task:'Projet client', dur:'60 min', state:'Complétée', badge:'badge-green', focus:85 },
+    { date:'18/05 09h15', task:'Rédaction', dur:'40 min', state:'Complétée', badge:'badge-green', focus:72 },
+    { date:'15/05 10h00', task:'Révision examen', dur:'30 min', state:'Complétée', badge:'badge-green', focus:65 },
+  ]
+};
+
+function filterHistory(period, btn) {
+  document.querySelectorAll('.history-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const tbody = document.getElementById('historyTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = historyData[period].map(r => `
+    <tr>
+      <td>${r.date}</td>
+      <td style="color:var(--text-sec);">${r.task}</td>
+      <td><span style="font-family:'Space Mono',monospace;font-size:12px;">${r.dur}</span></td>
+      <td><span class="stat-badge ${r.badge}" style="font-size:11px;">${r.state}</span></td>
+      <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:${r.focus}%"></div></div><span class="progress-pct">${r.focus}%</span></div></td>
+    </tr>`).join('');
+}
+filterHistory('week', document.querySelector('.history-filter-btn'));
+
+// ===== Init lessons & history on load =====
+renderLessons('all');
+filterHistory('week', document.querySelector('.history-filter-btn'));
 
 // ===== Welcome toast =====
 setTimeout(() => showToast('Bienvenue Abibou ! Ton focus monte en Phase 2 🧠', 'success'), 1200);
