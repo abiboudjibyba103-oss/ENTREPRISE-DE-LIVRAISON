@@ -494,13 +494,17 @@
 <!-- ===== SIDEBAR ===== -->
 <nav class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-      <rect width="34" height="34" rx="10" fill="#6C5CE7" opacity="0.12"/>
-      <path d="M17 6C12.8 6 9.4 8.6 8.2 12.2C6.7 12.7 5.5 14.2 5.5 16C5.5 18.1 7 19.9 9 20.3L9.5 22.5C9.8 23.4 10.7 24 11.7 24H22.3C23.3 24 24.2 23.4 24.5 22.5L25 20.3C27 19.9 28.5 18.1 28.5 16C28.5 14.2 27.3 12.7 25.8 12.2C24.6 8.6 21.2 6 17 6Z" fill="#6C5CE7" opacity="0.85"/>
-      <line x1="17" y1="12" x2="17" y2="18" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-      <line x1="14" y1="14" x2="20" y2="16" stroke="white" stroke-width="1.3" stroke-linecap="round" opacity="0.7"/>
-      <line x1="14" y1="17" x2="20" y2="15" stroke="white" stroke-width="1.3" stroke-linecap="round" opacity="0.7"/>
-      <circle cx="17" cy="20" r="1.5" fill="white" opacity="0.9"/>
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+      <!-- Purple circle background -->
+      <circle cx="18" cy="18" r="18" fill="#6C5CE7"/>
+      <!-- Ghost/alien body -->
+      <path d="M10 20C10 15.03 13.58 11 18 11C22.42 11 26 15.03 26 20V27L23.5 25.5L21 27L18.5 25.5L16 27L13.5 25.5L11 27L10 27V20Z" fill="white"/>
+      <!-- Eyes -->
+      <circle cx="15" cy="19" r="2" fill="#6C5CE7"/>
+      <circle cx="21" cy="19" r="2" fill="#6C5CE7"/>
+      <!-- Eye shine -->
+      <circle cx="15.7" cy="18.3" r="0.7" fill="white"/>
+      <circle cx="21.7" cy="18.3" r="0.7" fill="white"/>
     </svg>
     <span class="sidebar-logo-text">Prédicta</span>
   </div>
@@ -689,7 +693,13 @@
           <div class="card-sub" style="margin-bottom:16px;">Personnalisé pour toi</div>
           <div class="coach-header">
             <div class="coach-avatar">
-              <svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M13 4C10 4 7.5 5.8 6.8 8.4C5.7 8.8 5 9.8 5 11C5 12.4 5.9 13.5 7.2 13.8C7.6 15.1 8.9 16 10.5 16H15.5C17.1 16 18.4 15.1 18.8 13.8C20.1 13.5 21 12.4 21 11C21 9.8 20.3 8.8 19.2 8.4C18.5 5.8 16 4 13 4Z" fill="white" opacity="0.9"/><circle cx="10.5" cy="11.5" r="1.2" fill="#6C5CE7"/><circle cx="15.5" cy="11.5" r="1.2" fill="#6C5CE7"/><path d="M10.5 13.5C11 14.3 11.9 14.8 13 14.8C14.1 14.8 15 14.3 15.5 13.5" stroke="#6C5CE7" stroke-width="1.2" stroke-linecap="round"/></svg>
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                <path d="M6 16C6 11.58 9.58 8 14 8C18.42 8 22 11.58 22 16V22L20 21L18 22L16 21L14 22L12 21L10 22L8 21L6 22V16Z" fill="white" opacity="0.95"/>
+                <circle cx="11" cy="15.5" r="1.8" fill="#6C5CE7"/>
+                <circle cx="17" cy="15.5" r="1.8" fill="#6C5CE7"/>
+                <circle cx="11.6" cy="14.9" r="0.6" fill="white"/>
+                <circle cx="17.6" cy="14.9" r="0.6" fill="white"/>
+              </svg>
             </div>
             <div>
               <div class="coach-label">Coach Prédicta</div>
@@ -1707,21 +1717,13 @@ function renderLessons(filter) {
   if (!grid) return;
   const filtered = filter === 'all' ? allLessons : allLessons.filter(l => l.theme === filter);
   grid.innerHTML = filtered.map(l => {
-    if (l.status === 'locked') {
-      return `<div class="lesson-card locked" data-theme="${l.theme}">
-        <span class="lock-icon">🔒</span>
-        <span class="stat-badge" style="font-size:10px;margin-bottom:8px;background:#f0ebe3;color:#78716c;">${l.label}</span>
-        <div class="lesson-num">Leçon ${l.id}</div>
-        <div class="lesson-card-title" style="color:var(--text-sec);">${l.title}</div>
-        <div class="lesson-footer"><span class="lesson-dur">⏱ ${l.dur}</span><span class="lesson-status">🔒</span></div>
-      </div>`;
-    }
-    const statusIcon = l.status === 'done' ? '✅' : '→';
-    return `<div class="lesson-card" data-theme="${l.theme}" onclick="openLesson('${l.id}')">
-      <div class="start-overlay"><span>Commencer →</span></div>
-      <span class="stat-badge ${l.color}" style="font-size:10px;margin-bottom:8px;">${l.label}</span>
+    const statusIcon = l.status === 'done' ? '✅' : l.status === 'todo' ? '→' : '🔒';
+    const lockedStyle = l.status === 'locked' ? 'opacity:0.7;' : '';
+    return `<div class="lesson-card" data-theme="${l.theme}" onclick="openLesson('${l.id}')" style="${lockedStyle}cursor:pointer;">
+      <div class="start-overlay"><span>${l.status === 'locked' ? 'Voir la leçon →' : 'Commencer →'}</span></div>
+      <span class="stat-badge ${l.status === 'locked' ? '' : l.color}" style="font-size:10px;margin-bottom:8px;${l.status === 'locked' ? 'background:#f0ebe3;color:#78716c;' : ''}">${l.label}</span>
       <div class="lesson-num">Leçon ${l.id}</div>
-      <div class="lesson-card-title">${l.title}</div>
+      <div class="lesson-card-title" style="${l.status === 'locked' ? 'color:var(--text-sec);' : ''}">${l.title}</div>
       <div class="lesson-footer"><span class="lesson-dur">⏱ ${l.dur}</span><span class="lesson-status">${statusIcon}</span></div>
     </div>`;
   }).join('');
@@ -1756,9 +1758,11 @@ function openLesson(id) {
           <div class="lesson-action-label">✦ Action concrète</div>
           <div class="lesson-action-text">${l.action}</div>
         </div>
-        <div class="lesson-modal-cta">
-          <p>Prêt à transformer ta façon de te concentrer ?</p>
-          <button class="btn-full" onclick="window.location.href='predicta-landing.html#cta'">Commencer gratuitement →</button>
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:10px;">
+          <button class="btn-full" onclick="this.closest('.lesson-modal-backdrop').remove();navigate('session',document.querySelector('[data-page=session]'))">
+            ▶ Lancer une session maintenant
+          </button>
+          <button class="btn-outline" style="flex:1;" onclick="this.closest('.lesson-modal-backdrop').remove()">Fermer</button>
         </div>
       </div>
     </div>`;
