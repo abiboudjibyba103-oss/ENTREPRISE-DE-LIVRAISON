@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prédicta — Comprends ton cerveau pour t'en libérer</title>
+  <meta name="description" content="Prédicta apprend comment TON cerveau fonctionne — et te rend autonome. Pour toujours." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* =============================================
+       RESET & BASE
+    ============================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #FFFBF5;
+      color: #1C1917;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* =============================================
+       DESIGN TOKENS
+    ============================================= */
+    :root {
+      --bg: #FFFBF5;
+      --card: #FFFFFF;
+      --violet: #6C5CE7;
+      --violet-dark: #5548c8;
+      --violet-light: #EDE9FE;
+      --orange: #EA580C;
+      --text: #1C1917;
+      --text-sec: #78716C;
+      --border: #F0EBE3;
+      --success: #16A34A;
+      --radius: 20px;
+      --shadow-soft: 0 4px 24px rgba(108,92,231,0.08), 0 1px 4px rgba(28,25,23,0.06);
+      --shadow-card: 0 8px 40px rgba(108,92,231,0.1), 0 2px 8px rgba(28,25,23,0.05);
+      --shadow-hover: 0 16px 56px rgba(108,92,231,0.18), 0 4px 16px rgba(28,25,23,0.08);
+    }
+
+    /* =============================================
+       UTILITIES
+    ============================================= */
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+    .section-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: 'Space Mono', monospace; font-size: 11px;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--violet); background: var(--violet-light);
+      padding: 6px 14px; border-radius: 100px;
+      margin-bottom: 20px; font-weight: 700;
+    }
+    .section-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800; line-height: 1.15; letter-spacing: -0.03em;
+    }
+    .section-subtitle { color: var(--text-sec); font-size: 18px; line-height: 1.7; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 14px 28px; border-radius: 14px; font-weight: 600;
+      font-size: 16px; cursor: pointer; border: none; text-decoration: none;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      position: relative; overflow: hidden;
+    }
+    .btn::after {
+      content: ''; position: absolute; inset: 0;
+      background: rgba(255,255,255,0.12); opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .btn:hover::after { opacity: 1; }
+    .btn-primary {
+      background: var(--violet); color: #fff;
+      box-shadow: 0 4px 16px rgba(108,92,231,0.35);
+    }
+    .btn-primary:hover { box-shadow: 0 8px 32px rgba(108,92,231,0.45); transform: translateY(-1px); }
+    .btn-outline {
+      background: transparent; color: var(--violet);
+      border: 2px solid var(--violet);
+    }
+    .btn-outline:hover { background: var(--violet-light); transform: translateY(-1px); }
+    .btn-lg { padding: 18px 36px; font-size: 17px; border-radius: 16px; }
+
+    /* Scroll animations */
+    .fade-up { opacity: 0; transform: translateY(32px); transition: opacity 0.7s ease, transform 0.7s ease; }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
+    .stagger-1 { transition-delay: 0.1s; }
+    .stagger-2 { transition-delay: 0.2s; }
+    .stagger-3 { transition-delay: 0.3s; }
+    .stagger-4 { transition-delay: 0.4s; }
+
+    /* =============================================
+       NAVBAR
+    ============================================= */
+    #navbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      padding: 20px 0; transition: all 0.4s ease;
+    }
+    #navbar.scrolled {
+      background: rgba(255,251,245,0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 0;
+      box-shadow: 0 4px 24px rgba(28,25,23,0.06);
+    }
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between; gap: 32px;
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none; flex-shrink: 0;
+    }
+    .nav-logo-text {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800; font-size: 22px; color: var(--violet);
+      letter-spacing: -0.02em;
+    }
+    .nav-links {
+      display: flex; align-items: center; gap: 32px; list-style: none;
+    }
+    .nav-links a {
+      text-decoration: none; color: var(--text-sec); font-weight: 500;
+      font-size: 15px; transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--violet); }
+    .nav-actions { display: flex; align-items: center; gap: 12px; }
+    .hamburger {
+      display: none; flex-direction: column; gap: 5px;
+      cursor: pointer; padding: 4px; background: none; border: none;
+    }
+    .hamburger span {
+      display: block; width: 22px; height: 2px;
+      background: var(--text); border-radius: 2px;
+      transition: all 0.3s ease;
+    }
+    .hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+    .mobile-menu {
+      display: none; flex-direction: column; gap: 0;
+      background: #fff; border-radius: 16px; margin: 8px 16px;
+      box-shadow: var(--shadow-card); overflow: hidden;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      padding: 16px 24px; text-decoration: none; color: var(--text);
+      font-weight: 500; border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+    .mobile-menu a:hover { background: var(--violet-light); color: var(--violet); }
+    .mobile-menu a:last-child { border-bottom: none; }
+
+    /* =============================================
+       HERO
+    ============================================= */
+    #hero {
+      min-height: 100vh; display: flex; align-items: center;
+      padding: 120px 0 80px; position: relative; overflow: hidden;
+    }
+    .hero-bg-orb {
+      position: absolute; border-radius: 50%; filter: blur(80px);
+      pointer-events: none; animation: orb-float 8s ease-in-out infinite;
+    }
+    .hero-bg-orb-1 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(108,92,231,0.12) 0%, transparent 70%);
+      top: -100px; right: -100px;
+    }
+    .hero-bg-orb-2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(234,88,12,0.08) 0%, transparent 70%);
+      bottom: 50px; left: -100px; animation-delay: -4s;
+    }
+    @keyframes orb-float {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(20px, -30px); }
+    }
+    .hero-inner {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 64px;
+      align-items: center; position: relative; z-index: 1;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, var(--violet-light), #FEF3C7);
+      border: 1px solid rgba(108,92,231,0.2);
+      padding: 8px 16px; border-radius: 100px; margin-bottom: 28px;
+      font-weight: 600; font-size: 13px; color: var(--violet);
+    }
+    .hero-badge .sparkle { font-size: 16px; animation: spin-slow 4s linear infinite; display: inline-block; }
+    @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .hero-h1 {
+      font-size: clamp(40px, 5vw, 64px);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800; line-height: 1.1;
+      letter-spacing: -0.04em; margin-bottom: 24px;
+    }
+    .hero-h1 .accent { color: var(--violet); }
+    .hero-h1 .accent-orange { color: var(--orange); }
+    .hero-subtitle {
+      font-size: 18px; color: var(--text-sec);
+      line-height: 1.75; margin-bottom: 40px; max-width: 480px;
+    }
+    .hero-subtitle strong { color: var(--text); font-weight: 600; }
+    .hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; }
+    .hero-trust {
+      display: flex; align-items: center; gap: 12px;
+      margin-top: 32px; font-size: 13px; color: var(--text-sec);
+    }
+    .trust-avatars { display: flex; }
+    .trust-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 2px solid #fff; margin-left: -8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700;
+    }
+    .trust-avatar:first-child { margin-left: 0; }
+    .ta-1 { background: #C4B5FD; color: var(--violet); }
+    .ta-2 { background: #FED7AA; color: var(--orange); }
+    .ta-3 { background: #BBF7D0; color: var(--success); }
+
+    /* =============================================
+       HERO BRAIN SVG
+    ============================================= */
+    .hero-visual {
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .brain-container {
+      position: relative; width: 480px; height: 480px;
+      display: flex; align-items: center; justify-content: center;
+      animation: brain-float 6s ease-in-out infinite;
+    }
+    @keyframes brain-float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-16px); }
+    }
+    .brain-ring {
+      position: absolute; border-radius: 50%;
+      border: 1px solid rgba(108,92,231,0.15);
+      animation: ring-pulse 4s ease-in-out infinite;
+    }
+    .brain-ring-1 { width: 420px; height: 420px; animation-delay: 0s; }
+    .brain-ring-2 { width: 340px; height: 340px; animation-delay: 0.5s; }
+    .brain-ring-3 { width: 260px; height: 260px; animation-delay: 1s; border-color: rgba(108,92,231,0.25); }
+    @keyframes ring-pulse {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.03); opacity: 1; }
+    }
+    .brain-glow {
+      position: absolute; width: 280px; height: 280px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(108,92,231,0.2) 0%, transparent 70%);
+      animation: glow-breathe 3s ease-in-out infinite;
+    }
+    @keyframes glow-breathe {
+      0%, 100% { transform: scale(1); opacity: 0.7; }
+      50% { transform: scale(1.15); opacity: 1; }
+    }
+    .brain-svg-wrap {
+      position: relative; z-index: 2; filter: drop-shadow(0 0 32px rgba(108,92,231,0.3));
+    }
+    .brain-dot {
+      position: absolute; width: 8px; height: 8px;
+      background: var(--violet); border-radius: 50%;
+      animation: dot-pulse 2s ease-in-out infinite;
+    }
+    .brain-dot-1 { top: 80px; right: 100px; animation-delay: 0s; }
+    .brain-dot-2 { top: 140px; left: 80px; animation-delay: 0.4s; background: var(--orange); }
+    .brain-dot-3 { bottom: 120px; right: 120px; animation-delay: 0.8s; }
+    .brain-dot-4 { bottom: 160px; left: 120px; animation-delay: 1.2s; background: var(--orange); }
+    @keyframes dot-pulse {
+      0%, 100% { transform: scale(1); opacity: 0.7; }
+      50% { transform: scale(1.8); opacity: 1; }
+    }
+    .brain-line {
+      position: absolute; stroke: rgba(108,92,231,0.3);
+      stroke-dasharray: 4 4; animation: line-flow 3s linear infinite;
+    }
+    @keyframes line-flow { from { stroke-dashoffset: 20; } to { stroke-dashoffset: 0; } }
+
+    /* =============================================
+       WORD-BY-WORD ANIMATION
+    ============================================= */
+    .reveal-word {
+      display: inline-block; opacity: 0;
+      transform: translateY(20px) rotate(2deg);
+      animation: word-reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes word-reveal {
+      to { opacity: 1; transform: translateY(0) rotate(0deg); }
+    }
+
+    /* =============================================
+       PROBLEM SECTION
+    ============================================= */
+    #problems {
+      padding: 100px 0; background: #FFF7ED;
+    }
+    .problems-header { text-align: center; max-width: 640px; margin: 0 auto 60px; }
+    .problems-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .problem-card {
+      background: #fff; border-radius: var(--radius);
+      padding: 32px; border: 1px solid #FFE4CC;
+      box-shadow: 0 4px 20px rgba(234,88,12,0.06);
+      position: relative; overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .problem-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(234,88,12,0.12); }
+    .problem-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, #F87171, var(--orange));
+    }
+    .problem-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: #FEF2F2; display: flex; align-items: center; justify-content: center;
+      margin-bottom: 20px; font-size: 22px;
+    }
+    .problem-card h3 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700; font-size: 16px; margin-bottom: 10px; color: var(--text);
+    }
+    .problem-card p { color: var(--text-sec); font-size: 15px; line-height: 1.65; }
+    .problem-arrow {
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 48px; gap: 16px;
+    }
+    .arrow-line {
+      height: 2px; width: 80px;
+      background: linear-gradient(90deg, transparent, var(--violet));
+    }
+    .arrow-text {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700; color: var(--violet); font-size: 15px;
+    }
+    .arrow-icon { font-size: 24px; color: var(--violet); animation: bounce-right 1.5s ease-in-out infinite; }
+    @keyframes bounce-right {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(6px); }
+    }
+
+    /* =============================================
+       SOLUTION SECTION
+    ============================================= */
+    #solution { padding: 100px 0; background: #fff; }
+    .solution-header { text-align: center; max-width: 640px; margin: 0 auto 64px; }
+    .pillars-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+    .pillar-card {
+      border-radius: var(--radius); padding: 36px;
+      background: var(--bg); border: 1px solid var(--border);
+      transition: transform 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
+      position: relative; overflow: hidden;
+    }
+    .pillar-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-hover);
+      background: #fff;
+    }
+    .pillar-card::after {
+      content: ''; position: absolute; inset: 0; border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(108,92,231,0.04) 0%, transparent 60%);
+      opacity: 0; transition: opacity 0.35s;
+    }
+    .pillar-card:hover::after { opacity: 1; }
+    .pillar-icon {
+      width: 56px; height: 56px; border-radius: 16px;
+      background: var(--violet-light); display: flex; align-items: center;
+      justify-content: center; margin-bottom: 24px;
+      transition: transform 0.3s ease;
+    }
+    .pillar-card:hover .pillar-icon { transform: scale(1.1) rotate(-5deg); }
+    .pillar-card h3 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700; font-size: 20px; margin-bottom: 12px;
+    }
+    .pillar-card p { color: var(--text-sec); font-size: 15px; line-height: 1.7; }
+    .pillar-tag {
+      display: inline-block; margin-top: 16px;
+      font-family: 'Space Mono', monospace; font-size: 10px;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--violet); background: var(--violet-light);
+      padding: 4px 10px; border-radius: 100px;
+    }
+
+    /* =============================================
+       HOW IT WORKS
+    ============================================= */
+    #how-it-works {
+      padding: 100px 0;
+      background: linear-gradient(135deg, #F5F3FF 0%, #FFF7ED 100%);
+    }
+    .how-header { text-align: center; max-width: 580px; margin: 0 auto 72px; }
+    .steps-wrapper {
+      position: relative; display: grid;
+      grid-template-columns: repeat(3, 1fr); gap: 0;
+    }
+    .step-connector {
+      position: absolute; top: 56px; left: 16.66%; right: 16.66%;
+      height: 2px; background: var(--border); z-index: 0;
+    }
+    .step-connector-fill {
+      height: 100%; width: 0;
+      background: linear-gradient(90deg, var(--violet), var(--orange));
+      transition: width 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    .step-connector-fill.active { width: 100%; }
+    .step {
+      position: relative; z-index: 1; text-align: center; padding: 0 24px;
+    }
+    .step-number {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: #fff; border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 28px; font-family: 'Space Mono', monospace;
+      font-weight: 700; font-size: 18px; color: var(--text-sec);
+      transition: all 0.4s ease; position: relative;
+    }
+    .step.active .step-number {
+      background: var(--violet); border-color: var(--violet);
+      color: #fff; box-shadow: 0 0 0 8px rgba(108,92,231,0.15);
+    }
+    .step h3 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700; font-size: 19px; margin-bottom: 12px;
+    }
+    .step p { color: var(--text-sec); font-size: 15px; line-height: 1.7; }
+    .step-card {
+      background: #fff; border-radius: var(--radius);
+      padding: 20px; margin-top: 24px; border: 1px solid var(--border);
+      box-shadow: var(--shadow-soft); text-align: left;
+    }
+    .step-card-label {
+      font-family: 'Space Mono', monospace; font-size: 10px;
+      color: var(--violet); text-transform: uppercase; letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+    .step-card p { font-size: 13px; color: var(--text-sec); margin: 0; }
+
+    /* =============================================
+       FEATURES GRID
+    ============================================= */
+    #features { padding: 100px 0; background: #fff; }
+    .features-header { text-align: center; max-width: 580px; margin: 0 auto 64px; }
+    .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; }
+    .feature-card {
+      border-radius: var(--radius); padding: 36px;
+      background: var(--bg); border: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      overflow: hidden;
+    }
+    .feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
+    .feature-card-header {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+    }
+    .feature-icon-wrap {
+      width: 48px; height: 48px; border-radius: 14px;
+      background: var(--violet-light); display: flex;
+      align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .feature-card h3 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700; font-size: 18px;
+    }
+    .feature-card p { color: var(--text-sec); font-size: 14px; line-height: 1.7; margin-bottom: 24px; }
+    .mini-preview {
+      margin-top: auto; border-radius: 14px;
+      background: #fff; border: 1px solid var(--border);
+      padding: 16px; min-height: 100px; position: relative; overflow: hidden;
+    }
+
+    /* Mini Timer */
+    .mini-timer { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100px; gap: 8px; }
+    .timer-display {
+      font-family: 'Space Mono', monospace; font-size: 28px;
+      font-weight: 700; color: var(--violet);
+    }
+    .timer-bar { width: 100%; height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; }
+    .timer-fill {
+      height: 100%; width: 0%; background: linear-gradient(90deg, var(--violet), var(--orange));
+      border-radius: 4px; animation: timer-grow 25s linear infinite;
+    }
+    @keyframes timer-grow { 0% { width: 0%; } 100% { width: 100%; } }
+    .timer-label { font-size: 11px; color: var(--text-sec); font-weight: 500; }
+
+    /* Mini Chat */
+    .mini-chat { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
+    .chat-bubble {
+      padding: 8px 12px; border-radius: 12px;
+      font-size: 12px; line-height: 1.5; max-width: 80%;
+      animation: bubble-in 0.5s ease forwards; opacity: 0;
+    }
+    .chat-bubble.ai { background: var(--violet-light); color: var(--violet); align-self: flex-start; border-radius: 12px 12px 12px 4px; animation-delay: 0.2s; }
+    .chat-bubble.user { background: #F3F4F6; color: var(--text); align-self: flex-end; border-radius: 12px 12px 4px 12px; animation-delay: 0.8s; }
+    .chat-bubble.ai.second { animation-delay: 1.4s; }
+    @keyframes bubble-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .chat-typing { display: flex; gap: 4px; align-items: center; padding: 8px 12px; background: var(--violet-light); border-radius: 12px 12px 12px 4px; width: fit-content; }
+    .chat-typing span { width: 6px; height: 6px; background: var(--violet); border-radius: 50%; animation: typing-bounce 1.2s ease-in-out infinite; }
+    .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
+    .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing-bounce { 0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }
+
+    /* Mini Lesson */
+    .mini-lesson-card {
+      height: 96px; position: relative; perspective: 600px;
+      cursor: pointer;
+    }
+    .mini-lesson-inner {
+      position: absolute; inset: 0; transform-style: preserve-3d;
+      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .mini-lesson-card:hover .mini-lesson-inner { transform: rotateY(180deg); }
+    .mini-lesson-front, .mini-lesson-back {
+      position: absolute; inset: 0; backface-visibility: hidden;
+      border-radius: 10px; display: flex; flex-direction: column;
+      justify-content: center; padding: 12px;
+    }
+    .mini-lesson-front { background: linear-gradient(135deg, var(--violet-light), #F5F3FF); }
+    .mini-lesson-back { background: linear-gradient(135deg, #FFF7ED, #FEF3C7); transform: rotateY(180deg); }
+    .mini-lesson-front .lesson-num { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--violet); font-weight: 700; }
+    .mini-lesson-front .lesson-title { font-size: 13px; font-weight: 700; color: var(--text); margin-top: 6px; }
+    .mini-lesson-front .flip-hint { font-size: 10px; color: var(--text-sec); margin-top: 4px; }
+    .mini-lesson-back p { font-size: 12px; color: var(--text-sec); line-height: 1.5; }
+
+    /* Mini Chart */
+    .mini-chart { height: 96px; display: flex; align-items: flex-end; gap: 6px; padding-top: 8px; }
+    .chart-bar {
+      flex: 1; border-radius: 4px 4px 0 0;
+      background: linear-gradient(to top, var(--violet), #A78BFA);
+      animation: bar-grow 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      transform-origin: bottom; transform: scaleY(0);
+    }
+    @keyframes bar-grow { to { transform: scaleY(1); } }
+
+    /* =============================================
+       MICRO-LESSONS
+    ============================================= */
+    #micro-lessons {
+      padding: 100px 0;
+      background: linear-gradient(180deg, #F5F3FF 0%, #FFFBF5 100%);
+    }
+    .lessons-header { text-align: center; max-width: 560px; margin: 0 auto 64px; }
+    .lessons-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .lesson-card {
+      background: #fff; border-radius: var(--radius);
+      padding: 32px; border: 1px solid var(--border);
+      box-shadow: var(--shadow-soft);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      position: relative; overflow: hidden;
+    }
+    .lesson-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-hover); }
+    .lesson-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    }
+    .lesson-card.a1::before { background: linear-gradient(90deg, var(--violet), #A78BFA); }
+    .lesson-card.b1::before { background: linear-gradient(90deg, var(--orange), #FB923C); }
+    .lesson-card.d2::before { background: linear-gradient(90deg, var(--success), #34D399); }
+    .lesson-theme {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: 'Space Mono', monospace; font-size: 10px;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 100px; margin-bottom: 16px; font-weight: 700;
+    }
+    .lesson-theme.attention { color: var(--violet); background: var(--violet-light); }
+    .lesson-theme.dopamine { color: var(--orange); background: #FFF7ED; }
+    .lesson-theme.respiration { color: var(--success); background: #F0FDF4; }
+    .lesson-card h3 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700; font-size: 17px; margin-bottom: 12px; line-height: 1.35;
+    }
+    .lesson-excerpt { color: var(--text-sec); font-size: 14px; line-height: 1.7; margin-bottom: 20px; }
+    .lesson-meta {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .lesson-source { font-size: 12px; color: var(--text-sec); font-style: italic; }
+    .lesson-time {
+      font-family: 'Space Mono', monospace; font-size: 11px;
+      color: var(--violet); background: var(--violet-light);
+      padding: 4px 10px; border-radius: 100px; font-weight: 700;
+    }
+
+    /* =============================================
+       JOURNEY TIMELINE
+    ============================================= */
+    #journey { padding: 100px 0; background: #fff; }
+    .journey-header { text-align: center; max-width: 560px; margin: 0 auto 64px; }
+    .timeline-wrapper { position: relative; }
+    .timeline-track {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0; position: relative;
+    }
+    .timeline-line {
+      position: absolute; top: 28px; left: 12.5%; right: 12.5%;
+      height: 2px; background: var(--border); z-index: 0;
+    }
+    .timeline-line-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--violet), var(--orange));
+      transition: width 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    .timeline-line-fill.active { width: 100%; }
+    .timeline-phase {
+      position: relative; z-index: 1; text-align: center;
+      padding: 0 16px;
+    }
+    .phase-dot {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: #fff; border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+      font-family: 'Space Mono', monospace; font-size: 11px;
+      font-weight: 700; color: var(--text-sec);
+      transition: all 0.5s ease; position: relative; z-index: 1;
+    }
+    .timeline-phase.lit .phase-dot {
+      background: linear-gradient(135deg, var(--violet), #A78BFA);
+      border-color: var(--violet); color: #fff;
+      box-shadow: 0 0 0 8px rgba(108,92,231,0.12);
+    }
+    .phase-label {
+      font-family: 'Space Mono', monospace; font-size: 11px;
+      color: var(--text-sec); text-transform: uppercase;
+      letter-spacing: 0.08em; margin-bottom: 8px;
+      transition: color 0.4s ease;
+    }
+    .timeline-phase.lit .phase-label { color: var(--violet); }
+    .phase-name {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700; font-size: 16px; margin-bottom: 10px;
+      transition: color 0.4s ease;
+    }
+    .timeline-phase.lit .phase-name { color: var(--violet); }
+    .phase-desc { font-size: 13px; color: var(--text-sec); line-height: 1.65; }
+    .phase-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 14px; padding: 14px; margin-top: 20px;
+      text-align: left; font-size: 12px; color: var(--text-sec);
+      transition: all 0.4s ease;
+    }
+    .timeline-phase.lit .phase-card {
+      background: var(--violet-light); border-color: rgba(108,92,231,0.2); color: var(--violet);
+    }
+
+    /* =============================================
+       FOUNDER QUOTE
+    ============================================= */
+    #founder-quote {
+      padding: 120px 0;
+      background: linear-gradient(135deg, #2D1B69 0%, #1E1050 50%, #0F0733 100%);
+      position: relative; overflow: hidden;
+    }
+    #founder-quote::before {
+      content: '"'; position: absolute; top: -60px; left: 50%;
+      transform: translateX(-50%); font-size: 400px;
+      font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800;
+      color: rgba(255,255,255,0.03); line-height: 1; pointer-events: none;
+    }
+    .quote-inner { text-align: center; max-width: 800px; margin: 0 auto; position: relative; z-index: 1; }
+    .quote-mark { font-size: 72px; color: rgba(167,139,250,0.4); font-family: Georgia, serif; line-height: 0.5; display: block; margin-bottom: 16px; }
+    .quote-text {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 600; font-size: clamp(20px, 3vw, 28px);
+      color: #fff; line-height: 1.6; letter-spacing: -0.01em;
+      margin-bottom: 40px;
+    }
+    .quote-text em { color: #A78BFA; font-style: normal; }
+    .quote-author { display: flex; align-items: center; justify-content: center; gap: 16px; }
+    .author-avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--violet), #A78BFA);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 20px; color: #fff;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .author-info { text-align: left; }
+    .author-name { color: #fff; font-weight: 700; font-size: 16px; }
+    .author-role { color: rgba(255,255,255,0.5); font-size: 14px; }
+
+    /* =============================================
+       FINAL CTA
+    ============================================= */
+    #final-cta {
+      padding: 120px 0;
+      background: linear-gradient(135deg, #1E1050 0%, #6C5CE7 50%, #EA580C 100%);
+      position: relative; overflow: hidden;
+    }
+    #final-cta::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.08) 0%, transparent 60%);
+    }
+    .final-cta-inner { text-align: center; position: relative; z-index: 1; max-width: 600px; margin: 0 auto; }
+    .final-cta-inner h2 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800; font-size: clamp(32px, 5vw, 52px);
+      color: #fff; letter-spacing: -0.03em; margin-bottom: 16px; line-height: 1.1;
+    }
+    .final-cta-inner p { color: rgba(255,255,255,0.75); font-size: 18px; margin-bottom: 40px; }
+    .cta-email-form {
+      display: flex; gap: 12px; max-width: 480px; margin: 0 auto 20px;
+    }
+    .cta-email-input {
+      flex: 1; padding: 16px 20px; border-radius: 14px;
+      border: none; background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px); color: #fff; font-size: 15px;
+      outline: none; transition: background 0.2s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .cta-email-input::placeholder { color: rgba(255,255,255,0.5); }
+    .cta-email-input:focus { background: rgba(255,255,255,0.22); }
+    .btn-white {
+      background: #fff; color: var(--violet);
+      font-weight: 700; white-space: nowrap;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .btn-white:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.25); }
+    .cta-note { color: rgba(255,255,255,0.5); font-size: 13px; }
+    .cta-note svg { display: inline; vertical-align: middle; margin-right: 4px; }
+
+    /* =============================================
+       FOOTER
+    ============================================= */
+    footer {
+      background: #0F0733; padding: 64px 0 40px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .footer-top {
+      display: grid; grid-template-columns: 2fr 1fr 1fr;
+      gap: 48px; margin-bottom: 48px;
+    }
+    .footer-brand p {
+      color: rgba(255,255,255,0.45); font-size: 14px;
+      line-height: 1.7; margin-top: 12px; max-width: 260px;
+    }
+    .footer-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .footer-logo-text {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800; font-size: 20px; color: #fff;
+    }
+    .footer-col h4 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700; font-size: 13px; color: rgba(255,255,255,0.4);
+      text-transform: uppercase; letter-spacing: 0.1em;
+      margin-bottom: 20px;
+    }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .footer-col a { color: rgba(255,255,255,0.55); text-decoration: none; font-size: 14px; transition: color 0.2s; }
+    .footer-col a:hover { color: #A78BFA; }
+    .social-links { display: flex; gap: 12px; margin-top: 24px; }
+    .social-link {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s, transform 0.2s; text-decoration: none;
+    }
+    .social-link:hover { background: var(--violet); transform: translateY(-2px); }
+    .footer-bottom {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.06);
+      flex-wrap: wrap; gap: 16px;
+    }
+    .footer-bottom p { color: rgba(255,255,255,0.3); font-size: 13px; }
+    .footer-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: rgba(255,255,255,0.45); font-size: 13px;
+    }
+
+    /* =============================================
+       MAGNETIC BUTTON
+    ============================================= */
+    .magnetic { display: inline-block; }
+
+    /* =============================================
+       RESPONSIVE
+    ============================================= */
+    @media (max-width: 1024px) {
+      .problems-grid { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; }
+      .pillars-grid { grid-template-columns: 1fr 1fr; }
+      .lessons-grid { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; }
+      .timeline-track { grid-template-columns: 1fr 1fr; gap: 32px; }
+      .timeline-line { display: none; }
+      .footer-top { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 768px) {
+      .nav-links, .nav-actions { display: none; }
+      .hamburger { display: flex; }
+      .hero-inner { grid-template-columns: 1fr; gap: 48px; }
+      .brain-container { width: 300px; height: 300px; }
+      .brain-ring-1 { width: 280px; height: 280px; }
+      .brain-ring-2 { width: 220px; height: 220px; }
+      .brain-ring-3 { width: 160px; height: 160px; }
+      .pillars-grid { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .steps-wrapper { grid-template-columns: 1fr; }
+      .step-connector { display: none; }
+      .timeline-track { grid-template-columns: 1fr; }
+      .cta-email-form { flex-direction: column; }
+      .footer-top { grid-template-columns: 1fr; gap: 32px; }
+      .footer-bottom { flex-direction: column; align-items: flex-start; }
+      .hero-ctas { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- =============================================
+     NAVBAR
+============================================= -->
+<nav id="navbar">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="10" fill="#6C5CE7"/>
+          <path d="M16 6C11.04 6 7 10.04 7 15C7 17.08 7.72 18.98 8.9 20.5C8.96 20.58 9 20.68 9 20.8V24.5C9 25.05 9.45 25.5 10 25.5H11.5C12.05 25.5 12.5 25.05 12.5 24.5V23H14V24.5C14 25.05 14.45 25.5 15 25.5H17C17.55 25.5 18 25.05 18 24.5V23H19.5V24.5C19.5 25.05 19.95 25.5 20.5 25.5H22C22.55 25.5 23 25.05 23 24.5V20.8C23 20.68 23.04 20.58 23.1 20.5C24.28 18.98 25 17.08 25 15C25 10.04 20.96 6 16 6Z" fill="white" opacity="0.9"/>
+          <circle cx="13" cy="14" r="1.5" fill="#6C5CE7"/>
+          <circle cx="19" cy="14" r="1.5" fill="#6C5CE7"/>
+          <path d="M13 17.5C13.83 18.17 14.88 18.5 16 18.5C17.12 18.5 18.17 18.17 19 17.5" stroke="#6C5CE7" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        <span class="nav-logo-text">Prédicta</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#solution">Fonctionnalités</a></li>
+        <li><a href="#how-it-works">Comment ça marche</a></li>
+        <li><a href="#final-cta">Tarifs</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="#final-cta" class="btn btn-primary magnetic">Commencer gratuitement</a>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="#solution">Fonctionnalités</a>
+    <a href="#how-it-works">Comment ça marche</a>
+    <a href="#final-cta">Tarifs</a>
+    <a href="#final-cta" style="color:#6C5CE7;font-weight:700;">Commencer gratuitement</a>
+  </div>
+</nav>
+
+<!-- =============================================
+     HERO
+============================================= -->
+<section id="hero">
+  <div class="hero-bg-orb hero-bg-orb-1"></div>
+  <div class="hero-bg-orb hero-bg-orb-2"></div>
+  <div class="container">
+    <div class="hero-inner">
+      <div class="hero-content">
+        <div class="hero-badge" id="hero-badge" style="opacity:0;transform:translateY(16px)">
+          <span class="sparkle">✦</span>
+          Conçu pour les esprits ambitieux
+        </div>
+        <h1 class="hero-h1" id="hero-h1" aria-label="Ton cerveau ne manque pas de discipline. Il manque de compréhension.">
+          <!-- Words injected by JS -->
+        </h1>
+        <p class="hero-subtitle" id="hero-subtitle" style="opacity:0;transform:translateY(16px)">
+          Prédicta apprend comment <strong>TON cerveau fonctionne</strong> — et te rend autonome. Pour toujours.
+        </p>
+        <div class="hero-ctas" id="hero-ctas" style="opacity:0;transform:translateY(16px)">
+          <a href="#final-cta" class="btn btn-primary btn-lg magnetic">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Commencer gratuitement
+          </a>
+          <a href="#how-it-works" class="btn btn-outline btn-lg magnetic">
+            Voir comment ça marche
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+        <div class="hero-trust" id="hero-trust" style="opacity:0;transform:translateY(16px)">
+          <div class="trust-avatars">
+            <div class="trust-avatar ta-1">A</div>
+            <div class="trust-avatar ta-2">F</div>
+            <div class="trust-avatar ta-3">M</div>
+          </div>
+          <span>+200 personnes sur la liste d'attente</span>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="brain-container">
+          <div class="brain-ring brain-ring-1"></div>
+          <div class="brain-ring brain-ring-2"></div>
+          <div class="brain-ring brain-ring-3"></div>
+          <div class="brain-glow"></div>
+
+          <!-- Floating dots -->
+          <div class="brain-dot brain-dot-1"></div>
+          <div class="brain-dot brain-dot-2"></div>
+          <div class="brain-dot brain-dot-3"></div>
+          <div class="brain-dot brain-dot-4"></div>
+
+          <!-- Brain SVG -->
+          <div class="brain-svg-wrap">
+            <svg width="220" height="220" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Left hemisphere -->
+              <path d="M110 180C110 180 60 175 45 148C30 121 32 95 40 80C48 65 55 58 55 58C55 58 50 50 52 42C54 34 62 30 70 32C78 34 80 40 80 40C80 40 85 32 94 30C103 28 110 34 110 40V180Z" fill="#EDE9FE"/>
+              <path d="M110 180C110 180 160 175 175 148C190 121 188 95 180 80C172 65 165 58 165 58C165 58 170 50 168 42C166 34 158 30 150 32C142 34 140 40 140 40C140 40 135 32 126 30C117 28 110 34 110 40V180Z" fill="#DDD6FE"/>
+
+              <!-- Brain details left -->
+              <path d="M70 85 Q65 95 68 105 Q72 115 78 110 Q85 105 82 95 Q79 85 70 85Z" fill="#C4B5FD" opacity="0.6"/>
+              <path d="M85 120 Q78 130 82 140 Q88 150 96 145 Q102 138 98 128 Q93 120 85 120Z" fill="#C4B5FD" opacity="0.4"/>
+              <path d="M60 115 Q55 125 60 133 Q66 140 72 136 Q78 130 74 120 Q70 112 60 115Z" fill="#A78BFA" opacity="0.35"/>
+
+              <!-- Brain details right -->
+              <path d="M150 85 Q155 95 152 105 Q148 115 142 110 Q135 105 138 95 Q141 85 150 85Z" fill="#C4B5FD" opacity="0.6"/>
+              <path d="M135 120 Q142 130 138 140 Q132 150 124 145 Q118 138 122 128 Q127 120 135 120Z" fill="#C4B5FD" opacity="0.4"/>
+              <path d="M160 115 Q165 125 160 133 Q154 140 148 136 Q142 130 146 120 Q150 112 160 115Z" fill="#A78BFA" opacity="0.35"/>
+
+              <!-- Center line -->
+              <line x1="110" y1="42" x2="110" y2="178" stroke="#A78BFA" stroke-width="1" stroke-dasharray="3 4" opacity="0.6"/>
+
+              <!-- Neural pathways -->
+              <path d="M80 75 Q95 70 110 72 Q125 70 140 75" stroke="#6C5CE7" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.4"/>
+              <path d="M75 100 Q90 95 110 98 Q130 95 145 100" stroke="#6C5CE7" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.4"/>
+              <path d="M78 128 Q92 122 110 125 Q128 122 142 128" stroke="#6C5CE7" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.4"/>
+              <path d="M82 155 Q94 148 110 151 Q126 148 138 155" stroke="#6C5CE7" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.35"/>
+
+              <!-- Stem -->
+              <rect x="100" y="178" width="20" height="18" rx="10" fill="#C4B5FD"/>
+
+              <!-- Glow dots on brain -->
+              <circle cx="75" cy="90" r="4" fill="#6C5CE7" opacity="0.7">
+                <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite"/>
+                <animate attributeName="r" values="4;5.5;4" dur="2s" repeatCount="indefinite"/>
+              </circle>
+              <circle cx="148" cy="100" r="3" fill="#EA580C" opacity="0.7">
+                <animate attributeName="opacity" values="0.7;1;0.7" dur="2.5s" repeatCount="indefinite" begin="0.5s"/>
+                <animate attributeName="r" values="3;4.5;3" dur="2.5s" repeatCount="indefinite" begin="0.5s"/>
+              </circle>
+              <circle cx="95" cy="145" r="3.5" fill="#6C5CE7" opacity="0.6">
+                <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="1s"/>
+                <animate attributeName="r" values="3.5;5;3.5" dur="3s" repeatCount="indefinite" begin="1s"/>
+              </circle>
+              <circle cx="130" cy="135" r="3" fill="#A78BFA" opacity="0.7">
+                <animate attributeName="opacity" values="0.7;1;0.7" dur="1.8s" repeatCount="indefinite" begin="0.8s"/>
+              </circle>
+
+              <!-- Neural sparks -->
+              <line x1="75" y1="90" x2="95" y2="98" stroke="#6C5CE7" stroke-width="1" opacity="0.4">
+                <animate attributeName="opacity" values="0.4;0.8;0.4" dur="2s" repeatCount="indefinite"/>
+              </line>
+              <line x1="148" y1="100" x2="130" y2="135" stroke="#EA580C" stroke-width="1" opacity="0.4">
+                <animate attributeName="opacity" values="0.4;0.8;0.4" dur="2.5s" repeatCount="indefinite" begin="0.5s"/>
+              </line>
+            </svg>
+          </div>
+
+          <!-- Floating info cards around brain -->
+          <div style="position:absolute;top:30px;right:0;background:#fff;border-radius:12px;padding:10px 14px;box-shadow:0 4px 20px rgba(108,92,231,0.15);border:1px solid rgba(108,92,231,0.1);font-size:12px;font-weight:600;color:#6C5CE7;white-space:nowrap;animation:brain-float 5s ease-in-out infinite;animation-delay:-2s;">
+            <span style="font-family:'Space Mono',monospace;font-size:10px;display:block;color:#78716C;font-weight:400;">Focus score</span>
+            <span style="font-family:'Space Mono',monospace;font-size:18px;font-weight:700;">87%</span>
+            <span style="color:#16A34A;font-size:11px;"> ↑12%</span>
+          </div>
+          <div style="position:absolute;bottom:60px;left:-10px;background:#fff;border-radius:12px;padding:10px 14px;box-shadow:0 4px 20px rgba(234,88,12,0.12);border:1px solid rgba(234,88,12,0.1);font-size:12px;white-space:nowrap;animation:brain-float 7s ease-in-out infinite;animation-delay:-1s;">
+            <span style="font-family:'Space Mono',monospace;font-size:10px;display:block;color:#78716C;font-weight:400;">Session en cours</span>
+            <span style="font-weight:700;color:#1C1917;font-size:13px;">🧠 Deep Work · J14</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     PROBLEMS
+============================================= -->
+<section id="problems">
+  <div class="container">
+    <div class="problems-header fade-up">
+      <span class="section-tag">Le problème</span>
+      <h2 class="section-title" style="font-size:clamp(32px,4vw,48px);margin-bottom:16px;">Les apps actuelles<br>ne règlent rien.</h2>
+      <p class="section-subtitle">Tu essaies tout. Rien ne tient. Parce que le problème n'est pas résolu — il est juste masqué.</p>
+    </div>
+    <div class="problems-grid">
+      <div class="problem-card fade-up stagger-1">
+        <div class="problem-icon">🚫</div>
+        <h3>Blocage temporaire</h3>
+        <p>Tu bloques les distractions. Dès que tu arrêtes l'app — tout revient. Rien n'a changé en toi.</p>
+      </div>
+      <div class="problem-card fade-up stagger-2">
+        <div class="problem-icon">💬</div>
+        <h3>Conseils sans profondeur</h3>
+        <p>Des conseils génériques en surface. Jamais le vrai pourquoi. Ton cerveau reste un mystère pour l'app.</p>
+      </div>
+      <div class="problem-card fade-up stagger-3">
+        <div class="problem-icon">🔗</div>
+        <h3>Dépendance à l'outil</h3>
+        <p>Tu dépends de l'outil. L'outil ne te rend pas plus fort. Sans l'app, tu es au même point qu'avant.</p>
+      </div>
+    </div>
+    <div class="problem-arrow fade-up">
+      <div class="arrow-line"></div>
+      <span class="arrow-text">Il existe une meilleure façon</span>
+      <span class="arrow-icon">→</span>
+      <div class="arrow-line" style="background:linear-gradient(90deg,var(--violet),transparent)"></div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SOLUTION
+============================================= -->
+<section id="solution">
+  <div class="container">
+    <div class="solution-header fade-up">
+      <span class="section-tag">Notre approche</span>
+      <h2 class="section-title" style="font-size:clamp(32px,4vw,48px);margin-bottom:16px;">Prédicta est différent.</h2>
+      <p class="section-subtitle">Trois piliers fondamentaux qui transforment ton rapport à la concentration — pour de bon.</p>
+    </div>
+    <div class="pillars-grid">
+      <div class="pillar-card fade-up stagger-1">
+        <div class="pillar-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        </div>
+        <span class="pillar-tag">Anti-dépendance</span>
+        <h3 style="margin-top:12px;">L'app s'efface à mesure que tu grandis</h3>
+        <p>Notre objectif est que tu n'aies plus besoin de nous. Plus tu progresses, plus tu es autonome. L'app se fait discrète — et c'est une victoire.</p>
+      </div>
+      <div class="pillar-card fade-up stagger-2">
+        <div class="pillar-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+        </div>
+        <span class="pillar-tag">Blocage Plus</span>
+        <h3 style="margin-top:12px;">Comprendre ton cerveau, pas juste bloquer des sites</h3>
+        <p>Avant de bloquer, on comprend. Pourquoi tu procrastines à 15h ? Pourquoi tu es plus sharp le matin ? Le blocage devient intelligent.</p>
+      </div>
+      <div class="pillar-card fade-up stagger-3">
+        <div class="pillar-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+        </div>
+        <span class="pillar-tag">Science Profonde</span>
+        <h3 style="margin-top:12px;">Neuroscience réelle, pas des tips de surface</h3>
+        <p>Chaque décision de l'app s'appuie sur des recherches publiées. Roy Baumeister, Stephen Porges, Olds & Milner — pas des coaches YouTube.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     HOW IT WORKS
+============================================= -->
+<section id="how-it-works">
+  <div class="container">
+    <div class="how-header fade-up">
+      <span class="section-tag">Le parcours</span>
+      <h2 class="section-title" style="font-size:clamp(32px,4vw,48px);margin-bottom:16px;">De J0 à J90<br>Une transformation réelle</h2>
+      <p class="section-subtitle">Trois étapes simples. Un changement profond. Pas de miracle — de la méthode.</p>
+    </div>
+    <div class="steps-wrapper" id="steps-wrapper">
+      <div class="step-connector"><div class="step-connector-fill" id="step-line"></div></div>
+      <div class="step fade-up stagger-1">
+        <div class="step-number">01</div>
+        <h3>Installe-toi en 10 minutes</h3>
+        <p>Questions d'entrée + profil cognitif de départ. Prédicta sait déjà quelque chose que tu ignores sur toi.</p>
+        <div class="step-card">
+          <div class="step-card-label">Calibration initiale</div>
+          <p>Chronotype · Charge cognitive · Patterns d'attention identifiés</p>
+        </div>
+      </div>
+      <div class="step fade-up stagger-2">
+        <div class="step-number">02</div>
+        <h3>Lance tes sessions quotidiennes</h3>
+        <p>Timer intelligent + coach vocal contextuel + micro-leçon de 2 minutes. Chaque jour, tu comprends un peu plus.</p>
+        <div class="step-card">
+          <div class="step-card-label">Session active</div>
+          <p>Deep Work · 45 min · Coach actif · Leçon : Ego Depletion</p>
+        </div>
+      </div>
+      <div class="step fade-up stagger-3">
+        <div class="step-number">03</div>
+        <h3>Le coach apprend qui tu es</h3>
+        <p>Sur 90 jours, les prédictions s'affinent. L'app anticipe tes creux, tes pics — et agit avant que tu ne bloques.</p>
+        <div class="step-card">
+          <div class="step-card-label">Prédiction J47</div>
+          <p>Creux prévu à 16h30 · Recommandation : pause + respiration · Précision 89%</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     FEATURES GRID
+============================================= -->
+<section id="features">
+  <div class="container">
+    <div class="features-header fade-up">
+      <span class="section-tag">Fonctionnalités</span>
+      <h2 class="section-title" style="font-size:clamp(32px,4vw,48px);margin-bottom:16px;">Tout ce dont ton cerveau<br>a besoin</h2>
+      <p class="section-subtitle">Des outils conçus pour le long terme, pas pour la motivation du lundi matin.</p>
+    </div>
+    <div class="features-grid">
+
+      <!-- Feature 1: Timer -->
+      <div class="feature-card fade-up stagger-1">
+        <div class="feature-card-header">
+          <div class="feature-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3>Sessions quotidiennes</h3>
+        </div>
+        <p>Un timer qui apprend ta cadence naturelle. Pas de Pomodoro générique — des sessions calibrées sur ton cerveau.</p>
+        <div class="mini-preview">
+          <div class="mini-timer">
+            <div class="timer-display" id="timer-display">25:00</div>
+            <div class="timer-bar"><div class="timer-fill"></div></div>
+            <div class="timer-label">Deep Work · Session 3/5 aujourd'hui</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 2: Coach IA -->
+      <div class="feature-card fade-up stagger-2">
+        <div class="feature-card-header">
+          <div class="feature-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          </div>
+          <h3>Coach IA cognitif</h3>
+        </div>
+        <p>Un coach qui te connaît vraiment. Il répond en fonction de TON profil — pas de réponses génériques.</p>
+        <div class="mini-preview" style="padding:12px;">
+          <div class="mini-chat">
+            <div class="chat-bubble ai">Ton énergie cognitive est haute ce matin. C'est le moment pour la tâche difficile. 🧠</div>
+            <div class="chat-bubble user">J'ai du mal à commencer...</div>
+            <div class="chat-bubble ai second">Normal. Commence par 5 minutes. Ton cerveau prendra le relais.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 3: Micro-leçons -->
+      <div class="feature-card fade-up stagger-3">
+        <div class="feature-card-header">
+          <div class="feature-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          </div>
+          <h3>30 Micro-leçons scientifiques</h3>
+        </div>
+        <p>2 minutes. Un concept neuroscientifique réel. Une application concrète pour ta journée.</p>
+        <div class="mini-preview" style="padding:0;">
+          <div class="mini-lesson-card" style="margin:0;height:100px;">
+            <div class="mini-lesson-inner">
+              <div class="mini-lesson-front">
+                <div class="lesson-num">LEÇON A1</div>
+                <div class="lesson-title">L'attention n'est pas infinie</div>
+                <div class="flip-hint">Survoler pour voir →</div>
+              </div>
+              <div class="mini-lesson-back">
+                <p>Roy Baumeister : l'ego depletion explique pourquoi tu cèdes le soir. Gère ton capital attentionnel.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 4: Prédictions -->
+      <div class="feature-card fade-up stagger-4">
+        <div class="feature-card-header">
+          <div class="feature-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <h3>Prédictions personnalisées</h3>
+        </div>
+        <p>À J30, Prédicta prédit tes patterns. À J90, il anticipe avant que tu sentes le problème.</p>
+        <div class="mini-preview">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:11px;color:var(--text-sec);">Énergie cognitive · Cette semaine</span>
+            <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--violet);font-weight:700;">J47</span>
+          </div>
+          <div class="mini-chart">
+            <div class="chart-bar" style="height:60%;animation-delay:0.1s"></div>
+            <div class="chart-bar" style="height:80%;animation-delay:0.2s"></div>
+            <div class="chart-bar" style="height:55%;animation-delay:0.3s"></div>
+            <div class="chart-bar" style="height:90%;animation-delay:0.4s"></div>
+            <div class="chart-bar" style="height:70%;animation-delay:0.5s;background:linear-gradient(to top,#EA580C,#FB923C)"></div>
+            <div class="chart-bar" style="height:85%;animation-delay:0.6s"></div>
+            <div class="chart-bar" style="height:75%;animation-delay:0.7s;opacity:0.4;border:2px dashed var(--violet);background:transparent"></div>
+          </div>
+          <div style="text-align:center;margin-top:6px;font-size:10px;color:var(--text-sec);">Creux prévu demain 16h — alerte programmée ✓</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     MICRO-LESSONS PREVIEW
+============================================= -->
+<section id="micro-lessons">
+  <div class="container">
+    <div class="lessons-header fade-up">
+      <span class="section-tag">Micro-leçons</span>
+      <h2 class="section-title" style="font-size:clamp(32px,4vw,48px);margin-bottom:16px;">De la vraie science.<br>En 2 minutes.</h2>
+      <p class="section-subtitle">30 leçons basées sur des études publiées. Pas des hacks. Des principes.</p>
+    </div>
+    <div class="lessons-grid">
+
+      <div class="lesson-card a1 fade-up stagger-1">
+        <span class="lesson-theme attention">A1 · Attention</span>
+        <h3>L'attention n'est pas infinie — et c'est normal</h3>
+        <p class="lesson-excerpt">Roy Baumeister (1998) a démontré que la volonté et l'attention partagent la même ressource limitée. Comprendre l'ego depletion, c'est arrêter de se culpabiliser — et commencer à se gérer intelligemment.</p>
+        <div class="lesson-meta">
+          <span class="lesson-source">Baumeister et al., 1998</span>
+          <span class="lesson-time">2 min</span>
+        </div>
+      </div>
+
+      <div class="lesson-card b1 fade-up stagger-2">
+        <span class="lesson-theme dopamine">B1 · Neurochimie</span>
+        <h3>La dopamine n'est pas ce que tu crois</h3>
+        <p class="lesson-excerpt">Olds & Milner (1954) ont découvert que la dopamine est le signal de l'anticipation — pas du plaisir. Comprendre ça change tout dans ta relation aux réseaux sociaux et à la procrastination.</p>
+        <div class="lesson-meta">
+          <span class="lesson-source">Olds & Milner, 1954</span>
+          <span class="lesson-time">2 min</span>
+        </div>
+      </div>
+
+      <div class="lesson-card d2 fade-up stagger-3">
+        <span class="lesson-theme respiration">D2 · Corps & Cerveau</span>
+        <h3>Pourquoi la respiration change ton état en secondes</h3>
+        <p class="lesson-excerpt">La théorie polyvagale de Stephen Porges explique comment le nerf vague régule ton système nerveux. Une respiration lente n'est pas un tip — c'est une intervention neurologique directe.</p>
+        <div class="lesson-meta">
+          <span class="lesson-source">Stephen Porges, 1994</span>
+          <span class="lesson-time">2 min</span>
+        </div>
+      </div>
+
+    </div>
+    <div style="text-align:center;margin-top:48px;" class="fade-up">
+      <a href="#final-cta" class="btn btn-outline btn-lg magnetic">
+        Voir les 30 leçons complètes
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     JOURNEY TIMELINE
+============================================= -->
+<section id="journey">
+  <div class="container">
+    <div class="journey-header fade-up">
+      <span class="section-tag">La transformation</span>
+      <h2 class="section-title" style="font-size:clamp(32px,4vw,48px);margin-bottom:16px;">J0 → J90</h2>
+      <p class="section-subtitle">Une progression réelle, mesurable — avec des prédictions qui s'affinent chaque semaine.</p>
+    </div>
+    <div class="timeline-wrapper" id="timeline-wrapper">
+      <div class="timeline-track" id="timeline-track">
+        <div class="timeline-line"><div class="timeline-line-fill" id="timeline-fill"></div></div>
+
+        <div class="timeline-phase fade-up stagger-1" data-phase="0">
+          <div class="phase-dot">J0</div>
+          <div class="phase-label">Phase 1</div>
+          <div class="phase-name">Calibration</div>
+          <p class="phase-desc">Tu réponds à 12 questions. Prédicta construit ton profil cognitif de départ. Chronotype, charge, style.</p>
+          <div class="phase-card">
+            📊 Profil initial généré · Chronotype détecté : Intermédiaire-matin
+          </div>
+        </div>
+
+        <div class="timeline-phase fade-up stagger-2" data-phase="1">
+          <div class="phase-dot">J7</div>
+          <div class="phase-label">Phase 2</div>
+          <div class="phase-name">Observation</div>
+          <p class="phase-desc">Les premières sessions. Prédicta observe tes patterns : quand tu blocques, quand tu excelles.</p>
+          <div class="phase-card">
+            🔍 15 sessions · 3 patterns détectés · Creux à 16h identifié
+          </div>
+        </div>
+
+        <div class="timeline-phase fade-up stagger-3" data-phase="2">
+          <div class="phase-dot">J30</div>
+          <div class="phase-label">Phase 3</div>
+          <div class="phase-name">Détection patterns</div>
+          <p class="phase-desc">Les patterns se confirment. Les micro-leçons ciblées commencent. Tu comprends ton propre cerveau.</p>
+          <div class="phase-card">
+            🎯 Précision prédictions : 71% · 8 leçons personnalisées complétées
+          </div>
+        </div>
+
+        <div class="timeline-phase fade-up stagger-4" data-phase="3">
+          <div class="phase-dot">J90</div>
+          <div class="phase-label">Phase 4</div>
+          <div class="phase-name">Transformation</div>
+          <p class="phase-desc">Prédicta anticipe avant que tu ressentes le problème. Tu es autonome. L'app peut s'effacer.</p>
+          <div class="phase-card">
+            ✨ Précision : 89% · Score autonomie : 82/100 · Tu n'as plus besoin de nous.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     FOUNDER QUOTE
+============================================= -->
+<section id="founder-quote">
+  <div class="container">
+    <div class="quote-inner fade-up">
+      <span class="quote-mark">"</span>
+      <p class="quote-text">
+        Je n'ai pas cherché une app. J'ai cherché des <em>vraies réponses</em>.<br/>
+        Pourquoi je procrastinais alors que je voulais avancer ?<br/>
+        Pourquoi les outils que j'utilisais ne changeaient rien en profondeur ?<br/><br/>
+        Je suis allé dans les études. Dans la neuroscience.<br/>
+        Et j'ai réalisé que <em>personne ne construisait ce que je cherchais.</em><br/><br/>
+        Alors j'ai décidé de construire ce qui n'existait pas.
+      </p>
+      <div class="quote-author">
+        <div class="author-avatar">A</div>
+        <div class="author-info">
+          <div class="author-name">Abibou</div>
+          <div class="author-role">Fondateur de Prédicta · Dakar, Sénégal</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     FINAL CTA
+============================================= -->
+<section id="final-cta">
+  <div class="container">
+    <div class="final-cta-inner fade-up">
+      <span class="section-tag" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.2);">Accès anticipé</span>
+      <h2>Ton cerveau mérite mieux<br>que des tips.</h2>
+      <p>Rejoins les premiers utilisateurs de Prédicta.<br/>Accès gratuit pendant le lancement.</p>
+      <form class="cta-email-form" onsubmit="handleSubmit(event)">
+        <input
+          type="email"
+          class="cta-email-input"
+          placeholder="ton@email.com"
+          required
+          id="email-input"
+        />
+        <button type="submit" class="btn btn-white btn-lg magnetic">
+          Commencer gratuitement
+        </button>
+      </form>
+      <p class="cta-note">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Accès gratuit — aucune carte requise
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     FOOTER
+============================================= -->
+<footer>
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="#" class="footer-logo">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="10" fill="#6C5CE7"/>
+            <path d="M16 6C11.04 6 7 10.04 7 15C7 17.08 7.72 18.98 8.9 20.5C8.96 20.58 9 20.68 9 20.8V24.5C9 25.05 9.45 25.5 10 25.5H11.5C12.05 25.5 12.5 25.05 12.5 24.5V23H14V24.5C14 25.05 14.45 25.5 15 25.5H17C17.55 25.5 18 25.05 18 24.5V23H19.5V24.5C19.5 25.05 19.95 25.5 20.5 25.5H22C22.55 25.5 23 25.05 23 24.5V20.8C23 20.68 23.04 20.58 23.1 20.5C24.28 18.98 25 17.08 25 15C25 10.04 20.96 6 16 6Z" fill="white" opacity="0.9"/>
+          </svg>
+          <span class="footer-logo-text">Prédicta</span>
+        </a>
+        <p>Comprendre ton cerveau pour t'en libérer. La seule app qui travaille à sa propre disparition.</p>
+        <div class="social-links">
+          <a href="#" class="social-link" aria-label="Twitter/X">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="rgba(255,255,255,0.6)"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L2.25 2.25h6.953l4.257 5.628L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>
+          </a>
+          <a href="#" class="social-link" aria-label="Instagram">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="rgba(255,255,255,0.6)" stroke="none"/></svg>
+          </a>
+          <a href="#" class="social-link" aria-label="LinkedIn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="rgba(255,255,255,0.6)"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="footer-col">
+        <h4>Produit</h4>
+        <ul>
+          <li><a href="#solution">Fonctionnalités</a></li>
+          <li><a href="#how-it-works">Comment ça marche</a></li>
+          <li><a href="#micro-lessons">Micro-leçons</a></li>
+          <li><a href="#final-cta">Tarifs</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Légal</h4>
+        <ul>
+          <li><a href="#">Contact</a></li>
+          <li><a href="#">Politique de confidentialité</a></li>
+          <li><a href="#">Conditions d'utilisation</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© 2025 Prédicta. Tous droits réservés.</p>
+      <div class="footer-badge">
+        <span>Construit avec fierté au Sénégal 🌍</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- =============================================
+     JAVASCRIPT
+============================================= -->
+<script>
+  /* --- Navbar scroll morph --- */
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 40) {
+      navbar.classList.add('scrolled');
+    } else {
+      navbar.classList.remove('scrolled');
+    }
+  });
+
+  /* --- Hamburger menu --- */
+  const hamburger = document.getElementById('hamburger');
+  const mobileMenu = document.getElementById('mobile-menu');
+  hamburger.addEventListener('click', () => {
+    hamburger.classList.toggle('open');
+    mobileMenu.classList.toggle('open');
+  });
+  mobileMenu.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      hamburger.classList.remove('open');
+      mobileMenu.classList.remove('open');
+    });
+  });
+
+  /* --- Hero stagger reveal --- */
+  const heroText = "Ton cerveau ne manque pas de discipline. Il manque de compréhension.";
+  const h1El = document.getElementById('hero-h1');
+  const words = heroText.split(' ');
+  h1El.innerHTML = words.map((word, i) => {
+    const delay = 0.3 + i * 0.06;
+    const isAccent = word.toLowerCase().includes('discipline') || word.toLowerCase().includes('compréhension');
+    const cls = isAccent ? 'reveal-word accent' : 'reveal-word';
+    return `<span class="${cls}" style="animation-delay:${delay}s">${word}</span> `;
+  }).join('');
+
+  // Animate other hero elements
+  setTimeout(() => {
+    document.getElementById('hero-badge').style.cssText = 'opacity:1;transform:translateY(0);transition:opacity 0.6s ease,transform 0.6s ease;';
+  }, 100);
+  setTimeout(() => {
+    document.getElementById('hero-subtitle').style.cssText = 'opacity:1;transform:translateY(0);transition:opacity 0.6s ease,transform 0.6s ease;';
+  }, 800);
+  setTimeout(() => {
+    document.getElementById('hero-ctas').style.cssText = 'opacity:1;transform:translateY(0);transition:opacity 0.6s ease,transform 0.6s ease;';
+  }, 1000);
+  setTimeout(() => {
+    document.getElementById('hero-trust').style.cssText = 'opacity:1;transform:translateY(0);transition:opacity 0.6s ease,transform 0.6s ease;';
+  }, 1200);
+
+  /* --- Scroll animations (IntersectionObserver) --- */
+  const fadeEls = document.querySelectorAll('.fade-up');
+  const fadeObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        fadeObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+  fadeEls.forEach(el => fadeObserver.observe(el));
+
+  /* --- Step line animation --- */
+  const stepLine = document.getElementById('step-line');
+  const stepWrapper = document.getElementById('steps-wrapper');
+  if (stepWrapper && stepLine) {
+    const stepObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          stepLine.classList.add('active');
+          stepObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+    stepObserver.observe(stepWrapper);
+  }
+
+  /* --- Timeline animation --- */
+  const timelineFill = document.getElementById('timeline-fill');
+  const timelineTrack = document.getElementById('timeline-track');
+  const timelinePhases = document.querySelectorAll('.timeline-phase');
+
+  const timelineObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        timelineFill && timelineFill.classList.add('active');
+        // Light up phases progressively
+        timelinePhases.forEach((phase, i) => {
+          setTimeout(() => phase.classList.add('lit'), i * 300);
+        });
+        timelineObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+  if (timelineTrack) timelineObserver.observe(timelineTrack);
+
+  /* --- Timer countdown animation --- */
+  let timerSeconds = 25 * 60;
+  const timerEl = document.getElementById('timer-display');
+  if (timerEl) {
+    setInterval(() => {
+      timerSeconds = Math.max(0, timerSeconds - 1);
+      if (timerSeconds === 0) timerSeconds = 25 * 60;
+      const m = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+      const s = (timerSeconds % 60).toString().padStart(2, '0');
+      timerEl.textContent = `${m}:${s}`;
+    }, 1000);
+  }
+
+  /* --- Magnetic button effect --- */
+  document.querySelectorAll('.magnetic').forEach(el => {
+    el.addEventListener('mousemove', (e) => {
+      const rect = el.getBoundingClientRect();
+      const x = e.clientX - rect.left - rect.width / 2;
+      const y = e.clientY - rect.top - rect.height / 2;
+      el.style.transform = `translate(${x * 0.18}px, ${y * 0.18}px)`;
+    });
+    el.addEventListener('mouseleave', () => {
+      el.style.transform = '';
+      el.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      setTimeout(() => { el.style.transition = ''; }, 400);
+    });
+  });
+
+  /* --- Email form submit --- */
+  function handleSubmit(e) {
+    e.preventDefault();
+    const input = document.getElementById('email-input');
+    const btn = e.target.querySelector('button');
+    btn.textContent = '✓ Tu es sur la liste !';
+    btn.style.background = '#fff';
+    btn.style.color = '#16A34A';
+    input.value = '';
+    setTimeout(() => {
+      btn.textContent = 'Commencer gratuitement';
+      btn.style.color = 'var(--violet)';
+    }, 4000);
+  }
+
+  /* --- Smooth scroll for anchor links --- */
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        const offset = 80;
+        const top = target.getBoundingClientRect().top + window.scrollY - offset;
+        window.scrollTo({ top, behavior: 'smooth' });
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
