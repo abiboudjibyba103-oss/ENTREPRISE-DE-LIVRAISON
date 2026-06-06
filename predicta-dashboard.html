@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prédicta — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FFFBF5;
+    --card: #FFFFFF;
+    --violet: #6C5CE7;
+    --violet-light: rgba(108,92,231,0.1);
+    --violet-mid: rgba(108,92,231,0.2);
+    --orange: #EA580C;
+    --orange-light: rgba(234,88,12,0.1);
+    --text: #1C1917;
+    --text-sec: #78716C;
+    --border: #F0EBE3;
+    --success: #16A34A;
+    --success-light: rgba(22,163,74,0.1);
+    --error: #DC2626;
+    --error-light: rgba(220,38,38,0.1);
+    --warning: #CA8A04;
+    --warning-light: rgba(202,138,4,0.1);
+    --sidebar-w: 260px;
+    --radius: 20px;
+    --shadow: 0 2px 20px rgba(108,92,231,0.07), 0 1px 4px rgba(28,25,23,0.05);
+    --shadow-hover: 0 8px 30px rgba(108,92,231,0.13), 0 2px 8px rgba(28,25,23,0.07);
+  }
+
+  html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; width: var(--sidebar-w);
+    background: var(--card); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; z-index: 100;
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+  }
+  .sidebar-logo {
+    display: flex; align-items: center; gap: 10px;
+    padding: 24px 20px 20px; border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo svg { flex-shrink: 0; }
+  .sidebar-logo-text { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 20px; color: var(--violet); letter-spacing: -0.5px; }
+
+  .sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px; padding: 11px 12px;
+    border-radius: 12px; cursor: pointer; color: var(--text-sec);
+    font-size: 14px; font-weight: 500; transition: all 0.2s ease;
+    border-left: 3px solid transparent; margin-bottom: 2px;
+    user-select: none;
+  }
+  .nav-item:hover { background: var(--violet-light); color: var(--violet); }
+  .nav-item.active {
+    background: var(--violet-light); color: var(--violet);
+    border-left-color: var(--violet); font-weight: 600;
+  }
+  .nav-item svg { flex-shrink: 0; opacity: 0.7; }
+  .nav-item.active svg, .nav-item:hover svg { opacity: 1; }
+
+  .sidebar-user {
+    padding: 16px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .user-avatar {
+    width: 38px; height: 38px; border-radius: 50%; background: var(--violet);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700; font-size: 14px; flex-shrink: 0;
+  }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .user-sub { font-size: 11px; color: var(--text-sec); }
+  .logout-btn {
+    width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border);
+    background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; color: var(--text-sec);
+  }
+  .logout-btn:hover { background: var(--error-light); border-color: var(--error); color: var(--error); }
+
+  /* ===== MAIN CONTENT ===== */
+  .main {
+    margin-left: var(--sidebar-w); height: 100vh;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  /* ===== NAVBAR ===== */
+  .navbar {
+    background: var(--card); border-bottom: 1px solid var(--border);
+    padding: 0 28px; height: 68px; display: flex; align-items: center;
+    justify-content: space-between; flex-shrink: 0; position: sticky; top: 0; z-index: 50;
+  }
+  .navbar-left {}
+  .navbar-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); }
+  .breadcrumb { font-size: 12px; color: var(--text-sec); margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+  .breadcrumb span { opacity: 0.5; }
+  .navbar-right { display: flex; align-items: center; gap: 14px; }
+  .navbar-date { font-size: 13px; color: var(--text-sec); font-weight: 500; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--violet); color: #fff; border: none;
+    padding: 10px 18px; border-radius: 12px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+    white-space: nowrap;
+  }
+  .btn-primary:hover { background: #5a4bcf; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(108,92,231,0.35); }
+  .btn-primary:active { transform: translateY(0); }
+
+  /* ===== CONTENT SCROLL AREA ===== */
+  .content-area { flex: 1; overflow-y: auto; padding: 28px; }
+  .page { display: none; animation: fadeIn 0.35s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--card); border-radius: var(--radius);
+    border: 1px solid var(--border); box-shadow: var(--shadow);
+    padding: 24px; transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .card:hover { box-shadow: var(--shadow-hover); }
+  .card-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 4px; }
+  .card-sub { font-size: 13px; color: var(--text-sec); }
+
+  /* ===== STATS ROW ===== */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+  .stat-card { padding: 22px; }
+  .stat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+  .stat-label { font-size: 12px; color: var(--text-sec); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .stat-value { font-family: 'Space Mono', monospace; font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; margin-bottom: 8px; }
+  .stat-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 20px;
+  }
+  .badge-green { background: var(--success-light); color: var(--success); }
+  .badge-violet { background: var(--violet-light); color: var(--violet); }
+  .badge-orange { background: var(--orange-light); color: var(--orange); }
+  .badge-red { background: var(--error-light); color: var(--error); }
+
+  /* Skeleton shimmer */
+  .shimmer {
+    background: linear-gradient(90deg, #f0ebe3 25%, #f8f4ef 50%, #f0ebe3 75%);
+    background-size: 200% 100%; animation: shimmer 1.4s infinite;
+    border-radius: 8px; color: transparent !important;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  /* ===== MIDDLE ROW ===== */
+  .mid-grid { display: grid; grid-template-columns: 60% 1fr; gap: 16px; margin-bottom: 20px; }
+
+  /* Focus chart */
+  .chart-wrap { margin-top: 16px; }
+  #focusChart { width: 100%; display: block; }
+
+  /* Coach card */
+  .coach-avatar {
+    width: 48px; height: 48px; border-radius: 50%; background: var(--violet);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .coach-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .coach-label { font-size: 11px; color: var(--text-sec); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+  .coach-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 15px; color: var(--text); }
+  .coach-msg { font-size: 14px; line-height: 1.65; color: var(--text); background: var(--bg); border-radius: 14px; padding: 14px; margin-bottom: 16px; border: 1px solid var(--border); }
+  .btn-play {
+    width: 100%; padding: 11px; border-radius: 12px; border: none;
+    background: var(--violet); color: #fff; font-size: 14px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.2s; font-family: 'DM Sans', sans-serif; margin-bottom: 16px;
+  }
+  .btn-play:hover { background: #5a4bcf; box-shadow: 0 4px 16px rgba(108,92,231,0.3); }
+  .mood-section { border-top: 1px solid var(--border); padding-top: 14px; }
+  .mood-label { font-size: 12px; color: var(--text-sec); font-weight: 500; margin-bottom: 10px; }
+  .mood-btns { display: flex; gap: 8px; }
+  .mood-btn {
+    flex: 1; padding: 9px 6px; border-radius: 12px; border: 1.5px solid var(--border);
+    background: transparent; cursor: pointer; font-size: 12px; font-weight: 600;
+    color: var(--text-sec); transition: all 0.2s; display: flex; flex-direction: column;
+    align-items: center; gap: 4px; font-family: 'DM Sans', sans-serif;
+  }
+  .mood-btn .emoji { font-size: 20px; }
+  .mood-btn:hover { border-color: var(--violet); color: var(--violet); background: var(--violet-light); }
+  .mood-btn.selected { border-color: var(--violet); color: var(--violet); background: var(--violet-light); }
+
+  /* ===== TABLE ROW ===== */
+  .bot-grid { display: grid; grid-template-columns: 60% 1fr; gap: 16px; margin-bottom: 20px; }
+
+  .table-wrap { overflow-x: auto; margin-top: 16px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; font-size: 11px; font-weight: 600; color: var(--text-sec);
+    text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr { transition: background 0.15s; cursor: default; }
+  tbody tr:hover { background: var(--bg); }
+  tbody td { padding: 12px 14px; font-size: 13px; color: var(--text); border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .progress-cell { display: flex; align-items: center; gap: 8px; }
+  .progress-bar { flex: 1; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; min-width: 60px; }
+  .progress-fill { height: 100%; background: var(--violet); border-radius: 99px; }
+  .progress-pct { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-sec); width: 32px; text-align: right; }
+
+  /* Next lesson card */
+  .theme-badge {
+    display: inline-flex; font-size: 11px; font-weight: 700; padding: 3px 9px;
+    border-radius: 20px; background: var(--orange-light); color: var(--orange); margin-bottom: 12px;
+  }
+  .lesson-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 8px; line-height: 1.35; }
+  .lesson-excerpt { font-size: 13px; color: var(--text-sec); line-height: 1.6; margin-bottom: 16px; }
+  .duration-badge {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600;
+    color: var(--text-sec); background: var(--bg); padding: 4px 10px; border-radius: 20px;
+    border: 1px solid var(--border); margin-bottom: 16px;
+  }
+  .btn-full {
+    width: 100%; padding: 13px; border-radius: 14px; border: none;
+    background: var(--violet); color: #fff; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+  }
+  .btn-full:hover { background: #5a4bcf; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(108,92,231,0.3); }
+
+  /* ===== INSIGHTS ROW ===== */
+  .insights-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+  .insight-card {
+    padding: 20px 20px 20px 24px;
+    border-left: 4px solid var(--violet);
+    border-radius: var(--radius);
+    background: var(--card); border: 1px solid var(--border);
+    border-left: 4px solid var(--violet);
+    box-shadow: var(--shadow);
+  }
+  .insight-card.orange { border-left-color: var(--orange); }
+  .insight-card.green { border-left-color: var(--success); }
+  .insight-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--violet); display: inline-block; margin-right: 8px; }
+  .insight-dot.orange { background: var(--orange); }
+  .insight-dot.green { background: var(--success); }
+  .insight-text { font-size: 14px; color: var(--text); line-height: 1.6; font-weight: 500; }
+
+  /* ===== SESSION PAGE ===== */
+  .session-states { position: relative; }
+  .session-state { display: none; }
+  .session-state.active { display: block; }
+
+  .session-card-center {
+    max-width: 600px; margin: 0 auto;
+  }
+  .input-field {
+    width: 100%; padding: 14px 16px; border-radius: 14px;
+    border: 1.5px solid var(--border); background: var(--bg);
+    font-size: 14px; color: var(--text); font-family: 'DM Sans', sans-serif;
+    transition: border-color 0.2s; outline: none; resize: none;
+  }
+  .input-field:focus { border-color: var(--violet); }
+  .input-field::placeholder { color: var(--text-sec); }
+  .pill-group { display: flex; gap: 10px; margin-top: 10px; }
+  .pill-btn {
+    padding: 10px 20px; border-radius: 99px; border: 1.5px solid var(--border);
+    background: transparent; font-size: 14px; font-weight: 600; cursor: pointer;
+    color: var(--text-sec); transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+  }
+  .pill-btn.selected, .pill-btn:hover { background: var(--violet); color: #fff; border-color: var(--violet); }
+  .section-label { font-size: 13px; font-weight: 600; color: var(--text-sec); margin-bottom: 10px; margin-top: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Timer */
+  .timer-wrap { display: flex; flex-direction: column; align-items: center; padding: 40px 0; }
+  .timer-circle-wrap { position: relative; width: 220px; height: 220px; margin-bottom: 24px; }
+  #timerSvg { transform: rotate(-90deg); }
+  .timer-display {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .timer-time { font-family: 'Space Mono', monospace; font-size: 40px; font-weight: 700; color: var(--text); }
+  .timer-sub { font-size: 12px; color: var(--text-sec); font-weight: 500; margin-top: 4px; }
+  .timer-task { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+  .pulsing-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--success);
+    display: inline-block; animation: pulse 1.5s ease infinite; margin-right: 6px;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+  .timer-status { font-size: 14px; color: var(--text-sec); font-weight: 500; display: flex; align-items: center; margin-bottom: 32px; }
+  .timer-actions { display: flex; gap: 12px; width: 100%; max-width: 400px; }
+  .btn-secondary {
+    flex: 1; padding: 12px; border-radius: 14px; border: 1.5px solid var(--border);
+    background: transparent; font-size: 14px; font-weight: 600; cursor: pointer;
+    color: var(--text-sec); transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+  }
+  .btn-secondary:hover { border-color: var(--violet); color: var(--violet); background: var(--violet-light); }
+  .btn-danger {
+    flex: 1; padding: 12px; border-radius: 14px; border: 1.5px solid var(--error);
+    background: transparent; font-size: 14px; font-weight: 600; cursor: pointer;
+    color: var(--error); transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+  }
+  .btn-danger:hover { background: var(--error-light); }
+
+  /* End state */
+  .check-anim {
+    width: 80px; height: 80px; border-radius: 50%; background: var(--success-light);
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;
+    animation: popIn 0.5s cubic-bezier(.2,1.4,.5,1);
+  }
+  @keyframes popIn { from{transform:scale(0)} to{transform:scale(1)} }
+  .end-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; color: var(--text); text-align: center; margin-bottom: 12px; }
+  .end-quote { font-size: 14px; color: var(--text-sec); line-height: 1.7; text-align: center; font-style: italic; max-width: 480px; margin: 0 auto 24px; }
+  .end-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 24px; }
+  .end-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 16px; text-align: center; }
+  .end-stat-value { font-family: 'Space Mono', monospace; font-size: 22px; font-weight: 700; color: var(--violet); }
+  .end-stat-label { font-size: 11px; color: var(--text-sec); font-weight: 500; margin-top: 4px; }
+  .end-actions { display: flex; gap: 12px; }
+  .end-actions .btn-full { flex: 1; }
+  .btn-outline {
+    flex: 1; padding: 13px; border-radius: 14px; border: 1.5px solid var(--violet);
+    background: transparent; font-size: 14px; font-weight: 600; cursor: pointer;
+    color: var(--violet); transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+  }
+  .btn-outline:hover { background: var(--violet-light); }
+
+  /* ===== MON CERVEAU PAGE ===== */
+  .phase-card { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
+  .phase-icon { width: 60px; height: 60px; border-radius: 16px; background: var(--violet-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .phase-info { flex: 1; }
+  .phase-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); }
+  .phase-sub { font-size: 13px; color: var(--text-sec); margin-bottom: 10px; }
+  .phase-progress { height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .phase-fill { height: 100%; background: var(--violet); border-radius: 99px; width: 47%; transition: width 1s ease; }
+
+  .brain-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .radar-wrap { display: flex; align-items: center; justify-content: center; padding: 16px 0; }
+
+  .heatmap-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 6px; margin-top: 12px; }
+  .heat-cell {
+    aspect-ratio: 1; border-radius: 6px;
+  }
+
+  /* ===== MICRO-LEÇONS PAGE ===== */
+  .progress-bar-big { height: 10px; background: var(--border); border-radius: 99px; overflow: hidden; margin: 12px 0; }
+  .progress-bar-big-fill { height: 100%; background: var(--violet); border-radius: 99px; }
+  .theme-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .theme-tab {
+    padding: 8px 16px; border-radius: 99px; border: 1.5px solid var(--border);
+    background: transparent; font-size: 13px; font-weight: 600; cursor: pointer;
+    color: var(--text-sec); transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+  }
+  .theme-tab.active, .theme-tab:hover { background: var(--violet); color: #fff; border-color: var(--violet); }
+
+  .lessons-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  .lesson-card {
+    background: var(--card); border-radius: 16px; border: 1px solid var(--border);
+    padding: 18px; box-shadow: var(--shadow); transition: all 0.25s; position: relative; overflow: hidden;
+  }
+  .lesson-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+  .lesson-card.locked { opacity: 0.6; }
+  .lesson-card:hover .start-overlay { opacity: 1; }
+  .start-overlay {
+    position: absolute; inset: 0; background: rgba(108,92,231,0.92); border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.2s; pointer-events: none;
+  }
+  .lesson-card.locked .start-overlay { display: none; }
+  .start-overlay span { color: #fff; font-weight: 700; font-size: 15px; }
+  .lesson-num { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-sec); margin-bottom: 6px; }
+  .lesson-card-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); line-height: 1.4; margin-bottom: 10px; }
+  .lesson-footer { display: flex; align-items: center; justify-content: space-between; }
+  .lesson-dur { font-size: 11px; color: var(--text-sec); }
+  .lesson-status { font-size: 16px; }
+  .lock-icon { position: absolute; top: 12px; right: 12px; font-size: 18px; opacity: 0.5; }
+
+  /* ===== MA PROGRESSION PAGE ===== */
+  .before-after { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; align-items: center; text-align: center; margin-bottom: 20px; }
+  .ba-card { padding: 24px; }
+  .ba-label { font-size: 12px; color: var(--text-sec); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .ba-value { font-family: 'Space Mono', monospace; font-size: 42px; font-weight: 700; }
+  .ba-value.before { color: var(--text-sec); }
+  .ba-value.after { color: var(--violet); }
+  .ba-arrow { font-size: 32px; color: var(--violet); padding: 0 10px; }
+
+  /* ===== TOAST ===== */
+  #toastContainer { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+  .toast {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    font-size: 14px; color: var(--text); display: flex; align-items: center; gap: 10px;
+    animation: slideIn 0.35s cubic-bezier(.2,1.2,.5,1);
+    max-width: 320px; min-width: 240px;
+  }
+  .toast.success { border-left: 4px solid var(--success); }
+  .toast.error { border-left: 4px solid var(--error); }
+  .toast.info { border-left: 4px solid var(--violet); }
+  @keyframes slideIn { from{transform:translateX(120%);opacity:0} to{transform:translateX(0);opacity:1} }
+  @keyframes slideOut { from{transform:translateX(0);opacity:1} to{transform:translateX(120%);opacity:0} }
+  .toast.removing { animation: slideOut 0.3s ease forwards; }
+
+  /* ===== HAMBURGER (mobile) ===== */
+  .hamburger { display: none; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border); background: transparent; cursor: pointer; flex-direction: column; align-items: center; justify-content: center; gap: 5px; }
+  .hamburger span { display: block; width: 18px; height: 2px; background: var(--text); border-radius: 2px; transition: all 0.3s; }
+  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 99; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    .hamburger { display: flex; }
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay.visible { display: block; }
+    .main { margin-left: 0; }
+    .stats-grid { grid-template-columns: repeat(2,1fr); }
+    .mid-grid, .bot-grid { grid-template-columns: 1fr; }
+    .insights-grid { grid-template-columns: 1fr; }
+    .lessons-grid { grid-template-columns: repeat(2,1fr); }
+    .before-after { grid-template-columns: 1fr; }
+    .ba-arrow { display: none; }
+    .brain-grid { grid-template-columns: 1fr; }
+    .end-stats { grid-template-columns: 1fr; }
+    .content-area { padding: 16px; }
+  }
+  @media (max-width: 480px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .lessons-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Misc */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .see-all { font-size: 13px; color: var(--violet); font-weight: 600; cursor: pointer; text-decoration: none; }
+  .see-all:hover { text-decoration: underline; }
+  .divider { height: 1px; background: var(--border); margin: 4px 0 16px; }
+
+  .state-demo-bar {
+    display: flex; gap: 8px; margin-bottom: 20px;
+  }
+  .state-btn {
+    padding: 7px 14px; border-radius: 10px; border: 1.5px solid var(--border);
+    background: transparent; font-size: 12px; font-weight: 600; cursor: pointer;
+    color: var(--text-sec); transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+  }
+  .state-btn.active, .state-btn:hover { background: var(--violet); color: #fff; border-color: var(--violet); }
+
+  .prog-chart-wrap { margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<!-- Toast Container -->
+<div id="toastContainer"></div>
+
+<!-- Sidebar overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- ===== SIDEBAR ===== -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+      <rect width="34" height="34" rx="10" fill="#6C5CE7" opacity="0.12"/>
+      <path d="M17 7C13.5 7 10.5 9.2 9.5 12.3C8.2 12.8 7 14.1 7 15.8C7 17.7 8.4 19.3 10.2 19.6C10.8 21.6 12.7 23 15 23H19C21.3 23 23.2 21.6 23.8 19.6C25.6 19.3 27 17.7 27 15.8C27 14.1 25.8 12.8 24.5 12.3C23.5 9.2 20.5 7 17 7Z" fill="#6C5CE7" opacity="0.8"/>
+      <circle cx="14" cy="16" r="1.5" fill="#fff"/>
+      <circle cx="20" cy="16" r="1.5" fill="#fff"/>
+      <path d="M14 19.5C14.5 20.5 15.5 21 17 21C18.5 21 19.5 20.5 20 19.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <span class="sidebar-logo-text">Prédicta</span>
+  </div>
+
+  <div class="sidebar-nav">
+    <div class="nav-item active" data-page="dashboard" onclick="navigate('dashboard', this)">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 9L9 2L17 9V17H11V12H7V17H1V9Z"/>
+      </svg>
+      Dashboard
+    </div>
+    <div class="nav-item" data-page="session" onclick="navigate('session', this)">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="9" r="7"/>
+        <path d="M9 5V9L12 11"/>
+      </svg>
+      Session du jour
+    </div>
+    <div class="nav-item" data-page="brain" onclick="navigate('brain', this)">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 3C6.5 3 4.5 4.7 4 7C3 7.4 2 8.5 2 10C2 11.7 3.2 13 4.8 13.3C5.3 14.9 6.9 16 9 16C11.1 16 12.7 14.9 13.2 13.3C14.8 13 16 11.7 16 10C16 8.5 15 7.4 14 7C13.5 4.7 11.5 3 9 3Z"/>
+        <circle cx="9" cy="9" r="1"/>
+      </svg>
+      Mon Cerveau
+    </div>
+    <div class="nav-item" data-page="lessons" onclick="navigate('lessons', this)">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 3H11C12.1 3 13 3.9 13 5V13C13 14.1 12.1 15 11 15H2V3Z"/>
+        <path d="M13 6H14.5C15.3 6 16 6.7 16 7.5V14.5C16 15.3 15.3 16 14.5 16H11"/>
+        <line x1="5" y1="7" x2="10" y2="7"/>
+        <line x1="5" y1="10" x2="10" y2="10"/>
+      </svg>
+      Micro-leçons
+    </div>
+    <div class="nav-item" data-page="progression" onclick="navigate('progression', this)">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="2,14 6,9 10,11 16,4"/>
+        <line x1="14" y1="4" x2="16" y2="4"/>
+        <line x1="16" y1="4" x2="16" y2="6"/>
+      </svg>
+      Ma Progression
+    </div>
+    <div class="nav-item" data-page="settings" onclick="navigate('settings', this)">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="9" r="2.5"/>
+        <path d="M9 1.5V3M9 15V16.5M1.5 9H3M15 9H16.5M3.2 3.2L4.3 4.3M13.7 13.7L14.8 14.8M3.2 14.8L4.3 13.7M13.7 4.3L14.8 3.2"/>
+      </svg>
+      Paramètres
+    </div>
+  </div>
+
+  <div class="sidebar-user">
+    <div class="user-avatar">AB</div>
+    <div class="user-info">
+      <div class="user-name">Abibou</div>
+      <div class="user-sub">Phase 2 — Détection</div>
+    </div>
+    <button class="logout-btn" onclick="showToast('Déconnexion...','info')" title="Déconnexion">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 1H2C1.4 1 1 1.4 1 2V12C1 12.6 1.4 13 2 13H5"/>
+        <polyline points="9,10 13,7 9,4"/>
+        <line x1="13" y1="7" x2="5" y2="7"/>
+      </svg>
+    </button>
+  </div>
+</nav>
+
+<!-- ===== MAIN ===== -->
+<div class="main">
+  <!-- Navbar -->
+  <header class="navbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="hamburger" id="hamburger" onclick="toggleSidebar()">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="navbar-left" id="navbarLeft">
+        <div class="navbar-title">Tableau de bord</div>
+        <div class="breadcrumb">Prédicta <span>›</span> <span id="breadcrumbCurrent">Tableau de bord</span></div>
+      </div>
+    </div>
+    <div class="navbar-right">
+      <div class="navbar-date" id="navbarDate"></div>
+      <button class="btn-primary" onclick="navigate('session',document.querySelector('[data-page=session]'));showToast('Session prête !','success')">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="3,1 13,7 3,13" fill="white"/></svg>
+        Lancer la session
+      </button>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <div class="content-area">
+
+    <!-- ===== PAGE: DASHBOARD ===== -->
+    <div class="page active" id="page-dashboard">
+
+      <!-- Stats Row -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="card stat-card">
+          <div class="stat-icon" style="background:var(--violet-light)">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="9"/><path d="M11 6V11L14 13"/></svg>
+          </div>
+          <div class="stat-label">Sessions cette semaine</div>
+          <div class="stat-value shimmer" data-target="12" id="stat0">0</div>
+          <div class="stat-badge badge-green shimmer">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 2L8.5 6.5H1.5L5 2Z" fill="#16A34A"/></svg>
+            +3 vs semaine dernière
+          </div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-icon" style="background:rgba(234,88,12,0.1)">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3C7.1 3 4 6.1 4 10C4 13.3 6.1 16.1 9 17.3V19H13V17.3C15.9 16.1 18 13.3 18 10C18 6.1 14.9 3 11 3Z"/><line x1="11" y1="8" x2="11" y2="11"/></svg>
+          </div>
+          <div class="stat-label">Focus moyen</div>
+          <div class="stat-value shimmer" data-target="47" data-suffix=" min" id="stat1">0</div>
+          <div class="stat-badge badge-green shimmer">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 2L8.5 6.5H1.5L5 2Z" fill="#16A34A"/></svg>
+            +8 min ce mois
+          </div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-icon" style="background:var(--violet-light)">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4H13C14.1 4 15 4.9 15 6V16C15 17.1 14.1 18 13 18H4V4Z"/><path d="M15 7H17.5C18.3 7 19 7.7 19 8.5V17.5C19 18.3 18.3 19 17.5 19H13"/><line x1="7" y1="9" x2="12" y2="9"/><line x1="7" y1="12" x2="12" y2="12"/></svg>
+          </div>
+          <div class="stat-label">Leçons complétées</div>
+          <div class="stat-value shimmer" data-target="18" data-suffix="/30" id="stat2">0</div>
+          <div class="stat-badge badge-violet shimmer">Niveau 1 en cours</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-icon" style="background:rgba(234,88,12,0.1)">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4C7.1 4 4 6.8 4 10.3C4 12.2 5 13.9 6.5 15L6 18H16L15.5 15C17 13.9 18 12.2 18 10.3C18 6.8 14.9 4 11 4Z"/><line x1="8" y1="11" x2="14" y2="11"/><circle cx="11" cy="9" r="1" fill="#EA580C"/></svg>
+          </div>
+          <div class="stat-label">Niveau cognitif</div>
+          <div class="stat-value shimmer" id="stat3" style="font-size:22px;padding-top:4px;">Phase 2</div>
+          <div class="stat-badge badge-orange shimmer">Détection</div>
+        </div>
+      </div>
+
+      <!-- Mid Row: Chart + Coach -->
+      <div class="mid-grid">
+        <div class="card">
+          <div class="section-header">
+            <div>
+              <div class="card-title">Focus cette semaine</div>
+              <div class="card-sub">Durée de focus par jour (minutes)</div>
+            </div>
+            <div class="stat-badge badge-green" style="font-size:12px;">↑ +8% vs semaine dernière</div>
+          </div>
+          <div class="chart-wrap">
+            <svg id="focusChart" height="200" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#6C5CE7" stop-opacity="0.22"/>
+                  <stop offset="100%" stop-color="#6C5CE7" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <!-- Y-axis lines -->
+              <line x1="48" y1="20" x2="580" y2="20" stroke="#F0EBE3" stroke-width="1"/>
+              <line x1="48" y1="73" x2="580" y2="73" stroke="#F0EBE3" stroke-width="1"/>
+              <line x1="48" y1="127" x2="580" y2="127" stroke="#F0EBE3" stroke-width="1"/>
+              <line x1="48" y1="180" x2="580" y2="180" stroke="#F0EBE3" stroke-width="1"/>
+              <!-- Y labels -->
+              <text x="38" y="24" text-anchor="end" font-size="10" fill="#78716C" font-family="Space Mono, monospace">60</text>
+              <text x="38" y="77" text-anchor="end" font-size="10" fill="#78716C" font-family="Space Mono, monospace">40</text>
+              <text x="38" y="131" text-anchor="end" font-size="10" fill="#78716C" font-family="Space Mono, monospace">20</text>
+              <text x="38" y="184" text-anchor="end" font-size="10" fill="#78716C" font-family="Space Mono, monospace">0</text>
+              <!-- Area fill (bezier) -->
+              <path id="chartArea" fill="url(#chartGrad)" d=""/>
+              <!-- Line (bezier) -->
+              <path id="chartLine" fill="none" stroke="#6C5CE7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d=""/>
+              <!-- Dots -->
+              <g id="chartDots"></g>
+              <!-- X labels -->
+              <text x="90" y="198" text-anchor="middle" font-size="11" fill="#78716C" font-family="DM Sans, sans-serif">Lun</text>
+              <text x="170" y="198" text-anchor="middle" font-size="11" fill="#78716C" font-family="DM Sans, sans-serif">Mar</text>
+              <text x="250" y="198" text-anchor="middle" font-size="11" fill="#78716C" font-family="DM Sans, sans-serif">Mer</text>
+              <text x="330" y="198" text-anchor="middle" font-size="11" fill="#78716C" font-family="DM Sans, sans-serif">Jeu</text>
+              <text x="410" y="198" text-anchor="middle" font-size="11" fill="#78716C" font-family="DM Sans, sans-serif">Ven</text>
+              <text x="490" y="198" text-anchor="middle" font-size="11" fill="#78716C" font-family="DM Sans, sans-serif">Sam</text>
+              <text x="570" y="198" text-anchor="middle" font-size="11" fill="#78716C" font-family="DM Sans, sans-serif">Dim</text>
+            </svg>
+          </div>
+        </div>
+
+        <div class="card" style="display:flex;flex-direction:column;">
+          <div class="card-title">Message du Coach</div>
+          <div class="card-sub" style="margin-bottom:16px;">Personnalisé pour toi</div>
+          <div class="coach-header">
+            <div class="coach-avatar">
+              <svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M13 4C10 4 7.5 5.8 6.8 8.4C5.7 8.8 5 9.8 5 11C5 12.4 5.9 13.5 7.2 13.8C7.6 15.1 8.9 16 10.5 16H15.5C17.1 16 18.4 15.1 18.8 13.8C20.1 13.5 21 12.4 21 11C21 9.8 20.3 8.8 19.2 8.4C18.5 5.8 16 4 13 4Z" fill="white" opacity="0.9"/><circle cx="10.5" cy="11.5" r="1.2" fill="#6C5CE7"/><circle cx="15.5" cy="11.5" r="1.2" fill="#6C5CE7"/><path d="M10.5 13.5C11 14.3 11.9 14.8 13 14.8C14.1 14.8 15 14.3 15.5 13.5" stroke="#6C5CE7" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <div>
+              <div class="coach-label">Coach Prédicta</div>
+              <div class="coach-name">Aujourd'hui</div>
+            </div>
+          </div>
+          <div class="coach-msg">
+            "Abibou. Ton focus moyen a progressé de 8 minutes ce mois. Ton meilleur moment reste le mardi matin. Protège cette plage cette semaine."
+          </div>
+          <button class="btn-play" onclick="showToast('Lecture du message vocal...','info')">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="2,1 13,7 2,13" fill="white"/></svg>
+            Écouter le message vocal
+          </button>
+          <div class="mood-section">
+            <div class="mood-label">Ton état ce matin ?</div>
+            <div class="mood-btns">
+              <button class="mood-btn" onclick="selectMood(this)">
+                <span class="emoji">⚡</span>
+                <span>Affûté</span>
+              </button>
+              <button class="mood-btn" onclick="selectMood(this)">
+                <span class="emoji">😐</span>
+                <span>Neutre</span>
+              </button>
+              <button class="mood-btn" onclick="selectMood(this)">
+                <span class="emoji">😮‍💨</span>
+                <span>Chargé</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row: Table + Next Lesson -->
+      <div class="bot-grid">
+        <div class="card">
+          <div class="section-header">
+            <div>
+              <div class="card-title">Sessions récentes</div>
+              <div class="card-sub">Historique de tes sessions de focus</div>
+            </div>
+            <a class="see-all" onclick="navigate('progression',document.querySelector('[data-page=progression]'))">Voir tout →</a>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Durée</th>
+                  <th>État</th>
+                  <th>Focus</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Aujourd'hui 09h00</td>
+                  <td><span style="font-family:'Space Mono',monospace;font-size:13px;">47 min</span></td>
+                  <td><span class="stat-badge badge-green" style="font-size:11px;">Complétée</span></td>
+                  <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:82%"></div></div><span class="progress-pct">82%</span></div></td>
+                </tr>
+                <tr>
+                  <td>Hier 10h15</td>
+                  <td><span style="font-family:'Space Mono',monospace;font-size:13px;">25 min</span></td>
+                  <td><span class="stat-badge badge-orange" style="font-size:11px;">Interrompue</span></td>
+                  <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:54%"></div></div><span class="progress-pct">54%</span></div></td>
+                </tr>
+                <tr>
+                  <td>Lun 08h30</td>
+                  <td><span style="font-family:'Space Mono',monospace;font-size:13px;">60 min</span></td>
+                  <td><span class="stat-badge badge-green" style="font-size:11px;">Complétée</span></td>
+                  <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:91%"></div></div><span class="progress-pct">91%</span></div></td>
+                </tr>
+                <tr>
+                  <td>Dim 14h00</td>
+                  <td><span style="font-family:'Space Mono',monospace;font-size:13px;">30 min</span></td>
+                  <td><span class="stat-badge badge-green" style="font-size:11px;">Complétée</span></td>
+                  <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:70%"></div></div><span class="progress-pct">70%</span></div></td>
+                </tr>
+                <tr>
+                  <td>Sam 09h45</td>
+                  <td><span style="font-family:'Space Mono',monospace;font-size:13px;">20 min</span></td>
+                  <td><span class="stat-badge badge-orange" style="font-size:11px;">Interrompue</span></td>
+                  <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:42%"></div></div><span class="progress-pct">42%</span></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" style="display:flex;flex-direction:column;">
+          <div class="card-title">Prochaine Leçon</div>
+          <div class="card-sub" style="margin-bottom:16px;">Module recommandé</div>
+          <div class="theme-badge">Thème B — Distraction</div>
+          <div class="lesson-title">La dopamine n'est pas ce que tu crois</div>
+          <div class="lesson-excerpt">
+            En 1954, Olds et Milner ont découvert que des rats stimulaient leur noyau accumbens jusqu'à mourir d'épuisement... Ce que ça révèle sur ta capacité de focus est vertigineux.
+          </div>
+          <div class="duration-badge">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="5"/><path d="M6 3.5V6L7.5 7.5"/></svg>
+            2 min de lecture
+          </div>
+          <div style="flex:1"></div>
+          <button class="btn-full" onclick="navigate('lessons',document.querySelector('[data-page=lessons]'));showToast('Leçon chargée !','success')">Commencer la leçon</button>
+        </div>
+      </div>
+
+      <!-- Insights Row -->
+      <div style="margin-bottom:8px;">
+        <div class="card-title" style="margin-bottom:16px;">Insights du Coach</div>
+        <div class="insights-grid">
+          <div class="insight-card">
+            <div style="display:flex;align-items:flex-start;gap:10px;">
+              <span class="insight-dot" style="margin-top:5px;flex-shrink:0;"></span>
+              <div class="insight-text">Ton pic cognitif est le mardi entre 8h et 10h. Protège cette plage et réserve-la à ta tâche la plus difficile.</div>
+            </div>
+          </div>
+          <div class="insight-card orange">
+            <div style="display:flex;align-items:flex-start;gap:10px;">
+              <span class="insight-dot orange" style="margin-top:5px;flex-shrink:0;"></span>
+              <div class="insight-text">Tu décroches souvent après 35 minutes. Essaie des sessions de 30 min cette semaine — qualité avant durée.</div>
+            </div>
+          </div>
+          <div class="insight-card green">
+            <div style="display:flex;align-items:flex-start;gap:10px;">
+              <span class="insight-dot green" style="margin-top:5px;flex-shrink:0;"></span>
+              <div class="insight-text">3 sessions complétées cette semaine. Tu es dans la Phase 2 — les patterns cognitifs émergent.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-dashboard -->
+
+    <!-- ===== PAGE: SESSION DU JOUR ===== -->
+    <div class="page" id="page-session">
+      <div class="state-demo-bar">
+        <button class="state-btn active" onclick="showSessionState(0,this)">Avant la session</button>
+        <button class="state-btn" onclick="showSessionState(1,this)">En cours</button>
+        <button class="state-btn" onclick="showSessionState(2,this)">Fin de session</button>
+      </div>
+
+      <!-- State 0: Before -->
+      <div class="session-state active" id="sessionState0">
+        <div class="session-card-center">
+          <div class="card" style="padding:32px;">
+            <div class="card-title" style="font-size:22px;margin-bottom:6px;">Sur quoi tu travailles aujourd'hui ?</div>
+            <div class="card-sub" style="margin-bottom:24px;">Définir ta tâche principale aide ton cerveau à entrer en focus plus vite.</div>
+            <textarea class="input-field" rows="3" placeholder="Ex: Révision du chapitre 3, Rédaction du business plan..."></textarea>
+            <div class="section-label">Durée souhaitée</div>
+            <div class="pill-group">
+              <button class="pill-btn" onclick="selectPill(this)">25 min</button>
+              <button class="pill-btn selected" onclick="selectPill(this)">45 min</button>
+              <button class="pill-btn" onclick="selectPill(this)">90 min</button>
+            </div>
+            <div class="section-label">Ton état ce matin ?</div>
+            <div class="mood-btns" style="margin-bottom:28px;">
+              <button class="mood-btn" style="padding:14px 8px;" onclick="selectMood(this)">
+                <span class="emoji" style="font-size:28px;">⚡</span>
+                <span style="font-size:13px;">Affûté</span>
+              </button>
+              <button class="mood-btn" style="padding:14px 8px;" onclick="selectMood(this)">
+                <span class="emoji" style="font-size:28px;">😐</span>
+                <span style="font-size:13px;">Neutre</span>
+              </button>
+              <button class="mood-btn" style="padding:14px 8px;" onclick="selectMood(this)">
+                <span class="emoji" style="font-size:28px;">😮‍💨</span>
+                <span style="font-size:13px;">Chargé</span>
+              </button>
+            </div>
+            <button class="btn-full" style="padding:16px;font-size:16px;" onclick="showSessionState(1,document.querySelectorAll('.state-btn')[1]);showToast('Session lancée ! Bonne concentration 🧠','success')">
+              <span style="display:flex;align-items:center;justify-content:center;gap:10px;">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><polygon points="2,1 15,8 2,15" fill="white"/></svg>
+                Lancer la session
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- State 1: In progress -->
+      <div class="session-state" id="sessionState1">
+        <div class="session-card-center">
+          <div class="card" style="padding:32px;">
+            <div class="timer-wrap">
+              <div class="timer-circle-wrap">
+                <svg id="timerSvg" width="220" height="220" viewBox="0 0 220 220">
+                  <circle cx="110" cy="110" r="96" fill="none" stroke="#F0EBE3" stroke-width="10"/>
+                  <circle id="timerArc" cx="110" cy="110" r="96" fill="none" stroke="#6C5CE7" stroke-width="10"
+                    stroke-linecap="round"
+                    stroke-dasharray="603"
+                    stroke-dashoffset="0"
+                    style="transition: stroke-dashoffset 1s linear;"/>
+                </svg>
+                <div class="timer-display">
+                  <div class="timer-time" id="timerDisplay">45:00</div>
+                  <div class="timer-sub">minutes restantes</div>
+                </div>
+              </div>
+              <div class="timer-task">Business plan — Chapitre 2</div>
+              <div class="timer-status">
+                <span class="pulsing-dot"></span>
+                Session en cours...
+              </div>
+              <div class="timer-actions">
+                <button class="btn-secondary" onclick="showToast('Mode Esprit Calme activé','info')">🌊 Esprit calme</button>
+                <button class="btn-danger" onclick="showSessionState(2,document.querySelectorAll('.state-btn')[2]);showToast('Session terminée','success')">Terminer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- State 2: End -->
+      <div class="session-state" id="sessionState2">
+        <div class="session-card-center">
+          <div class="card" style="padding:32px;text-align:center;">
+            <div class="check-anim">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M8 20L16 28L32 12" stroke="#16A34A" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="end-title">Session terminée !<br>47 minutes de focus pur. 🧠</div>
+            <div class="end-quote">"Tu viens de prouver quelque chose à ton cortex préfrontal — qu'il est capable de tenir. Chaque session est une répétition. Continue."</div>
+            <div class="end-stats">
+              <div class="end-stat">
+                <div class="end-stat-value">47</div>
+                <div class="end-stat-label">minutes</div>
+              </div>
+              <div class="end-stat">
+                <div class="end-stat-value">82%</div>
+                <div class="end-stat-label">Score focus</div>
+              </div>
+              <div class="end-stat">
+                <div class="end-stat-value">B·07</div>
+                <div class="end-stat-label">Leçon du jour</div>
+              </div>
+            </div>
+            <div class="end-actions">
+              <button class="btn-outline" onclick="showSessionState(0,document.querySelectorAll('.state-btn')[0])">Nouvelle session</button>
+              <button class="btn-full" onclick="navigate('progression',document.querySelector('[data-page=progression]'))">Voir ma progression</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /page-session -->
+
+    <!-- ===== PAGE: MON CERVEAU ===== -->
+    <div class="page" id="page-brain">
+      <div class="card phase-card" style="margin-bottom:20px;flex-wrap:wrap;gap:16px;">
+        <div class="phase-icon">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M16 5C12 5 8.5 7.5 7.5 11.2C6 11.7 5 13.1 5 14.8C5 16.8 6.4 18.4 8.3 18.8C9 21 11.2 22.5 14 22.5H18C20.8 22.5 23 21 23.7 18.8C25.6 18.4 27 16.8 27 14.8C27 13.1 26 11.7 24.5 11.2C23.5 7.5 20 5 16 5Z" fill="#6C5CE7" opacity="0.8"/><circle cx="13" cy="15" r="2" fill="white"/><circle cx="19" cy="15" r="2" fill="white"/><path d="M13 19C13.7 20.2 14.7 21 16 21C17.3 21 18.3 20.2 19 19" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="phase-info">
+          <div class="phase-title">Phase 2 — Détection</div>
+          <div class="phase-sub">Jour 14 sur 30 · Tu construis tes premiers patterns cognitifs</div>
+          <div class="phase-progress"><div class="phase-fill"></div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <div class="stat-badge badge-violet">J14/30</div>
+          <div class="stat-badge badge-orange">47%</div>
+        </div>
+      </div>
+
+      <div class="brain-grid">
+        <div class="card">
+          <div class="card-title">Profil cognitif</div>
+          <div class="card-sub" style="margin-bottom:16px;">Radar de tes 5 axes clés</div>
+          <div class="radar-wrap">
+            <svg width="260" height="260" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <radialGradient id="radarGrad" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#6C5CE7" stop-opacity="0.25"/>
+                  <stop offset="100%" stop-color="#6C5CE7" stop-opacity="0.05"/>
+                </radialGradient>
+              </defs>
+              <!-- Grid circles -->
+              <circle cx="130" cy="130" r="90" fill="none" stroke="#F0EBE3" stroke-width="1"/>
+              <circle cx="130" cy="130" r="67.5" fill="none" stroke="#F0EBE3" stroke-width="1"/>
+              <circle cx="130" cy="130" r="45" fill="none" stroke="#F0EBE3" stroke-width="1"/>
+              <circle cx="130" cy="130" r="22.5" fill="none" stroke="#F0EBE3" stroke-width="1"/>
+              <!-- Axes (5 axes: top, top-right, bot-right, bot-left, top-left) -->
+              <line x1="130" y1="130" x2="130" y2="40" stroke="#F0EBE3" stroke-width="1"/>
+              <line x1="130" y1="130" x2="215.5" y2="101.8" stroke="#F0EBE3" stroke-width="1"/>
+              <line x1="130" y1="130" x2="183.9" y2="206.9" stroke="#F0EBE3" stroke-width="1"/>
+              <line x1="130" y1="130" x2="76.1" y2="206.9" stroke="#F0EBE3" stroke-width="1"/>
+              <line x1="130" y1="130" x2="44.5" y2="101.8" stroke="#F0EBE3" stroke-width="1"/>
+              <!-- Data polygon: [75,60,55,80,65] → scale to 90 max radius -->
+              <!-- Concentration(top) 75%→67.5, Mémoire(TR) 60%→54, Régulation(BR) 55%→49.5, Régularité(BL) 80%→72, Récupération(TL) 65%→58.5 -->
+              <!-- Points calc from center (130,130):
+                   top: 130, 130-67.5 = 130,62.5
+                   top-right: 130+54*sin72, 130-54*cos72 = 130+51.35, 130-16.68 = 181.35, 113.32
+                   bot-right: 130+49.5*sin144, 130-49.5*cos144 = 130+29.09, 130+40.06 = 159.09, 170.06
+                   bot-left: 130-72*sin144, 130-72*cos144 = 130-42.31, 130+58.27 = 87.69, 188.27
+                   top-left: 130-58.5*sin72, 130-58.5*cos72 = 130-55.63, 130-18.1 = 74.37, 111.9
+              -->
+              <polygon
+                points="130,62.5 181.35,113.32 159.09,170.06 87.69,188.27 74.37,111.9"
+                fill="url(#radarGrad)" stroke="#6C5CE7" stroke-width="2" stroke-linejoin="round"/>
+              <!-- Dots -->
+              <circle cx="130" cy="62.5" r="4" fill="#6C5CE7"/>
+              <circle cx="181.35" cy="113.32" r="4" fill="#6C5CE7"/>
+              <circle cx="159.09" cy="170.06" r="4" fill="#6C5CE7"/>
+              <circle cx="87.69" cy="188.27" r="4" fill="#6C5CE7"/>
+              <circle cx="74.37" cy="111.9" r="4" fill="#6C5CE7"/>
+              <!-- Labels -->
+              <text x="130" y="33" text-anchor="middle" font-size="11" fill="#1C1917" font-family="DM Sans, sans-serif" font-weight="600">Concentration</text>
+              <text x="230" y="108" text-anchor="start" font-size="11" fill="#1C1917" font-family="DM Sans, sans-serif" font-weight="600">Mémoire</text>
+              <text x="193" y="215" text-anchor="middle" font-size="11" fill="#1C1917" font-family="DM Sans, sans-serif" font-weight="600">Régulation</text>
+              <text x="65" y="222" text-anchor="middle" font-size="11" fill="#1C1917" font-family="DM Sans, sans-serif" font-weight="600">Régularité</text>
+              <text x="25" y="108" text-anchor="end" font-size="11" fill="#1C1917" font-family="DM Sans, sans-serif" font-weight="600">Récupération</text>
+              <!-- Pct labels near dots -->
+              <text x="147" y="60" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace">75%</text>
+              <text x="185" y="110" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace">60%</text>
+              <text x="163" y="183" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace">55%</text>
+              <text x="58" y="203" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace">80%</text>
+              <text x="38" y="108" font-size="10" fill="#6C5CE7" font-family="Space Mono, monospace">65%</text>
+            </svg>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:12px;">Patterns détectés</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
+                <span style="font-size:18px;">🔵</span>
+                <div style="font-size:13px;color:var(--text);line-height:1.5;">Focus optimal entre <strong>8h–10h</strong> le mardi et mercredi</div>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
+                <span style="font-size:18px;">🟠</span>
+                <div style="font-size:13px;color:var(--text);line-height:1.5;">Décrochage fréquent après <strong>35 min</strong> de session</div>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
+                <span style="font-size:18px;">🟢</span>
+                <div style="font-size:13px;color:var(--text);line-height:1.5;">Régularité en hausse : <strong>+30%</strong> vs mois dernier</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:12px;">Saboteurs identifiés</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--error-light);border-radius:12px;border:1px solid rgba(220,38,38,0.15);">
+                <span style="font-size:18px;">⚠️</span>
+                <div style="font-size:13px;color:var(--error);line-height:1.5;font-weight:500;">Notifications téléphone pendant les sessions</div>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--error-light);border-radius:12px;border:1px solid rgba(220,38,38,0.15);">
+                <span style="font-size:18px;">⚠️</span>
+                <div style="font-size:13px;color:var(--error);line-height:1.5;font-weight:500;">Manque de sommeil le dimanche soir (sessions lundi faibles)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom:6px;">Heatmap hebdomadaire</div>
+        <div class="card-sub" style="margin-bottom:14px;">Intensité de focus sur 4 semaines</div>
+        <div style="display:flex;gap:6px;margin-bottom:6px;">
+          <div style="width:30px;font-size:10px;color:var(--text-sec);text-align:center;"></div>
+          <div style="flex:1;display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center;">
+            <div style="font-size:10px;color:var(--text-sec);">Lun</div>
+            <div style="font-size:10px;color:var(--text-sec);">Mar</div>
+            <div style="font-size:10px;color:var(--text-sec);">Mer</div>
+            <div style="font-size:10px;color:var(--text-sec);">Jeu</div>
+            <div style="font-size:10px;color:var(--text-sec);">Ven</div>
+            <div style="font-size:10px;color:var(--text-sec);">Sam</div>
+            <div style="font-size:10px;color:var(--text-sec);">Dim</div>
+          </div>
+        </div>
+        <div id="heatmapGrid" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+    </div><!-- /page-brain -->
+
+    <!-- ===== PAGE: MICRO-LEÇONS ===== -->
+    <div class="page" id="page-lessons">
+      <div class="card" style="margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div class="card-title">Micro-leçons</div>
+            <div class="card-sub">18 leçons complétées sur 30</div>
+          </div>
+          <div style="font-family:'Space Mono',monospace;font-size:20px;color:var(--violet);font-weight:700;">60%</div>
+        </div>
+        <div class="progress-bar-big" style="margin-top:14px;">
+          <div class="progress-bar-big-fill" id="lessonProgress" style="width:0%;transition:width 1.2s ease;"></div>
+        </div>
+      </div>
+
+      <div class="theme-tabs">
+        <button class="theme-tab active">Tous</button>
+        <button class="theme-tab">Thème A — Fondations</button>
+        <button class="theme-tab">Thème B — Distraction</button>
+        <button class="theme-tab">Thème C</button>
+        <button class="theme-tab">Thème D</button>
+      </div>
+
+      <div class="lessons-grid">
+        <!-- Theme A: done -->
+        <div class="lesson-card">
+          <div class="start-overlay"><span>Commencer →</span></div>
+          <span class="stat-badge badge-violet" style="font-size:10px;margin-bottom:8px;">Thème A</span>
+          <div class="lesson-num">Leçon A·01</div>
+          <div class="lesson-card-title">Le cerveau n'est pas une machine</div>
+          <div class="lesson-footer"><span class="lesson-dur">⏱ 2 min</span><span class="lesson-status">✅</span></div>
+        </div>
+        <div class="lesson-card">
+          <div class="start-overlay"><span>Commencer →</span></div>
+          <span class="stat-badge badge-violet" style="font-size:10px;margin-bottom:8px;">Thème A</span>
+          <div class="lesson-num">Leçon A·02</div>
+          <div class="lesson-card-title">Le mythe du multitâche</div>
+          <div class="lesson-footer"><span class="lesson-dur">⏱ 3 min</span><span class="lesson-status">✅</span></div>
+        </div>
+        <div class="lesson-card">
+          <div class="start-overlay"><span>Commencer →</span></div>
+          <span class="stat-badge badge-violet" style="font-size:10px;margin-bottom:8px;">Thème A</span>
+          <div class="lesson-num">Leçon A·03</div>
+          <div class="lesson-card-title">La fenêtre d'attention : 90 minutes</div>
+          <div class="lesson-footer"><span class="lesson-dur">⏱ 2 min</span><span class="lesson-status">✅</span></div>
+        </div>
+        <!-- Theme B: in progress -->
+        <div class="lesson-card">
+          <div class="start-overlay"><span>Commencer →</span></div>
+          <span class="stat-badge badge-orange" style="font-size:10px;margin-bottom:8px;">Thème B</span>
+          <div class="lesson-num">Leçon B·01</div>
+          <div class="lesson-card-title">Qu'est-ce que la distraction vraiment ?</div>
+          <div class="lesson-footer"><span class="lesson-dur">⏱ 2 min</span><span class="lesson-status">✅</span></div>
+        </div>
+        <div class="lesson-card">
+          <div class="start-overlay"><span>Commencer →</span></div>
+          <span class="stat-badge badge-orange" style="font-size:10px;margin-bottom:8px;">Thème B</span>
+          <div class="lesson-num">Leçon B·02</div>
+          <div class="lesson-card-title">La dopamine n'est pas ce que tu crois</div>
+          <div class="lesson-footer"><span class="lesson-dur">⏱ 2 min</span><span class="lesson-status">→</span></div>
+        </div>
+        <div class="lesson-card">
+          <div class="start-overlay"><span>Commencer →</span></div>
+          <span class="stat-badge badge-orange" style="font-size:10px;margin-bottom:8px;">Thème B</span>
+          <div class="lesson-num">Leçon B·03</div>
+          <div class="lesson-card-title">Les 4 déclencheurs de décrochage</div>
+          <div class="lesson-footer"><span class="lesson-dur">⏱ 3 min</span><span class="lesson-status">→</span></div>
+        </div>
+        <div class="lesson-card">
+          <div class="start-overlay"><span>Commencer →</span></div>
+          <span class="stat-badge badge-orange" style="font-size:10px;margin-bottom:8px;">Thème B</span>
+          <div class="lesson-num">Leçon B·04</div>
+          <div class="lesson-card-title">Environnement de focus optimal</div>
+          <div class="lesson-footer"><span class="lesson-dur">⏱ 2 min</span><span class="lesson-status">→</span></div>
+        </div>
+        <!-- Locked -->
+        <div class="lesson-card locked">
+          <span class="lock-icon">🔒</span>
+          <span class="stat-badge" style="font-size:10px;margin-bottom:8px;background:#f0ebe3;color:#78716c;">Thème C</span>
+          <div class="lesson-num">Leçon C·01</div>
+          <div class="lesson-card-title" style="color:var(--text-sec);">La mémoire de travail</div>
+          <div class="lesson-footer"><span class="lesson-dur">⏱ 3 min</span><span class="lesson-status">🔒</span></div>
+        </div>
+        <div class="lesson-card locked">
+          <span class="lock-icon">🔒</span>
+          <span class="stat-badge" style="font-size:10px;margin-bottom:8px;background:#f0ebe3;color:#78716c;">Thème C</span>
+          <div class="lesson-num">Leçon C·02</div>
+          <div class="lesson-card-title" style="color:var(--text-sec);">Charge cognitive et stratégie</div>
+          <div class="lesson-footer"><span class="lesson-dur">⏱ 2 min</span><span class="lesson-status">🔒</span></div>
+        </div>
+        <div class="lesson-card locked">
+          <span class="lock-icon">🔒</span>
+          <span class="stat-badge" style="font-size:10px;margin-bottom:8px;background:#f0ebe3;color:#78716c;">Thème D</span>
+          <div class="lesson-num">Leçon D·01</div>
+          <div class="lesson-card-title" style="color:var(--text-sec);">Régulation émotionnelle & focus</div>
+          <div class="lesson-footer"><span class="lesson-dur">⏱ 3 min</span><span class="lesson-status">🔒</span></div>
+        </div>
+      </div>
+    </div><!-- /page-lessons -->
+
+    <!-- ===== PAGE: MA PROGRESSION ===== -->
+    <div class="page" id="page-progression">
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title" style="margin-bottom:4px;">Avant / Après — Focus moyen</div>
+        <div class="card-sub" style="margin-bottom:20px;">Comparaison depuis ton premier jour</div>
+        <div class="before-after">
+          <div class="ba-card card" style="border:none;box-shadow:none;background:var(--bg);">
+            <div class="ba-label">J1 — Avant</div>
+            <div class="ba-value before">15 <span style="font-size:20px;">min</span></div>
+            <div style="font-size:12px;color:var(--text-sec);margin-top:6px;">Focus moyen initial</div>
+          </div>
+          <div class="ba-arrow">→</div>
+          <div class="ba-card card" style="border:none;box-shadow:none;background:var(--violet-light);">
+            <div class="ba-label">Aujourd'hui</div>
+            <div class="ba-value after">47 <span style="font-size:20px;">min</span></div>
+            <div class="stat-badge badge-green" style="margin-top:8px;">+213% en 14 jours</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <div class="section-header">
+          <div>
+            <div class="card-title">Progression sur 30 jours</div>
+            <div class="card-sub">Focus moyen quotidien (minutes)</div>
+          </div>
+          <div class="stat-badge badge-violet">30 jours</div>
+        </div>
+        <div class="prog-chart-wrap">
+          <svg id="progChart" width="100%" height="200" viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="progGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#6C5CE7" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="#6C5CE7" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <line x1="0" y1="20" x2="700" y2="20" stroke="#F0EBE3" stroke-width="1"/>
+            <line x1="0" y1="73" x2="700" y2="73" stroke="#F0EBE3" stroke-width="1"/>
+            <line x1="0" y1="127" x2="700" y2="127" stroke="#F0EBE3" stroke-width="1"/>
+            <line x1="0" y1="180" x2="700" y2="180" stroke="#F0EBE3" stroke-width="1"/>
+            <text x="0" y="24" font-size="9" fill="#78716C" font-family="Space Mono, monospace">60</text>
+            <text x="0" y="77" font-size="9" fill="#78716C" font-family="Space Mono, monospace">40</text>
+            <text x="0" y="131" font-size="9" fill="#78716C" font-family="Space Mono, monospace">20</text>
+            <path id="progArea" fill="url(#progGrad)" d=""/>
+            <path id="progLine" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" d=""/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title" style="margin-bottom:4px;">Rapport hebdomadaire</div>
+        <div class="card-sub" style="margin-bottom:16px;">Semaine du 2 juin 2026</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;flex-wrap:wrap;">
+          <div style="background:var(--bg);border-radius:14px;padding:16px;border:1px solid var(--border);text-align:center;">
+            <div style="font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--violet);">12</div>
+            <div style="font-size:11px;color:var(--text-sec);margin-top:4px;">Sessions</div>
+          </div>
+          <div style="background:var(--bg);border-radius:14px;padding:16px;border:1px solid var(--border);text-align:center;">
+            <div style="font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--violet);">9h 26m</div>
+            <div style="font-size:11px;color:var(--text-sec);margin-top:4px;">Focus total</div>
+          </div>
+          <div style="background:var(--bg);border-radius:14px;padding:16px;border:1px solid var(--border);text-align:center;">
+            <div style="font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--success);">75%</div>
+            <div style="font-size:11px;color:var(--text-sec);margin-top:4px;">Taux completion</div>
+          </div>
+          <div style="background:var(--bg);border-radius:14px;padding:16px;border:1px solid var(--border);text-align:center;">
+            <div style="font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--orange);">4</div>
+            <div style="font-size:11px;color:var(--text-sec);margin-top:4px;">Leçons terminées</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">
+          <div class="card-title">Historique des sessions</div>
+          <div style="display:flex;gap:8px;">
+            <button class="theme-tab active" style="font-size:11px;padding:6px 12px;">Cette semaine</button>
+            <button class="theme-tab" style="font-size:11px;padding:6px 12px;">Ce mois</button>
+          </div>
+        </div>
+        <div class="table-wrap" style="margin-top:12px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th><th>Tâche</th><th>Durée</th><th>État</th><th>Focus</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>06/06 09h00</td><td style="color:var(--text-sec);">Business plan</td>
+                <td><span style="font-family:'Space Mono',monospace;font-size:12px;">47 min</span></td>
+                <td><span class="stat-badge badge-green" style="font-size:11px;">Complétée</span></td>
+                <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:82%"></div></div><span class="progress-pct">82%</span></div></td>
+              </tr>
+              <tr>
+                <td>05/06 10h15</td><td style="color:var(--text-sec);">Révision examen</td>
+                <td><span style="font-family:'Space Mono',monospace;font-size:12px;">25 min</span></td>
+                <td><span class="stat-badge badge-orange" style="font-size:11px;">Interrompue</span></td>
+                <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:54%"></div></div><span class="progress-pct">54%</span></div></td>
+              </tr>
+              <tr>
+                <td>04/06 08h30</td><td style="color:var(--text-sec);">Lecture / Recherche</td>
+                <td><span style="font-family:'Space Mono',monospace;font-size:12px;">60 min</span></td>
+                <td><span class="stat-badge badge-green" style="font-size:11px;">Complétée</span></td>
+                <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:91%"></div></div><span class="progress-pct">91%</span></div></td>
+              </tr>
+              <tr>
+                <td>02/06 14h00</td><td style="color:var(--text-sec);">Projet client</td>
+                <td><span style="font-family:'Space Mono',monospace;font-size:12px;">30 min</span></td>
+                <td><span class="stat-badge badge-green" style="font-size:11px;">Complétée</span></td>
+                <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:70%"></div></div><span class="progress-pct">70%</span></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /page-progression -->
+
+    <!-- ===== PAGE: PARAMÈTRES ===== -->
+    <div class="page" id="page-settings">
+      <div class="card" style="max-width:600px;margin-bottom:20px;">
+        <div class="card-title" style="margin-bottom:20px;">Paramètres du compte</div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div>
+            <div style="font-size:12px;color:var(--text-sec);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Nom d'affichage</div>
+            <input class="input-field" value="Abibou" style="height:44px;">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text-sec);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Email</div>
+            <input class="input-field" value="abibou@predicta.sn" style="height:44px;">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text-sec);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Durée de session par défaut</div>
+            <div class="pill-group">
+              <button class="pill-btn">25 min</button>
+              <button class="pill-btn selected">45 min</button>
+              <button class="pill-btn">90 min</button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text-sec);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Notifications</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--text);">Rappels quotidiens</div>
+                <div style="font-size:12px;color:var(--text-sec);">Rappel de session à 8h00</div>
+              </div>
+              <div id="toggleNotif" onclick="toggleSwitch(this)" style="width:44px;height:24px;border-radius:99px;background:var(--violet);cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;">
+                <div style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:right 0.2s;"></div>
+              </div>
+            </div>
+          </div>
+          <button class="btn-full" onclick="showToast('Paramètres sauvegardés !','success')">Enregistrer les modifications</button>
+        </div>
+      </div>
+      <div class="card" style="max-width:600px;">
+        <div class="card-title" style="margin-bottom:16px;">Abonnement</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--violet-light);border-radius:14px;border:1.5px solid var(--violet);">
+          <div>
+            <div style="font-size:15px;font-weight:700;color:var(--violet);">Plan Pro</div>
+            <div style="font-size:12px;color:var(--text-sec);">Accès à toutes les leçons · Rapport hebdomadaire</div>
+          </div>
+          <div class="stat-badge badge-violet">Actif</div>
+        </div>
+      </div>
+    </div><!-- /page-settings -->
+
+  </div><!-- /content-area -->
+</div><!-- /main -->
+
+<script>
+// ===== Navigation =====
+const pageTitles = {
+  dashboard: 'Tableau de bord',
+  session: 'Session du jour',
+  brain: 'Mon Cerveau',
+  lessons: 'Micro-leçons',
+  progression: 'Ma Progression',
+  settings: 'Paramètres'
+};
+
+function navigate(pageId, navEl) {
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  // Show target
+  document.getElementById('page-' + pageId).classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  // Update navbar
+  const title = pageTitles[pageId] || pageId;
+  document.querySelector('.navbar-title').textContent = title;
+  document.getElementById('breadcrumbCurrent').textContent = title;
+  // Close mobile sidebar
+  if (window.innerWidth < 768) {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('visible');
+  }
+  // Trigger page-specific init
+  if (pageId === 'lessons') {
+    setTimeout(() => { document.getElementById('lessonProgress').style.width = '60%'; }, 200);
+  }
+  if (pageId === 'progression') drawProgChart();
+}
+
+// ===== Mobile Sidebar =====
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('visible');
+}
+
+// ===== Date =====
+function setDate() {
+  const days = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const months = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const d = new Date();
+  document.getElementById('navbarDate').textContent = `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+setDate();
+
+// ===== Toast =====
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  const icons = { success: '✅', error: '❌', info: '💡' };
+  toast.innerHTML = `<span>${icons[type] || '💡'}</span><span>${msg}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('removing');
+    setTimeout(() => toast.remove(), 320);
+  }, 3200);
+}
+
+// ===== Counter Animation =====
+function animateCounters() {
+  const stats = document.querySelectorAll('.stat-value[data-target]');
+  stats.forEach(el => {
+    const target = parseInt(el.dataset.target);
+    const suffix = el.dataset.suffix || '';
+    let start = 0;
+    const duration = 1200;
+    const step = (timestamp) => {
+      if (!start) start = timestamp;
+      const progress = Math.min((timestamp - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.floor(ease * target) + suffix;
+      if (progress < 1) requestAnimationFrame(step);
+      else el.textContent = target + suffix;
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+// ===== Remove shimmer =====
+function removeShimmers() {
+  setTimeout(() => {
+    document.querySelectorAll('.shimmer').forEach(el => el.classList.remove('shimmer'));
+    animateCounters();
+  }, 800);
+}
+removeShimmers();
+
+// ===== Focus Chart (bezier) =====
+function drawFocusChart() {
+  const data = [25, 38, 45, 30, 52, 47, 60];
+  const xs = [90, 170, 250, 330, 410, 490, 570];
+  const minY = 0, maxY = 60;
+  const chartTop = 20, chartBottom = 180;
+  const H = chartBottom - chartTop;
+
+  function yPos(val) {
+    return chartBottom - ((val - minY) / (maxY - minY)) * H;
+  }
+
+  const points = data.map((d, i) => ({ x: xs[i], y: yPos(d) }));
+
+  // Build smooth bezier path
+  function getPath(pts) {
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const cp1x = pts[i].x + (pts[i+1].x - pts[i].x) / 3;
+      const cp1y = pts[i].y;
+      const cp2x = pts[i+1].x - (pts[i+1].x - pts[i].x) / 3;
+      const cp2y = pts[i+1].y;
+      d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${pts[i+1].x} ${pts[i+1].y}`;
+    }
+    return d;
+  }
+
+  const linePath = getPath(points);
+  const areaPath = linePath + ` L ${points[points.length-1].x} ${chartBottom} L ${points[0].x} ${chartBottom} Z`;
+
+  document.getElementById('chartLine').setAttribute('d', linePath);
+  document.getElementById('chartArea').setAttribute('d', areaPath);
+
+  // Dots
+  const dotsG = document.getElementById('chartDots');
+  dotsG.innerHTML = '';
+  points.forEach((p, i) => {
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx', p.x);
+    circle.setAttribute('cy', p.y);
+    circle.setAttribute('r', '5');
+    circle.setAttribute('fill', '#6C5CE7');
+    circle.setAttribute('stroke', '#fff');
+    circle.setAttribute('stroke-width', '2');
+    dotsG.appendChild(circle);
+    // Value label
+    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+    text.setAttribute('x', p.x);
+    text.setAttribute('y', p.y - 10);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('font-size', '10');
+    text.setAttribute('fill', '#6C5CE7');
+    text.setAttribute('font-family', 'Space Mono, monospace');
+    text.textContent = data[i];
+    dotsG.appendChild(text);
+  });
+}
+drawFocusChart();
+
+// ===== Progression Chart =====
+function drawProgChart() {
+  const raw = [15,17,16,20,18,22,24,21,25,23,27,30,28,32,29,35,33,37,34,38,36,40,39,42,43,41,45,44,47,47];
+  const xs = raw.map((_,i) => 20 + i * (660/29));
+  const minY = 0, maxY = 60;
+  const chartTop = 20, chartBottom = 180;
+  const H = chartBottom - chartTop;
+  function yPos(v) { return chartBottom - ((v - minY) / (maxY - minY)) * H; }
+  const pts = raw.map((d,i) => ({ x: xs[i], y: yPos(d) }));
+  function path(p) {
+    let d = `M ${p[0].x} ${p[0].y}`;
+    for (let i = 0; i < p.length - 1; i++) {
+      const cp1x = p[i].x + (p[i+1].x - p[i].x) / 3;
+      const cp2x = p[i+1].x - (p[i+1].x - p[i].x) / 3;
+      d += ` C ${cp1x} ${p[i].y}, ${cp2x} ${p[i+1].y}, ${p[i+1].x} ${p[i+1].y}`;
+    }
+    return d;
+  }
+  const lp = path(pts);
+  document.getElementById('progLine').setAttribute('d', lp);
+  document.getElementById('progArea').setAttribute('d', lp + ` L ${pts[pts.length-1].x} ${chartBottom} L ${pts[0].x} ${chartBottom} Z`);
+}
+
+// ===== Heatmap =====
+function buildHeatmap() {
+  const data = [
+    [0.3,0.9,0.6,0.4,0.7,0.2,0.1],
+    [0.5,0.8,0.7,0.6,0.8,0.3,0.2],
+    [0.4,0.95,0.8,0.5,0.9,0.4,0.3],
+    [0.6,1.0,0.85,0.7,0.75,0.5,0.4],
+  ];
+  const weeks = ['S-4','S-3','S-2','S-1'];
+  const grid = document.getElementById('heatmapGrid');
+  grid.innerHTML = '';
+  data.forEach((row,wi) => {
+    const rowEl = document.createElement('div');
+    rowEl.style.cssText = 'display:flex;gap:6px;align-items:center;';
+    const label = document.createElement('div');
+    label.style.cssText = 'width:30px;font-size:10px;color:var(--text-sec);text-align:right;flex-shrink:0;';
+    label.textContent = weeks[wi];
+    rowEl.appendChild(label);
+    const cells = document.createElement('div');
+    cells.style.cssText = 'flex:1;display:grid;grid-template-columns:repeat(7,1fr);gap:6px;';
+    row.forEach(v => {
+      const cell = document.createElement('div');
+      cell.style.cssText = `aspect-ratio:1;border-radius:6px;background:rgba(108,92,231,${v * 0.85 + 0.05});cursor:pointer;transition:transform 0.15s;`;
+      cell.title = `${Math.round(v * 60)} min`;
+      cell.onmouseenter = () => cell.style.transform = 'scale(1.15)';
+      cell.onmouseleave = () => cell.style.transform = '';
+      cells.appendChild(cell);
+    });
+    rowEl.appendChild(cells);
+    grid.appendChild(rowEl);
+  });
+}
+buildHeatmap();
+
+// ===== Session States =====
+function showSessionState(idx, btn) {
+  document.querySelectorAll('.session-state').forEach((s,i) => {
+    s.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.state-btn').forEach((b,i) => {
+    b.classList.toggle('active', i === idx);
+  });
+  if (btn) {
+    document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  if (idx === 1) startTimer();
+  else stopTimer();
+}
+
+// ===== Timer =====
+let timerInterval = null;
+let timerTotal = 45 * 60;
+let timerRemaining = 45 * 60;
+const circumference = 2 * Math.PI * 96; // ~603
+
+function startTimer() {
+  timerRemaining = timerTotal;
+  stopTimer();
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    timerRemaining = Math.max(0, timerRemaining - 1);
+    updateTimerDisplay();
+    if (timerRemaining === 0) stopTimer();
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timerRemaining / 60);
+  const s = timerRemaining % 60;
+  document.getElementById('timerDisplay').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const fraction = timerRemaining / timerTotal;
+  const offset = circumference * (1 - fraction);
+  document.getElementById('timerArc').style.strokeDashoffset = offset;
+}
+
+// ===== Mood Selection =====
+function selectMood(btn) {
+  const siblings = btn.closest('.mood-btns').querySelectorAll('.mood-btn');
+  siblings.forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const mood = btn.querySelector('span:last-child').textContent;
+  showToast(`Humeur enregistrée : ${mood}`, 'success');
+}
+
+// ===== Pill Selection =====
+function selectPill(btn) {
+  const siblings = btn.closest('.pill-group').querySelectorAll('.pill-btn');
+  siblings.forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+// ===== Theme tabs =====
+document.querySelectorAll('.theme-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    this.closest('.theme-tabs').querySelectorAll('.theme-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ===== Toggle switch =====
+function toggleSwitch(el) {
+  const dot = el.querySelector('div');
+  if (el.dataset.on !== 'false') {
+    el.style.background = '#F0EBE3';
+    dot.style.right = 'auto';
+    dot.style.left = '3px';
+    el.dataset.on = 'false';
+  } else {
+    el.style.background = 'var(--violet)';
+    dot.style.left = 'auto';
+    dot.style.right = '3px';
+    el.dataset.on = 'true';
+  }
+}
+
+// ===== History table filter tabs =====
+document.querySelectorAll('.theme-tab').forEach(tab => {
+  if (tab.closest('.card')) {
+    tab.addEventListener('click', function() {
+      const siblings = this.parentElement.querySelectorAll('.theme-tab');
+      if (siblings.length > 0) {
+        siblings.forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+      }
+    });
+  }
+});
+
+// ===== Welcome toast =====
+setTimeout(() => showToast('Bienvenue Abibou ! Ton focus monte en Phase 2 🧠', 'success'), 1200);
+</script>
+</body>
+</html>
