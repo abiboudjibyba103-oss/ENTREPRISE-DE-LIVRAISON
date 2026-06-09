@@ -1148,8 +1148,8 @@
   <div class="container">
     <div class="how-header fade-up">
       <span class="section-tag">Le parcours</span>
-      <h2 class="section-title" style="font-size:clamp(32px,4vw,48px);margin-bottom:16px;">De J0 à J90<br>Une transformation réelle</h2>
-      <p class="section-subtitle">Trois étapes simples. Un changement profond. Pas de miracle — de la méthode.</p>
+      <h2 class="section-title" style="font-size:clamp(32px,4vw,48px);margin-bottom:16px;">3 étapes. C'est tout.</h2>
+      <p class="section-subtitle">Prédicta s'adapte à toi dès les premières minutes. Pas de configuration complexe.</p>
     </div>
     <div class="steps-wrapper" id="steps-wrapper">
       <div class="step-connector"><div class="step-connector-fill" id="step-line"></div></div>
@@ -1289,63 +1289,122 @@
 
 
 <!-- =============================================
-     JOURNEY TIMELINE
+     JOURNEY
 ============================================= -->
 <section id="journey">
   <div class="container">
     <div class="journey-header fade-up">
       <span class="section-tag">La transformation</span>
-      <h2 class="section-title" style="font-size:clamp(32px,4vw,48px);margin-bottom:16px;">J0 → J90</h2>
-      <p class="section-subtitle">Une progression réelle, mesurable — avec des prédictions qui s'affinent chaque semaine.</p>
+      <h2 class="section-title" style="font-size:clamp(32px,4vw,48px);margin-bottom:16px;">J0 → J90 — Une progression réelle</h2>
+      <p class="section-subtitle">En 90 jours, Prédicta accumule vos données et anticipe avant que vous ne ressentiez le problème.</p>
     </div>
-    <div class="timeline-wrapper" id="timeline-wrapper">
-      <div class="timeline-track" id="timeline-track">
-        <div class="timeline-line"><div class="timeline-line-fill" id="timeline-fill"></div></div>
-
-        <div class="timeline-phase fade-up stagger-1" data-phase="0">
-          <div class="phase-dot">J0</div>
-          <div class="phase-label">Phase 1</div>
-          <div class="phase-name">Calibration</div>
-          <p class="phase-desc">Tu réponds à 12 questions. Prédicta construit ton profil cognitif de départ. Chronotype, charge, style.</p>
-          <div class="phase-card">
-            📊 Profil initial généré · Chronotype détecté : Intermédiaire-matin
-          </div>
-        </div>
-
-        <div class="timeline-phase fade-up stagger-2" data-phase="1">
-          <div class="phase-dot">J7</div>
-          <div class="phase-label">Phase 2</div>
-          <div class="phase-name">Observation</div>
-          <p class="phase-desc">Les premières sessions. Prédicta observe tes patterns : quand tu blocques, quand tu excelles.</p>
-          <div class="phase-card">
-            🔍 15 sessions · 3 patterns détectés · Creux à 16h identifié
-          </div>
-        </div>
-
-        <div class="timeline-phase fade-up stagger-3" data-phase="2">
-          <div class="phase-dot">J30</div>
-          <div class="phase-label">Phase 3</div>
-          <div class="phase-name">Détection patterns</div>
-          <p class="phase-desc">Les patterns se confirment. Les micro-leçons ciblées commencent. Tu comprends ton propre cerveau.</p>
-          <div class="phase-card">
-            🎯 Précision prédictions : 71% · 8 leçons personnalisées complétées
-          </div>
-        </div>
-
-        <div class="timeline-phase fade-up stagger-4" data-phase="3">
-          <div class="phase-dot">J90</div>
-          <div class="phase-label">Phase 4</div>
-          <div class="phase-name">Transformation</div>
-          <p class="phase-desc">Prédicta anticipe avant que tu ressentes le problème. Tu es autonome. L'app peut s'effacer.</p>
-          <div class="phase-card">
-            ✨ Précision : 89% · Score autonomie : 82/100 · Tu n'as plus besoin de nous.
-          </div>
-        </div>
-
+    <div class="journey-cards-row">
+      <div class="journey-stat-card fade-up stagger-1">
+        <div class="journey-phase-label">J1–J7</div>
+        <div class="journey-stat-num">7 jours</div>
+        <div class="journey-phase-name">Observation</div>
+        <p class="journey-phase-desc">Prédicta écoute. Il établit ton profil de base. Rythme circadien, durée avant décrochage, niveau de résistance.</p>
+      </div>
+      <div class="journey-connector fade-up stagger-2">
+        <span class="journey-badge">Précision croissante ↑</span>
+      </div>
+      <div class="journey-stat-card fade-up stagger-2">
+        <div class="journey-phase-label">J8–J30</div>
+        <div class="journey-stat-num">71%</div>
+        <div class="journey-stat-sub">précision prédictions</div>
+        <div class="journey-phase-name">Détection</div>
+        <p class="journey-phase-desc">Les patterns émergent. Le coach commence à faire des liens entre ton comportement et tes performances.</p>
+      </div>
+      <div class="journey-connector fade-up stagger-3">
+        <span class="journey-badge">Précision croissante ↑</span>
+      </div>
+      <div class="journey-stat-card fade-up stagger-3">
+        <div class="journey-phase-label">J31–J90</div>
+        <div class="journey-stat-num">89%</div>
+        <div class="journey-stat-sub">précision prédictions</div>
+        <div class="journey-phase-name">Transformation</div>
+        <p class="journey-phase-desc">Prédicta anticipe avant que tu ressentes le problème. Tu es autonome. L'app peut s'effacer.</p>
       </div>
     </div>
   </div>
 </section>
+
+<style>
+  .journey-cards-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .journey-stat-card {
+    flex: 1;
+    background: var(--violet-light);
+    border: 1px solid rgba(108,92,231,0.15);
+    border-radius: 20px;
+    padding: 36px 28px;
+    text-align: center;
+  }
+  .journey-phase-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--violet);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+  }
+  .journey-stat-num {
+    font-family: 'Space Mono', monospace;
+    font-size: clamp(36px, 5vw, 52px);
+    font-weight: 700;
+    color: var(--violet);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .journey-stat-sub {
+    font-size: 12px;
+    color: var(--text-sec);
+    margin-bottom: 10px;
+  }
+  .journey-phase-name {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .journey-phase-desc {
+    font-size: 14px;
+    color: var(--text-sec);
+    line-height: 1.75;
+  }
+  .journey-connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    flex-shrink: 0;
+  }
+  .journey-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--violet);
+    background: #fff;
+    border: 1.5px solid rgba(108,92,231,0.25);
+    padding: 5px 10px;
+    border-radius: 100px;
+    text-align: center;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+  @media (max-width: 768px) {
+    .journey-cards-row { flex-direction: column; gap: 0; }
+    .journey-connector { width: auto; height: 48px; writing-mode: horizontal-tb; }
+    .journey-badge { writing-mode: horizontal-tb; transform: none; }
+  }
+</style>
 
 <!-- =============================================
      FOUNDER QUOTE
@@ -1435,7 +1494,6 @@
         <ul>
           <li><a href="#solution">Fonctionnalités</a></li>
           <li><a href="#how-it-works">Comment ça marche</a></li>
-          <li><a href="#micro-lessons">Micro-leçons</a></li>
           <li><a href="#final-cta">Tarifs</a></li>
         </ul>
       </div>
