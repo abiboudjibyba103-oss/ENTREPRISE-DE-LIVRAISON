@@ -20,7 +20,8 @@
       background: #FFFBF5;
       color: #1C1917;
       overflow-x: hidden;
-      line-height: 1.6;
+      line-height: 1.75;
+      word-spacing: 0.01em;
     }
 
     /* =============================================
@@ -59,7 +60,7 @@
       font-family: 'Plus Jakarta Sans', sans-serif;
       font-weight: 800; line-height: 1.15; letter-spacing: -0.03em;
     }
-    .section-subtitle { color: var(--text-sec); font-size: 18px; line-height: 1.7; }
+    .section-subtitle { color: var(--text-sec); font-size: 17px; line-height: 1.8; }
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 8px;
       padding: 14px 28px; border-radius: 14px; font-weight: 600;
@@ -324,7 +325,7 @@
       font-family: 'Plus Jakarta Sans', sans-serif;
       font-weight: 700; font-size: 16px; margin-bottom: 10px; color: var(--text);
     }
-    .problem-card p { color: var(--text-sec); font-size: 15px; line-height: 1.65; }
+    .problem-card p { color: var(--text-sec); font-size: 14px; line-height: 1.8; }
     .problem-arrow {
       display: flex; align-items: center; justify-content: center;
       margin-top: 48px; gap: 16px;
@@ -377,7 +378,7 @@
       font-family: 'Plus Jakarta Sans', sans-serif;
       font-weight: 700; font-size: 20px; margin-bottom: 12px;
     }
-    .pillar-card p { color: var(--text-sec); font-size: 15px; line-height: 1.7; }
+    .pillar-card p { color: var(--text-sec); font-size: 14px; line-height: 1.8; }
     .pillar-tag {
       display: inline-block; margin-top: 16px;
       font-family: 'Space Mono', monospace; font-size: 10px;
@@ -427,7 +428,7 @@
       font-family: 'Plus Jakarta Sans', sans-serif;
       font-weight: 700; font-size: 19px; margin-bottom: 12px;
     }
-    .step p { color: var(--text-sec); font-size: 15px; line-height: 1.7; }
+    .step p { color: var(--text-sec); font-size: 14px; line-height: 1.7; }
     .step-card {
       background: #fff; border-radius: var(--radius);
       padding: 20px; margin-top: 24px; border: 1px solid var(--border);
@@ -634,7 +635,7 @@
       transition: color 0.4s ease;
     }
     .timeline-phase.lit .phase-name { color: var(--violet); }
-    .phase-desc { font-size: 13px; color: var(--text-sec); line-height: 1.65; }
+    .phase-desc { font-size: 14px; color: var(--text-sec); line-height: 1.65; }
     .phase-card {
       background: var(--bg); border: 1px solid var(--border);
       border-radius: 14px; padding: 14px; margin-top: 20px;
@@ -785,6 +786,7 @@
       .footer-top { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 768px) {
+      html { font-size: 15px; }
       .nav-links, .nav-actions { display: none; }
       .hamburger { display: flex; }
       .hero-inner { grid-template-columns: 1fr; gap: 48px; }
@@ -801,6 +803,12 @@
       .footer-top { grid-template-columns: 1fr; gap: 32px; }
       .footer-bottom { flex-direction: column; align-items: flex-start; }
       .hero-ctas { flex-direction: column; align-items: flex-start; }
+      .hero-h1 { font-size: clamp(30px, 7vw, 44px) !important; }
+      .section-title { font-size: clamp(26px, 6vw, 36px) !important; }
+      .section-subtitle { font-size: 15px !important; }
+      .hero-subtitle { font-size: 16px; }
+      .problem-card p, .pillar-card p, .feature-card p, .step p, .phase-desc { font-size: 14px; line-height: 1.75; }
+      section { padding: 72px 0; }
     }
   </style>
 </head>
@@ -1004,43 +1012,134 @@
 </section>
 
 <!-- =============================================
-     SOLUTION
+     DAY IN THE LIFE
 ============================================= -->
-<section id="solution">
+<section id="solution" style="padding:100px 0;background:#fff;">
   <div class="container">
-    <div class="solution-header fade-up">
-      <span class="section-tag">Notre approche</span>
-      <h2 class="section-title" style="font-size:clamp(32px,4vw,48px);margin-bottom:16px;">Prédicta est différent.</h2>
-      <p class="section-subtitle">Trois piliers fondamentaux qui transforment ton rapport à la concentration — pour de bon.</p>
+    <div class="fade-up" style="text-align:center;max-width:640px;margin:0 auto 64px;">
+      <span class="section-tag">Concrètement</span>
+      <h2 class="section-title" style="font-size:clamp(32px,4vw,48px);margin-bottom:16px;">Voici ce qui se passe quand tu utilises Prédicta</h2>
+      <p class="section-subtitle">Pas de l'abstrait. Une journée réelle, étape par étape.</p>
     </div>
-    <div class="pillars-grid">
-      <div class="pillar-card fade-up stagger-1">
-        <div class="pillar-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    <div class="day-timeline">
+      <!-- Step 1 -->
+      <div class="day-card fade-up stagger-1">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <span style="font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:#fff;background:var(--violet);padding:3px 10px;border-radius:100px;">01</span>
+          <span style="font-size:12px;font-weight:700;color:var(--orange);">30 secondes</span>
         </div>
-        <span class="pillar-tag">Anti-dépendance</span>
-        <h3 style="margin-top:12px;">L'app s'efface à mesure que tu grandis</h3>
-        <p>Notre objectif est que tu n'aies plus besoin de nous. Plus tu progresses, plus tu es autonome. L'app se fait discrète — et c'est une victoire.</p>
+        <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:6px;letter-spacing:0.01em;">07h30 — Check-in matin</div>
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:10px;color:var(--text);">Prédicta te prend le pouls</h3>
+        <p style="font-size:14px;color:var(--text-sec);line-height:1.75;margin-bottom:16px;">Prédicta te pose une question. Ton état du jour : Affûté, Neutre, ou Chargé. En fonction de ta réponse, il adapte ton programme.</p>
+        <div style="background:var(--violet-light);border-radius:12px;height:72px;display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span style="background:#fff;color:var(--violet);font-size:12px;font-weight:700;padding:6px 12px;border-radius:20px;border:1.5px solid rgba(108,92,231,0.25);">⚡ Affûté</span>
+          <span style="background:#fff;color:var(--text-sec);font-size:12px;font-weight:600;padding:6px 12px;border-radius:20px;border:1.5px solid var(--border);">😐 Neutre</span>
+          <span style="background:#fff;color:var(--text-sec);font-size:12px;font-weight:600;padding:6px 12px;border-radius:20px;border:1.5px solid var(--border);">😮‍💨 Chargé</span>
+        </div>
       </div>
-      <div class="pillar-card fade-up stagger-2">
-        <div class="pillar-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+      <!-- Step 2 -->
+      <div class="day-card fade-up stagger-2">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <span style="font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:#fff;background:var(--violet);padding:3px 10px;border-radius:100px;">02</span>
+          <span style="font-size:12px;font-weight:700;color:var(--orange);">45 min</span>
         </div>
-        <span class="pillar-tag">Blocage Plus</span>
-        <h3 style="margin-top:12px;">Comprendre ton cerveau, pas juste bloquer des sites</h3>
-        <p>Avant de bloquer, on comprend. Pourquoi tu procrastines à 15h ? Pourquoi tu es plus sharp le matin ? Le blocage devient intelligent.</p>
+        <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:6px;letter-spacing:0.01em;">08h00 — Tu lances ta session</div>
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:10px;color:var(--text);">Le timer démarre</h3>
+        <p style="font-size:14px;color:var(--text-sec);line-height:1.75;margin-bottom:16px;">Tu définis ta tâche. Le timer démarre. Prédicta bloque les distractions et t'envoie un message vocal de lancement. Ton cerveau sait ce qu'il doit faire.</p>
+        <div style="background:#F5F3FF;border-radius:12px;height:72px;display:flex;align-items:center;justify-content:center;gap:16px;">
+          <svg width="44" height="44" viewBox="0 0 44 44">
+            <circle cx="22" cy="22" r="18" fill="none" stroke="#EDE9FE" stroke-width="3"/>
+            <circle cx="22" cy="22" r="18" fill="none" stroke="#6C5CE7" stroke-width="3" stroke-dasharray="90 23" stroke-linecap="round" transform="rotate(-90 22 22)"/>
+          </svg>
+          <span style="font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--violet);">45:00</span>
+        </div>
       </div>
-      <div class="pillar-card fade-up stagger-3">
-        <div class="pillar-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+      <!-- Step 3 -->
+      <div class="day-card fade-up stagger-3">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <span style="font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:#fff;background:var(--violet);padding:3px 10px;border-radius:100px;">03</span>
+          <span style="font-size:12px;font-weight:700;color:var(--orange);">automatique</span>
         </div>
-        <span class="pillar-tag">Science Profonde</span>
-        <h3 style="margin-top:12px;">Neuroscience réelle, pas des tips de surface</h3>
-        <p>Chaque décision de l'app s'appuie sur des recherches publiées. Roy Baumeister, Stephen Porges, Olds & Milner — pas des coaches YouTube.</p>
+        <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:6px;letter-spacing:0.01em;">08h47 — Le coach analyse</div>
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:10px;color:var(--text);">Mesure silencieuse</h3>
+        <p style="font-size:14px;color:var(--text-sec);line-height:1.75;margin-bottom:16px;">Session terminée. Prédicta mesure ta durée réelle, ton niveau de décrochage, compare avec tes sessions précédentes. Il prépare son feedback.</p>
+        <div style="background:#F5F3FF;border-radius:12px;height:72px;display:flex;align-items:flex-end;justify-content:center;gap:5px;padding:10px 16px;">
+          <div style="flex:1;border-radius:3px 3px 0 0;background:linear-gradient(to top,#6C5CE7,#A78BFA);height:40%;"></div>
+          <div style="flex:1;border-radius:3px 3px 0 0;background:linear-gradient(to top,#6C5CE7,#A78BFA);height:60%;"></div>
+          <div style="flex:1;border-radius:3px 3px 0 0;background:linear-gradient(to top,#6C5CE7,#A78BFA);height:50%;"></div>
+          <div style="flex:1;border-radius:3px 3px 0 0;background:linear-gradient(to top,#6C5CE7,#A78BFA);height:75%;"></div>
+          <div style="flex:1;border-radius:3px 3px 0 0;background:linear-gradient(to top,#EA580C,#FB923C);height:90%;"></div>
+        </div>
+      </div>
+      <!-- Step 4 -->
+      <div class="day-card fade-up stagger-4">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <span style="font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:#fff;background:var(--violet);padding:3px 10px;border-radius:100px;">04</span>
+          <span style="font-size:12px;font-weight:700;color:var(--orange);">vocal</span>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:6px;letter-spacing:0.01em;">09h00 — Message vocal personnalisé</div>
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:10px;color:var(--text);">Le coach te parle</h3>
+        <p style="font-size:14px;color:var(--text-sec);line-height:1.75;margin-bottom:16px;">Pas un message générique — un message basé sur TES données du jour. "Abibou. Tu as tenu 47 minutes. C'est ton record de la semaine."</p>
+        <div style="background:#F5F3FF;border-radius:12px;height:72px;display:flex;align-items:center;padding:0 16px;gap:12px;">
+          <div style="width:36px;height:36px;background:var(--violet);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:11px;color:var(--violet);font-weight:700;font-family:'Space Mono',monospace;margin-bottom:3px;">Coach Prédicta</div>
+            <div style="height:6px;background:rgba(108,92,231,0.15);border-radius:3px;overflow:hidden;">
+              <div style="height:100%;width:60%;background:var(--violet);border-radius:3px;"></div>
+            </div>
+          </div>
+          <span style="font-size:11px;color:var(--text-sec);font-family:'Space Mono',monospace;">0:47</span>
+        </div>
+      </div>
+      <!-- Step 5 -->
+      <div class="day-card fade-up" style="transition-delay:0.5s;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <span style="font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:#fff;background:var(--violet);padding:3px 10px;border-radius:100px;">05</span>
+          <span style="font-size:12px;font-weight:700;color:var(--orange);">2 min</span>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:6px;letter-spacing:0.01em;">19h00 — Micro-leçon du soir</div>
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:10px;color:var(--text);">La science explique ton comportement</h3>
+        <p style="font-size:14px;color:var(--text-sec);line-height:1.75;margin-bottom:16px;">Une leçon tirée de ta journée. Si tu as décroché à 30 min, tu apprends pourquoi le coût de transition coûte 23 minutes. La science explique TON comportement.</p>
+        <div style="background:linear-gradient(135deg,var(--violet-light),#F5F3FF);border-radius:12px;height:72px;display:flex;align-items:center;padding:0 16px;gap:12px;">
+          <div style="flex:1;">
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--violet);font-weight:700;margin-bottom:4px;">LEÇON A4</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);">Le coût de transition</div>
+          </div>
+          <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--violet);background:#fff;padding:4px 10px;border-radius:100px;font-weight:700;white-space:nowrap;">2 min</span>
+        </div>
       </div>
     </div>
   </div>
 </section>
+
+<style>
+  .day-timeline {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+  .day-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--violet);
+    border-radius: 20px;
+    padding: 28px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .day-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+  }
+  @media (max-width: 1024px) {
+    .day-timeline { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  }
+  @media (max-width: 768px) {
+    .day-timeline { grid-template-columns: 1fr; gap: 16px; }
+  }
+</style>
 
 <!-- =============================================
      HOW IT WORKS
@@ -1188,57 +1287,6 @@
   </div>
 </section>
 
-<!-- =============================================
-     MICRO-LESSONS PREVIEW
-============================================= -->
-<section id="micro-lessons">
-  <div class="container">
-    <div class="lessons-header fade-up">
-      <span class="section-tag">Micro-leçons</span>
-      <h2 class="section-title" style="font-size:clamp(32px,4vw,48px);margin-bottom:16px;">De la vraie science.<br>En 2 minutes.</h2>
-      <p class="section-subtitle">30 leçons basées sur des études publiées. Pas des hacks. Des principes.</p>
-    </div>
-    <div class="lessons-grid">
-
-      <div class="lesson-card a1 fade-up stagger-1">
-        <span class="lesson-theme attention">A1 · Attention</span>
-        <h3>L'attention n'est pas infinie — et c'est normal</h3>
-        <p class="lesson-excerpt">Roy Baumeister (1998) a démontré que la volonté et l'attention partagent la même ressource limitée. Comprendre l'ego depletion, c'est arrêter de se culpabiliser — et commencer à se gérer intelligemment.</p>
-        <div class="lesson-meta">
-          <span class="lesson-source">Baumeister et al., 1998</span>
-          <span class="lesson-time">2 min</span>
-        </div>
-      </div>
-
-      <div class="lesson-card b1 fade-up stagger-2">
-        <span class="lesson-theme dopamine">B1 · Neurochimie</span>
-        <h3>La dopamine n'est pas ce que tu crois</h3>
-        <p class="lesson-excerpt">Olds & Milner (1954) ont découvert que la dopamine est le signal de l'anticipation — pas du plaisir. Comprendre ça change tout dans ta relation aux réseaux sociaux et à la procrastination.</p>
-        <div class="lesson-meta">
-          <span class="lesson-source">Olds & Milner, 1954</span>
-          <span class="lesson-time">2 min</span>
-        </div>
-      </div>
-
-      <div class="lesson-card d2 fade-up stagger-3">
-        <span class="lesson-theme respiration">D2 · Corps & Cerveau</span>
-        <h3>Pourquoi la respiration change ton état en secondes</h3>
-        <p class="lesson-excerpt">La théorie polyvagale de Stephen Porges explique comment le nerf vague régule ton système nerveux. Une respiration lente n'est pas un tip — c'est une intervention neurologique directe.</p>
-        <div class="lesson-meta">
-          <span class="lesson-source">Stephen Porges, 1994</span>
-          <span class="lesson-time">2 min</span>
-        </div>
-      </div>
-
-    </div>
-    <div style="text-align:center;margin-top:48px;" class="fade-up">
-      <a href="#final-cta" class="btn btn-outline btn-lg magnetic">
-        Voir les 30 leçons complètes
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </a>
-    </div>
-  </div>
-</section>
 
 <!-- =============================================
      JOURNEY TIMELINE
