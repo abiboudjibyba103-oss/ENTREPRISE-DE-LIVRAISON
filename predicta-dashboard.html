@@ -557,12 +557,12 @@
   </div>
 
   <div class="sidebar-user">
-    <div class="user-avatar">AB</div>
+    <div class="user-avatar" id="sidebarAvatar">AB</div>
     <div class="user-info">
-      <div class="user-name">Abibou</div>
-      <div class="user-sub">Phase 2 — Détection</div>
+      <div class="user-name" id="sidebarUserName">Abibou</div>
+      <div class="user-sub" id="sidebarUserPhase">Phase 2 — Détection</div>
     </div>
-    <button class="logout-btn" onclick="showToast('Déconnexion...','info')" title="Déconnexion">
+    <button class="logout-btn" onclick="predictaSignOut()" title="Déconnexion">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M5 1H2C1.4 1 1 1.4 1 2V12C1 12.6 1.4 13 2 13H5"/>
         <polyline points="9,10 13,7 9,4"/>
@@ -1211,18 +1211,18 @@
         <div style="display:flex;flex-direction:column;gap:16px;">
           <div>
             <div style="font-size:12px;color:var(--text-sec);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Nom d'affichage</div>
-            <input class="input-field" value="Abibou" style="height:44px;">
+            <input class="input-field" id="settingsDisplayName" value="Abibou" style="height:44px;">
           </div>
           <div>
             <div style="font-size:12px;color:var(--text-sec);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Email</div>
-            <input class="input-field" value="abibou@predicta.sn" style="height:44px;">
+            <input class="input-field" id="settingsEmail" value="abibou@predicta.sn" style="height:44px;" disabled>
           </div>
           <div>
             <div style="font-size:12px;color:var(--text-sec);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Durée de session par défaut</div>
-            <div class="pill-group">
-              <button class="pill-btn">25 min</button>
-              <button class="pill-btn selected">45 min</button>
-              <button class="pill-btn">90 min</button>
+            <div class="pill-group" id="settingsDurationPills">
+              <button class="pill-btn" data-duration="25" onclick="selectDurationPill(this)">25 min</button>
+              <button class="pill-btn selected" data-duration="45" onclick="selectDurationPill(this)">45 min</button>
+              <button class="pill-btn" data-duration="90" onclick="selectDurationPill(this)">90 min</button>
             </div>
           </div>
           <div>
@@ -1237,7 +1237,7 @@
               </div>
             </div>
           </div>
-          <button class="btn-full" onclick="showToast('Paramètres sauvegardés !','success')">Enregistrer les modifications</button>
+          <button class="btn-full" onclick="saveSettings()">Enregistrer les modifications</button>
         </div>
       </div>
       <div class="card" style="max-width:600px;">
@@ -1254,6 +1254,12 @@
 
   </div><!-- /content-area -->
 </div><!-- /main -->
+
+<!-- =============================================
+     SUPABASE
+============================================= -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/js/supabase-client.js"></script>
 
 <script>
 // ===== Navigation =====
@@ -1840,8 +1846,74 @@ filterHistory('week', document.querySelector('.history-filter-btn'));
 renderLessons('all');
 filterHistory('week', document.querySelector('.history-filter-btn'));
 
-// ===== Welcome toast =====
-setTimeout(() => showToast('Bienvenue Abibou ! Ton focus monte en Phase 2 🧠', 'success'), 1200);
+// ===== Settings: session duration pills =====
+function selectDurationPill(btn) {
+  document.querySelectorAll('#settingsDurationPills .pill-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+// ===== Settings: save profile to Supabase =====
+async function saveSettings() {
+  const displayName = document.getElementById('settingsDisplayName').value.trim();
+  const selectedPill = document.querySelector('#settingsDurationPills .pill-btn.selected');
+  const defaultMinutes = selectedPill ? Number(selectedPill.dataset.duration) : 45;
+  const notifEl = document.getElementById('toggleNotif');
+  const notificationsEnabled = notifEl ? notifEl.dataset.on !== 'false' : true;
+
+  try {
+    await predictaUpdateProfile({
+      display_name: displayName,
+      default_session_minutes: defaultMinutes,
+      notifications_enabled: notificationsEnabled,
+    });
+    document.getElementById('sidebarUserName').textContent = displayName;
+    document.getElementById('sidebarAvatar').textContent = initialsFromName(displayName);
+    showToast('Paramètres sauvegardés !', 'success');
+  } catch (err) {
+    console.error('[predicta] saveSettings error', err.message);
+    showToast('Erreur lors de la sauvegarde', 'error');
+  }
+}
+
+function initialsFromName(name) {
+  return (name || '?')
+    .trim()
+    .split(/\s+/)
+    .map(p => p[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
+
+// ===== Auth bootstrap =====
+async function initDashboard() {
+  const session = await predictaRequireAuth();
+  if (!session) return; // redirected to landing page
+
+  const profile = await predictaGetProfile();
+  const displayName = profile?.display_name || session.user.email.split('@')[0];
+
+  document.getElementById('sidebarUserName').textContent = displayName;
+  document.getElementById('sidebarUserPhase').textContent = profile?.phase || 'Phase 1 — Découverte';
+  document.getElementById('sidebarAvatar').textContent = initialsFromName(displayName);
+
+  const settingsName = document.getElementById('settingsDisplayName');
+  const settingsEmail = document.getElementById('settingsEmail');
+  if (settingsName) settingsName.value = displayName;
+  if (settingsEmail) settingsEmail.value = session.user.email;
+
+  if (profile) {
+    const pill = document.querySelector(`#settingsDurationPills .pill-btn[data-duration="${profile.default_session_minutes}"]`);
+    if (pill) selectDurationPill(pill);
+
+    const notifEl = document.getElementById('toggleNotif');
+    if (notifEl && profile.notifications_enabled === false) toggleSwitch(notifEl);
+  }
+
+  setTimeout(() => showToast(`Bienvenue ${displayName} ! Ton focus monte en Phase 2 🧠`, 'success'), 1200);
+}
+
+initDashboard();
 </script>
 </body>
 </html>

@@ -1518,6 +1518,12 @@
 </footer>
 
 <!-- =============================================
+     SUPABASE
+============================================= -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/js/supabase-client.js"></script>
+
+<!-- =============================================
      JAVASCRIPT
 ============================================= -->
 <script>
@@ -1645,18 +1651,34 @@
   });
 
   /* --- Email form submit --- */
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const input = document.getElementById('email-input');
     const btn = e.target.querySelector('button');
-    btn.textContent = '✓ Tu es sur la liste !';
-    btn.style.background = '#fff';
-    btn.style.color = '#16A34A';
-    input.value = '';
-    setTimeout(() => {
-      btn.textContent = 'Commencer gratuitement';
-      btn.style.color = 'var(--violet)';
-    }, 4000);
+    const email = input.value.trim();
+    if (!email) return;
+
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = 'Envoi en cours...';
+
+    try {
+      await predictaSignInWithEmail(email);
+      btn.textContent = '✓ Vérifie tes mails !';
+      btn.style.background = '#fff';
+      btn.style.color = '#16A34A';
+      input.value = '';
+    } catch (err) {
+      console.error('[predicta] signIn error', err.message);
+      btn.textContent = 'Erreur, réessaie';
+      btn.style.color = '#DC2626';
+    } finally {
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        btn.style.color = 'var(--violet)';
+      }, 4000);
+    }
   }
 
   /* --- Smooth scroll for anchor links --- */
