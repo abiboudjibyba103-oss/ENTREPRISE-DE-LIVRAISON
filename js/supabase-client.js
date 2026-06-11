@@ -271,3 +271,31 @@ async function predictaLogSession({ durationMin, focusScore, status = 'completed
   if (error) throw error;
   return data;
 }
+
+/**
+ * Sends a message to the AI coach (Supabase edge function `coach-chat`).
+ * The function authenticates the caller via their JWT, builds a context
+ * from the user's real sessions/lessons/brain metrics, and returns a
+ * personalized reply. Pass an empty message + empty history to get the
+ * coach's daily greeting.
+ */
+async function predictaCoachChat(message, history) {
+  const session = await predictaGetSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const safeMessage = String(message || '').slice(0, 500);
+  const safeHistory = Array.isArray(history)
+    ? history
+        .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+        .slice(-10)
+        .map((m) => ({ role: m.role, content: m.content.slice(0, 500) }))
+    : [];
+
+  const { data, error } = await supabase.functions.invoke('coach-chat', {
+    body: { message: safeMessage, history: safeHistory },
+  });
+
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data.reply;
+}

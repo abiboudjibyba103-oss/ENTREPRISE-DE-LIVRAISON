@@ -85,7 +85,32 @@ Then point the frontend at
 `https://<project-ref>.functions.supabase.co/auth-rate-limit` instead of
 calling `supabase.auth.signInWithOtp` directly, if you want the extra layer.
 
-## 6. Dependency audit
+## 6. AI Coach (`coach-chat` edge function)
+
+`supabase/functions/coach-chat/index.ts` powers the "Coach IA" chat on the
+dashboard:
+
+- The caller's Supabase JWT is verified server-side (`supabaseAdmin.auth.getUser`).
+- The function loads the user's own `profiles`, recent `sessions`,
+  `lesson_progress` and latest `brain_metrics` rows (service role, scoped to
+  `user.id` — never trusts a user id from the request body).
+- It builds a French system prompt grounded in that real data and calls the
+  Anthropic Messages API for a short (2-4 sentence), personalized reply.
+- Each reply is also stored in `predictions` for that user.
+
+Deploy it with:
+
+```
+supabase functions deploy coach-chat
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=...
+supabase secrets set ANTHROPIC_API_KEY=...
+```
+
+Frontend usage: `predictaCoachChat(message, history)` in
+`js/supabase-client.js`, called from `predicta-dashboard.html` (chat UI in
+the "Message du Coach" card).
+
+## 7. Dependency audit
 
 `package.json` dependencies were bumped to current patched versions
 (`react`/`react-dom` 18.3.1, `vite` 5.4.6, `@vitejs/plugin-react` 4.3.1,

@@ -173,6 +173,41 @@
     transition: all 0.2s; font-family: 'DM Sans', sans-serif; margin-bottom: 16px;
   }
   .btn-play:hover { background: #5a4bcf; box-shadow: 0 4px 16px rgba(108,92,231,0.3); }
+
+  /* Coach AI chat */
+  .coach-chat {
+    display: flex; flex-direction: column; gap: 10px;
+    max-height: 240px; overflow-y: auto; margin-bottom: 12px; padding-right: 4px;
+  }
+  .coach-bubble {
+    padding: 10px 14px; border-radius: 14px; font-size: 13.5px;
+    line-height: 1.6; max-width: 88%; animation: bubbleIn 0.3s ease;
+  }
+  @keyframes bubbleIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .coach-bubble.ai { background: var(--violet-light); color: var(--text); align-self: flex-start; border-radius: 14px 14px 14px 4px; }
+  .coach-bubble.user { background: var(--bg); border: 1px solid var(--border); color: var(--text); align-self: flex-end; border-radius: 14px 14px 4px 14px; }
+  .coach-bubble.typing { display: flex; gap: 4px; align-items: center; padding: 12px 14px; }
+  .coach-bubble.typing span {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--violet);
+    animation: typingBounce 1.2s ease-in-out infinite;
+  }
+  .coach-bubble.typing span:nth-child(2) { animation-delay: 0.2s; }
+  .coach-bubble.typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typingBounce { 0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }
+  .coach-input-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .coach-input {
+    flex: 1; padding: 11px 14px; border-radius: 12px; border: 1.5px solid var(--border);
+    background: var(--bg); font-size: 13px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s;
+  }
+  .coach-input:focus { border-color: var(--violet); }
+  .coach-send-btn {
+    width: 42px; height: 42px; border-radius: 12px; border: none; flex-shrink: 0;
+    background: var(--violet); color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+  }
+  .coach-send-btn:hover:not(:disabled) { background: #5a4bcf; box-shadow: 0 4px 16px rgba(108,92,231,0.3); }
+  .coach-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .mood-section { border-top: 1px solid var(--border); padding-top: 14px; }
   .mood-label { font-size: 12px; color: var(--text-sec); font-weight: 500; margin-bottom: 10px; }
   .mood-btns { display: flex; gap: 8px; }
@@ -706,13 +741,17 @@
               <div class="coach-name">Aujourd'hui</div>
             </div>
           </div>
-          <div class="coach-msg">
-            "Abibou. Ton focus moyen a progressé de 8 minutes ce mois. Ton meilleur moment reste le mardi matin. Protège cette plage cette semaine."
+          <div class="coach-chat" id="coachChat">
+            <div class="coach-bubble ai">
+              "Abibou. Ton focus moyen a progressé de 8 minutes ce mois. Ton meilleur moment reste le mardi matin. Protège cette plage cette semaine."
+            </div>
           </div>
-          <button class="btn-play" onclick="showToast('Lecture du message vocal...','info')">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="2,1 13,7 2,13" fill="white"/></svg>
-            Écouter le message vocal
-          </button>
+          <div class="coach-input-row">
+            <input type="text" class="coach-input" id="coachInput" placeholder="Pose une question à ton coach..." maxlength="500" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCoachMessage();}">
+            <button class="coach-send-btn" id="coachSendBtn" onclick="sendCoachMessage()" aria-label="Envoyer">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
           <div class="mood-section">
             <div class="mood-label">Ton état ce matin ?</div>
             <div class="mood-btns">
@@ -1885,6 +1924,87 @@ function initialsFromName(name) {
     .toUpperCase();
 }
 
+// ===== Coach IA chat =====
+let coachHistory = [];
+let coachBusy = false;
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function addCoachBubble(role, text) {
+  const chat = document.getElementById('coachChat');
+  const bubble = document.createElement('div');
+  bubble.className = `coach-bubble ${role === 'user' ? 'user' : 'ai'}`;
+  bubble.innerHTML = escapeHtml(text).replace(/\n/g, '<br>');
+  chat.appendChild(bubble);
+  chat.scrollTop = chat.scrollHeight;
+  return bubble;
+}
+
+function showCoachTyping() {
+  const chat = document.getElementById('coachChat');
+  const bubble = document.createElement('div');
+  bubble.className = 'coach-bubble ai typing';
+  bubble.id = 'coachTyping';
+  bubble.innerHTML = '<span></span><span></span><span></span>';
+  chat.appendChild(bubble);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function removeCoachTyping() {
+  document.getElementById('coachTyping')?.remove();
+}
+
+async function sendCoachMessage() {
+  if (coachBusy) return;
+  const input = document.getElementById('coachInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const sendBtn = document.getElementById('coachSendBtn');
+  coachBusy = true;
+  sendBtn.disabled = true;
+  input.value = '';
+
+  addCoachBubble('user', text);
+  showCoachTyping();
+
+  try {
+    const reply = await predictaCoachChat(text, coachHistory);
+    removeCoachTyping();
+    addCoachBubble('ai', reply);
+    coachHistory.push({ role: 'user', content: text });
+    coachHistory.push({ role: 'assistant', content: reply });
+    coachHistory = coachHistory.slice(-10);
+  } catch (err) {
+    console.error('[predicta] coach chat error', err.message);
+    removeCoachTyping();
+    addCoachBubble('ai', "Désolé, je n'arrive pas à répondre pour le moment. Réessaie dans un instant.");
+  } finally {
+    coachBusy = false;
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+async function initCoach() {
+  showCoachTyping();
+  try {
+    const reply = await predictaCoachChat('', []);
+    removeCoachTyping();
+    document.getElementById('coachChat').innerHTML = '';
+    addCoachBubble('ai', reply);
+    coachHistory = [{ role: 'assistant', content: reply }];
+  } catch (err) {
+    console.error('[predicta] coach init error', err.message);
+    removeCoachTyping();
+    // Keep the default static message on error
+  }
+}
+
 // ===== Auth bootstrap =====
 async function initDashboard() {
   const session = await predictaRequireAuth();
@@ -1911,6 +2031,8 @@ async function initDashboard() {
   }
 
   setTimeout(() => showToast(`Bienvenue ${displayName} ! Ton focus monte en Phase 2 🧠`, 'success'), 1200);
+
+  initCoach();
 }
 
 initDashboard();
