@@ -12,7 +12,7 @@
 const SUPABASE_URL = 'https://hqdzbeykutvmjnuzhnwy.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_P-tNenm-AP1SIX8x6aIJRA_Cv9lpasr';
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -24,7 +24,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
  * Returns the current session, or null if the visitor is not signed in.
  */
 async function predictaGetSession() {
-  const { data, error } = await supabase.auth.getSession();
+  const { data, error } = await supabaseClient.auth.getSession();
   if (error) {
     console.error('[predicta] getSession error', error.message);
     return null;
@@ -38,9 +38,9 @@ async function predictaGetSession() {
  */
 async function predictaSignInWithEmail(email, redirectTo) {
   // Best-effort waitlist capture (insert-only, RLS protected)
-  await supabase.from('waitlist').insert({ email }).select().maybeSingle();
+  await supabaseClient.from('waitlist').insert({ email }).select().maybeSingle();
 
-  const { error } = await supabase.auth.signInWithOtp({
+  const { error } = await supabaseClient.auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: redirectTo || `${window.location.origin}/predicta-dashboard.html`,
@@ -64,7 +64,7 @@ async function predictaSignUpWithPassword(email, password, displayName) {
   if (!emailRegex.test(email)) throw new Error('Adresse email invalide');
   if (password.length < 8) throw new Error('Le mot de passe doit contenir au moins 8 caractères');
 
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await supabaseClient.auth.signUp({
     email,
     password,
     options: {
@@ -76,7 +76,7 @@ async function predictaSignUpWithPassword(email, password, displayName) {
   if (error) throw error;
 
   // Best-effort waitlist capture (insert-only, RLS protected)
-  await supabase.from('waitlist').insert({ email }).select().maybeSingle();
+  await supabaseClient.from('waitlist').insert({ email }).select().maybeSingle();
 
   return data;
 }
@@ -92,7 +92,7 @@ async function predictaSignInWithPassword(email, password) {
   if (!emailRegex.test(email)) throw new Error('Adresse email invalide');
   if (!password) throw new Error('Mot de passe requis');
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if (error) throw error;
   return data;
 }
@@ -101,7 +101,7 @@ async function predictaSignInWithPassword(email, password) {
  * Signs the current user out and redirects to the auth page.
  */
 async function predictaSignOut(redirectTo) {
-  await supabase.auth.signOut();
+  await supabaseClient.auth.signOut();
   window.location.href = redirectTo || '/predicta-auth.html';
 }
 
@@ -125,7 +125,7 @@ async function predictaGetProfile() {
   const session = await predictaGetSession();
   if (!session) return null;
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('profiles')
     .select('*')
     .eq('id', session.user.id)
@@ -152,7 +152,7 @@ async function predictaUpdateProfile(patch) {
     if (key in patch) safePatch[key] = patch[key];
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('profiles')
     .update(safePatch)
     .eq('id', session.user.id)
@@ -170,7 +170,7 @@ async function predictaGetLessonProgress() {
   const session = await predictaGetSession();
   if (!session) return {};
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('lesson_progress')
     .select('lesson_id, status, completed_at')
     .eq('user_id', session.user.id);
@@ -192,7 +192,7 @@ async function predictaSetLessonStatus(lessonId, status) {
   if (!/^[A-F][1-5]$/.test(lessonId)) throw new Error('Invalid lesson id');
   if (!['todo', 'in_progress', 'done'].includes(status)) throw new Error('Invalid status');
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('lesson_progress')
     .upsert(
       {
@@ -217,7 +217,7 @@ async function predictaGetLatestBrainMetrics() {
   const session = await predictaGetSession();
   if (!session) return null;
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('brain_metrics')
     .select('*')
     .eq('user_id', session.user.id)
@@ -255,7 +255,7 @@ async function predictaLogSession({ durationMin, focusScore, status = 'completed
     throw new Error('Invalid status');
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('sessions')
     .insert({
       user_id: session.user.id,
@@ -291,7 +291,7 @@ async function predictaCoachChat(message, history) {
         .map((m) => ({ role: m.role, content: m.content.slice(0, 500) }))
     : [];
 
-  const { data, error } = await supabase.functions.invoke('coach-chat', {
+  const { data, error } = await supabaseClient.functions.invoke('coach-chat', {
     body: { message: safeMessage, history: safeHistory },
   });
 
