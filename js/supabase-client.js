@@ -52,21 +52,67 @@ async function predictaSignInWithEmail(email, redirectTo) {
 }
 
 /**
- * Signs the current user out and redirects to the landing page.
+ * Creates a new account with email + password.
+ * A `profiles` row is auto-created by the `handle_new_user` trigger,
+ * using `displayName` from the user metadata.
  */
-async function predictaSignOut(redirectTo) {
-  await supabase.auth.signOut();
-  window.location.href = redirectTo || '/predicta-landing.html';
+async function predictaSignUpWithPassword(email, password, displayName) {
+  email = String(email || '').trim().toLowerCase();
+  password = String(password || '');
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) throw new Error('Adresse email invalide');
+  if (password.length < 8) throw new Error('Le mot de passe doit contenir au moins 8 caractères');
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { display_name: (displayName || email.split('@')[0]).trim().slice(0, 80) },
+      emailRedirectTo: `${window.location.origin}/predicta-dashboard.html`,
+    },
+  });
+
+  if (error) throw error;
+
+  // Best-effort waitlist capture (insert-only, RLS protected)
+  await supabase.from('waitlist').insert({ email }).select().maybeSingle();
+
+  return data;
 }
 
 /**
- * Guards a page: redirects to the landing page if no session exists.
+ * Signs in an existing user with email + password.
+ */
+async function predictaSignInWithPassword(email, password) {
+  email = String(email || '').trim().toLowerCase();
+  password = String(password || '');
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) throw new Error('Adresse email invalide');
+  if (!password) throw new Error('Mot de passe requis');
+
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Signs the current user out and redirects to the auth page.
+ */
+async function predictaSignOut(redirectTo) {
+  await supabase.auth.signOut();
+  window.location.href = redirectTo || '/predicta-auth.html';
+}
+
+/**
+ * Guards a page: redirects to the auth page if no session exists.
  * Returns the session when present.
  */
 async function predictaRequireAuth() {
   const session = await predictaGetSession();
   if (!session) {
-    window.location.href = '/predicta-landing.html';
+    window.location.href = '/predicta-auth.html';
     return null;
   }
   return session;

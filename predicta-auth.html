@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prédicta — Connexion / Créer un compte</title>
+  <meta name="description" content="Connecte-toi ou crée ton compte Prédicta." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, #F5F3FF 0%, #FFF7ED 100%);
+      color: #1C1917;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+
+    :root {
+      --violet: #6C5CE7;
+      --violet-dark: #5548c8;
+      --violet-light: #EDE9FE;
+      --orange: #EA580C;
+      --text: #1C1917;
+      --text-sec: #78716C;
+      --border: #F0EBE3;
+      --error: #DC2626;
+      --error-light: #FEF2F2;
+      --success: #16A34A;
+      --radius: 20px;
+      --shadow-card: 0 8px 40px rgba(108,92,231,0.1), 0 2px 8px rgba(28,25,23,0.05);
+    }
+
+    .auth-wrap { width: 100%; max-width: 440px; }
+
+    .auth-logo {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      margin-bottom: 28px; text-decoration: none;
+    }
+    .auth-logo-text {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800; font-size: 24px; color: var(--violet);
+      letter-spacing: -0.02em;
+    }
+
+    .auth-card {
+      background: #fff; border-radius: var(--radius);
+      box-shadow: var(--shadow-card); border: 1px solid var(--border);
+      padding: 8px; overflow: hidden;
+    }
+
+    /* Tabs */
+    .auth-tabs {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+      background: var(--violet-light); border-radius: 14px; padding: 4px;
+      margin-bottom: 28px;
+    }
+    .auth-tab {
+      border: none; background: transparent; cursor: pointer;
+      padding: 12px 8px; border-radius: 11px; font-size: 14px; font-weight: 700;
+      color: var(--text-sec); font-family: 'DM Sans', sans-serif;
+      transition: all 0.25s cubic-bezier(.2,.8,.2,1);
+    }
+    .auth-tab.active { background: #fff; color: var(--violet); box-shadow: 0 2px 10px rgba(108,92,231,0.15); }
+
+    .auth-body { padding: 24px 28px 28px; }
+
+    .auth-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800; font-size: 24px; letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+    .auth-subtitle { font-size: 14px; color: var(--text-sec); margin-bottom: 24px; line-height: 1.6; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      display: block; font-size: 13px; font-weight: 600; color: var(--text);
+      margin-bottom: 8px;
+    }
+    .form-input {
+      width: 100%; padding: 13px 16px; border-radius: 12px;
+      border: 1.5px solid var(--border); background: #FFFBF5;
+      font-size: 14px; color: var(--text); font-family: 'DM Sans', sans-serif;
+      transition: border-color 0.2s, background 0.2s; outline: none;
+    }
+    .form-input:focus { border-color: var(--violet); background: #fff; }
+    .form-input::placeholder { color: #B8AFA6; }
+    .form-hint { font-size: 12px; color: var(--text-sec); margin-top: 6px; }
+
+    .form-error {
+      display: none; align-items: center; gap: 8px;
+      background: var(--error-light); color: var(--error);
+      border: 1px solid rgba(220,38,38,0.2); border-radius: 12px;
+      padding: 11px 14px; font-size: 13px; font-weight: 500;
+      margin-bottom: 16px;
+    }
+    .form-error.visible { display: flex; }
+
+    .form-success {
+      display: none; align-items: center; gap: 8px;
+      background: #F0FDF4; color: var(--success);
+      border: 1px solid rgba(22,163,74,0.2); border-radius: 12px;
+      padding: 11px 14px; font-size: 13px; font-weight: 500;
+      margin-bottom: 16px;
+    }
+    .form-success.visible { display: flex; }
+
+    .btn-submit {
+      width: 100%; padding: 15px; border-radius: 14px; border: none;
+      background: var(--violet); color: #fff; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 4px;
+    }
+    .btn-submit:hover:not(:disabled) { background: var(--violet-dark); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(108,92,231,0.3); }
+    .btn-submit:disabled { opacity: 0.65; cursor: not-allowed; }
+
+    .spinner {
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
+      animation: spin 0.7s linear infinite; display: none;
+    }
+    .btn-submit.loading .spinner { display: inline-block; }
+    .btn-submit.loading .btn-label { opacity: 0.85; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .auth-switch {
+      text-align: center; font-size: 13.5px; color: var(--text-sec);
+      margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--border);
+    }
+    .auth-switch button {
+      background: none; border: none; cursor: pointer;
+      color: var(--violet); font-weight: 700; font-size: 13.5px;
+      font-family: 'DM Sans', sans-serif; padding: 0; margin-left: 4px;
+    }
+    .auth-switch button:hover { text-decoration: underline; }
+
+    .auth-back {
+      display: block; text-align: center; margin-top: 20px;
+      font-size: 13px; color: var(--text-sec); text-decoration: none;
+    }
+    .auth-back:hover { color: var(--violet); }
+
+    @media (max-width: 480px) {
+      .auth-body { padding: 20px 20px 24px; }
+      .auth-title { font-size: 21px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="auth-wrap">
+  <a href="/predicta-landing.html" class="auth-logo">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="32" height="32" rx="10" fill="#6C5CE7"/>
+      <path d="M16 6C11.04 6 7 10.04 7 15C7 17.08 7.72 18.98 8.9 20.5C8.96 20.58 9 20.68 9 20.8V24.5C9 25.05 9.45 25.5 10 25.5H11.5C12.05 25.5 12.5 25.05 12.5 24.5V23H14V24.5C14 25.05 14.45 25.5 15 25.5H17C17.55 25.5 18 25.05 18 24.5V23H19.5V24.5C19.5 25.05 19.95 25.5 20.5 25.5H22C22.55 25.5 23 25.05 23 24.5V20.8C23 20.68 23.04 20.58 23.1 20.5C24.28 18.98 25 17.08 25 15C25 10.04 20.96 6 16 6Z" fill="white" opacity="0.9"/>
+      <circle cx="13" cy="14" r="1.5" fill="#6C5CE7"/>
+      <circle cx="19" cy="14" r="1.5" fill="#6C5CE7"/>
+      <path d="M13 17.5C13.83 18.17 14.88 18.5 16 18.5C17.12 18.5 18.17 18.17 19 17.5" stroke="#6C5CE7" stroke-width="1.2" stroke-linecap="round"/>
+    </svg>
+    <span class="auth-logo-text">Prédicta</span>
+  </a>
+
+  <div class="auth-card">
+    <div style="padding:16px 16px 0;">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Connexion</button>
+        <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Créer un compte</button>
+      </div>
+    </div>
+
+    <div class="auth-body">
+
+      <!-- ===== LOGIN FORM ===== -->
+      <form id="form-login" onsubmit="return handleLogin(event)">
+        <div class="auth-title">Content de te revoir</div>
+        <div class="auth-subtitle">Connecte-toi pour retrouver ton coach et ta progression.</div>
+
+        <div class="form-error" id="login-error"></div>
+        <div class="form-success" id="login-success"></div>
+
+        <div class="form-group">
+          <label class="form-label" for="login-email">Email</label>
+          <input class="form-input" type="email" id="login-email" placeholder="toi@email.com" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="login-password">Mot de passe</label>
+          <input class="form-input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required>
+        </div>
+
+        <button type="submit" class="btn-submit" id="login-submit">
+          <span class="spinner"></span>
+          <span class="btn-label">Se connecter</span>
+        </button>
+
+        <div class="auth-switch">
+          Pas encore de compte ?
+          <button type="button" onclick="switchTab('signup')">Créer un compte</button>
+        </div>
+      </form>
+
+      <!-- ===== SIGNUP FORM ===== -->
+      <form id="form-signup" onsubmit="return handleSignup(event)" style="display:none;">
+        <div class="auth-title">Crée ton compte</div>
+        <div class="auth-subtitle">Quelques secondes suffisent pour commencer à comprendre ton cerveau.</div>
+
+        <div class="form-error" id="signup-error"></div>
+        <div class="form-success" id="signup-success"></div>
+
+        <div class="form-group">
+          <label class="form-label" for="signup-name">Prénom</label>
+          <input class="form-input" type="text" id="signup-name" placeholder="Ton prénom" autocomplete="given-name" maxlength="80" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="signup-email">Email</label>
+          <input class="form-input" type="email" id="signup-email" placeholder="toi@email.com" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="signup-password">Mot de passe</label>
+          <input class="form-input" type="password" id="signup-password" placeholder="••••••••" autocomplete="new-password" minlength="8" required>
+          <div class="form-hint">8 caractères minimum.</div>
+        </div>
+
+        <button type="submit" class="btn-submit" id="signup-submit">
+          <span class="spinner"></span>
+          <span class="btn-label">Créer mon compte</span>
+        </button>
+
+        <div class="auth-switch">
+          Tu as déjà un compte ?
+          <button type="button" onclick="switchTab('login')">Se connecter</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <a href="/predicta-landing.html" class="auth-back">← Retour à l'accueil</a>
+</div>
+
+<!-- =============================================
+     SUPABASE
+============================================= -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/js/supabase-client.js"></script>
+
+<script>
+  function switchTab(tab) {
+    const isLogin = tab === 'login';
+    document.getElementById('tab-login').classList.toggle('active', isLogin);
+    document.getElementById('tab-signup').classList.toggle('active', !isLogin);
+    document.getElementById('form-login').style.display = isLogin ? 'block' : 'none';
+    document.getElementById('form-signup').style.display = isLogin ? 'none' : 'block';
+    hideMessage('login-error'); hideMessage('login-success');
+    hideMessage('signup-error'); hideMessage('signup-success');
+  }
+
+  function showMessage(id, text) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.classList.add('visible');
+  }
+  function hideMessage(id) {
+    const el = document.getElementById(id);
+    el.classList.remove('visible');
+    el.textContent = '';
+  }
+
+  function setLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    btn.disabled = loading;
+    btn.classList.toggle('loading', loading);
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    hideMessage('login-error'); hideMessage('login-success');
+
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    setLoading('login-submit', true);
+    try {
+      await predictaSignInWithPassword(email, password);
+      showMessage('login-success', 'Connexion réussie ! Redirection...');
+      setTimeout(() => { window.location.href = '/predicta-dashboard.html'; }, 700);
+    } catch (err) {
+      console.error('[predicta] login error', err.message);
+      showMessage('login-error', "Email ou mot de passe incorrect.");
+    } finally {
+      setLoading('login-submit', false);
+    }
+    return false;
+  }
+
+  async function handleSignup(e) {
+    e.preventDefault();
+    hideMessage('signup-error'); hideMessage('signup-success');
+
+    const name = document.getElementById('signup-name').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+
+    if (password.length < 8) {
+      showMessage('signup-error', 'Le mot de passe doit contenir au moins 8 caractères.');
+      return false;
+    }
+
+    setLoading('signup-submit', true);
+    try {
+      const data = await predictaSignUpWithPassword(email, password, name);
+      if (data?.session) {
+        showMessage('signup-success', 'Compte créé ! Redirection...');
+        setTimeout(() => { window.location.href = '/predicta-dashboard.html'; }, 700);
+      } else {
+        showMessage('signup-success', 'Compte créé ! Vérifie tes mails pour confirmer ton adresse.');
+        document.getElementById('form-signup').reset();
+      }
+    } catch (err) {
+      console.error('[predicta] signup error', err.message);
+      const msg = /already registered|already exists/i.test(err.message)
+        ? 'Un compte existe déjà avec cet email. Connecte-toi plutôt.'
+        : err.message || "Erreur lors de la création du compte.";
+      showMessage('signup-error', msg);
+    } finally {
+      setLoading('signup-submit', false);
+    }
+    return false;
+  }
+
+  // If already logged in, skip straight to the dashboard
+  (async () => {
+    const session = await predictaGetSession();
+    if (session) window.location.href = '/predicta-dashboard.html';
+  })();
+</script>
+
+</body>
+</html>
