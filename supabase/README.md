@@ -94,8 +94,9 @@ dashboard:
 - The function loads the user's own `profiles`, recent `sessions`,
   `lesson_progress` and latest `brain_metrics` rows (service role, scoped to
   `user.id` — never trusts a user id from the request body).
-- It builds a French system prompt grounded in that real data and calls the
-  Anthropic Messages API for a short (2-4 sentence), personalized reply.
+- It builds a French system prompt grounded in that real data and calls
+  Groq's OpenAI-compatible Chat Completions API (Llama 3.1 70B) for a short
+  (2-4 sentence), personalized reply.
 - Each reply is also stored in `predictions` for that user.
 
 Deploy it with:
@@ -103,8 +104,10 @@ Deploy it with:
 ```
 supabase functions deploy coach-chat
 supabase secrets set SUPABASE_SERVICE_ROLE_KEY=...
-supabase secrets set ANTHROPIC_API_KEY=...
+supabase secrets set GROQ_API_KEY=...
 ```
+
+Get a Groq API key at https://console.groq.com (free tier available).
 
 Frontend usage: `predictaCoachChat(message, history)` in
 `js/supabase-client.js`, called from `predicta-dashboard.html` (chat UI in

@@ -3,12 +3,13 @@
 //
 // Acts as the AI Coach: authenticates the caller via their
 // Supabase JWT, loads their real session/lesson/brain-metrics
-// data from the database, and asks an LLM (Anthropic Claude)
-// for a short, personalized coaching reply in French.
+// data from the database, and asks an LLM (Llama 3.1 70B via
+// Groq, OpenAI-compatible API) for a short, personalized
+// coaching reply in French.
 //
 // Deploy with:
 //   supabase functions deploy coach-chat
-//   supabase secrets set ANTHROPIC_API_KEY=...
+//   supabase secrets set GROQ_API_KEY=...
 //
 // Frontend: js/supabase-client.js -> predictaCoachChat(message, history)
 // ============================================================
@@ -17,11 +18,11 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')!;
+const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')!;
 
 const MAX_MESSAGE_LEN = 500;
 const MAX_HISTORY = 10;
-const COACH_MODEL = 'claude-haiku-4-5-20251001';
+const COACH_MODEL = 'llama-3.1-70b-versatile';
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') {
@@ -112,27 +113,25 @@ Règles:
 Données de l'utilisateur:
 ${contextLines.join('\n')}`;
 
-  const messages = [...history];
+  const messages = [{ role: 'system', content: systemPrompt }, ...history];
   if (message) {
     messages.push({ role: 'user', content: message });
   }
-  if (messages.length === 0) {
+  if (messages.length === 1) {
     messages.push({ role: 'user', content: 'Donne-moi mon message de coaching du jour, basé sur mes données.' });
   }
 
   let aiRes: Response;
   try {
-    aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+    aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
       },
       body: JSON.stringify({
         model: COACH_MODEL,
         max_tokens: 300,
-        system: systemPrompt,
         messages,
       }),
     });
@@ -143,12 +142,12 @@ ${contextLines.join('\n')}`;
 
   if (!aiRes.ok) {
     const errText = await aiRes.text();
-    console.error('[coach-chat] Anthropic error', aiRes.status, errText);
+    console.error('[coach-chat] Groq error', aiRes.status, errText);
     return json({ error: 'Le coach est momentanément indisponible.' }, 502);
   }
 
   const aiData = await aiRes.json();
-  const reply: string = aiData.content?.[0]?.text?.trim() || "Je n'ai pas pu générer de réponse, réessaie dans un instant.";
+  const reply: string = aiData.choices?.[0]?.message?.content?.trim() || "Je n'ai pas pu générer de réponse, réessaie dans un instant.";
 
   // Best-effort: keep a history of coach messages.
   await supabaseAdmin.from('predictions').insert({
