@@ -22,7 +22,7 @@ const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')!;
 
 const MAX_MESSAGE_LEN = 500;
 const MAX_HISTORY = 10;
-const COACH_MODEL = 'llama-3.1-70b-versatile';
+const COACH_MODEL = 'llama-3.3-70b-versatile';
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') {

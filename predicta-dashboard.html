@@ -529,18 +529,6 @@
 <!-- ===== SIDEBAR ===== -->
 <nav class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <!-- Purple circle background -->
-      <circle cx="18" cy="18" r="18" fill="#6C5CE7"/>
-      <!-- Ghost/alien body -->
-      <path d="M10 20C10 15.03 13.58 11 18 11C22.42 11 26 15.03 26 20V27L23.5 25.5L21 27L18.5 25.5L16 27L13.5 25.5L11 27L10 27V20Z" fill="white"/>
-      <!-- Eyes -->
-      <circle cx="15" cy="19" r="2" fill="#6C5CE7"/>
-      <circle cx="21" cy="19" r="2" fill="#6C5CE7"/>
-      <!-- Eye shine -->
-      <circle cx="15.7" cy="18.3" r="0.7" fill="white"/>
-      <circle cx="21.7" cy="18.3" r="0.7" fill="white"/>
-    </svg>
     <span class="sidebar-logo-text">Prédicta</span>
   </div>
 
@@ -642,10 +630,10 @@
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="9"/><path d="M11 6V11L14 13"/></svg>
           </div>
           <div class="stat-label">Sessions cette semaine</div>
-          <div class="stat-value shimmer" data-target="12" id="stat0">0</div>
-          <div class="stat-badge badge-green shimmer">
+          <div class="stat-value" id="stat0">0</div>
+          <div class="stat-badge badge-green" id="stat0Badge" style="display:none;">
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 2L8.5 6.5H1.5L5 2Z" fill="#16A34A"/></svg>
-            +3 vs semaine dernière
+            <span id="stat0BadgeText"></span>
           </div>
         </div>
         <div class="card stat-card">
@@ -653,10 +641,10 @@
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3C7.1 3 4 6.1 4 10C4 13.3 6.1 16.1 9 17.3V19H13V17.3C15.9 16.1 18 13.3 18 10C18 6.1 14.9 3 11 3Z"/><line x1="11" y1="8" x2="11" y2="11"/></svg>
           </div>
           <div class="stat-label">Focus moyen</div>
-          <div class="stat-value shimmer" data-target="47" data-suffix=" min" id="stat1">0</div>
-          <div class="stat-badge badge-green shimmer">
+          <div class="stat-value" id="stat1">0 min</div>
+          <div class="stat-badge badge-green" id="stat1Badge" style="display:none;">
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 2L8.5 6.5H1.5L5 2Z" fill="#16A34A"/></svg>
-            +8 min ce mois
+            <span id="stat1BadgeText"></span>
           </div>
         </div>
         <div class="card stat-card">
@@ -664,16 +652,16 @@
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4H13C14.1 4 15 4.9 15 6V16C15 17.1 14.1 18 13 18H4V4Z"/><path d="M15 7H17.5C18.3 7 19 7.7 19 8.5V17.5C19 18.3 18.3 19 17.5 19H13"/><line x1="7" y1="9" x2="12" y2="9"/><line x1="7" y1="12" x2="12" y2="12"/></svg>
           </div>
           <div class="stat-label">Leçons complétées</div>
-          <div class="stat-value shimmer" data-target="18" data-suffix="/30" id="stat2">0</div>
-          <div class="stat-badge badge-violet shimmer">Niveau 1 en cours</div>
+          <div class="stat-value" id="stat2">0/30</div>
+          <div class="stat-badge badge-violet" id="stat2Badge">Niveau 1 en cours</div>
         </div>
         <div class="card stat-card">
           <div class="stat-icon" style="background:rgba(234,88,12,0.1)">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4C7.1 4 4 6.8 4 10.3C4 12.2 5 13.9 6.5 15L6 18H16L15.5 15C17 13.9 18 12.2 18 10.3C18 6.8 14.9 4 11 4Z"/><line x1="8" y1="11" x2="14" y2="11"/><circle cx="11" cy="9" r="1" fill="#EA580C"/></svg>
           </div>
           <div class="stat-label">Niveau cognitif</div>
-          <div class="stat-value shimmer" id="stat3" style="font-size:22px;padding-top:4px;">Phase 2</div>
-          <div class="stat-badge badge-orange shimmer">Détection</div>
+          <div class="stat-value" id="stat3" style="font-size:22px;padding-top:4px;">Phase 1</div>
+          <div class="stat-badge badge-orange" id="stat3Badge">Découverte</div>
         </div>
       </div>
 
@@ -685,7 +673,7 @@
               <div class="card-title">Focus cette semaine</div>
               <div class="card-sub">Durée de focus par jour (minutes)</div>
             </div>
-            <div class="stat-badge badge-green" style="font-size:12px;">↑ +8% vs semaine dernière</div>
+            <div class="stat-badge badge-green" style="font-size:12px;" id="focusChartBadge"></div>
           </div>
           <div class="chart-wrap">
             <svg id="focusChart" height="200" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
@@ -792,37 +780,8 @@
                   <th>Focus</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td>Aujourd'hui 09h00</td>
-                  <td><span style="font-family:'Space Mono',monospace;font-size:13px;">47 min</span></td>
-                  <td><span class="stat-badge badge-green" style="font-size:11px;">Complétée</span></td>
-                  <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:82%"></div></div><span class="progress-pct">82%</span></div></td>
-                </tr>
-                <tr>
-                  <td>Hier 10h15</td>
-                  <td><span style="font-family:'Space Mono',monospace;font-size:13px;">25 min</span></td>
-                  <td><span class="stat-badge badge-orange" style="font-size:11px;">Interrompue</span></td>
-                  <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:54%"></div></div><span class="progress-pct">54%</span></div></td>
-                </tr>
-                <tr>
-                  <td>Lun 08h30</td>
-                  <td><span style="font-family:'Space Mono',monospace;font-size:13px;">60 min</span></td>
-                  <td><span class="stat-badge badge-green" style="font-size:11px;">Complétée</span></td>
-                  <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:91%"></div></div><span class="progress-pct">91%</span></div></td>
-                </tr>
-                <tr>
-                  <td>Dim 14h00</td>
-                  <td><span style="font-family:'Space Mono',monospace;font-size:13px;">30 min</span></td>
-                  <td><span class="stat-badge badge-green" style="font-size:11px;">Complétée</span></td>
-                  <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:70%"></div></div><span class="progress-pct">70%</span></div></td>
-                </tr>
-                <tr>
-                  <td>Sam 09h45</td>
-                  <td><span style="font-family:'Space Mono',monospace;font-size:13px;">20 min</span></td>
-                  <td><span class="stat-badge badge-orange" style="font-size:11px;">Interrompue</span></td>
-                  <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:42%"></div></div><span class="progress-pct">42%</span></div></td>
-                </tr>
+              <tbody id="recentSessionsBody">
+                <tr><td colspan="4" style="text-align:center;color:var(--text-sec);padding:24px 0;">Chargement...</td></tr>
               </tbody>
             </table>
           </div>
@@ -831,17 +790,15 @@
         <div class="card" style="display:flex;flex-direction:column;">
           <div class="card-title">Prochaine Leçon</div>
           <div class="card-sub" style="margin-bottom:16px;">Module recommandé</div>
-          <div class="theme-badge">Thème B — Distraction</div>
-          <div class="lesson-title">La dopamine n'est pas ce que tu crois</div>
-          <div class="lesson-excerpt">
-            En 1954, Olds et Milner ont découvert que des rats stimulaient leur noyau accumbens jusqu'à mourir d'épuisement... Ce que ça révèle sur ta capacité de focus est vertigineux.
-          </div>
+          <div class="theme-badge" id="nextLessonTheme">Thème A — Attention</div>
+          <div class="lesson-title" id="nextLessonTitle">—</div>
+          <div class="lesson-excerpt" id="nextLessonExcerpt"></div>
           <div class="duration-badge">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="5"/><path d="M6 3.5V6L7.5 7.5"/></svg>
             2 min de lecture
           </div>
           <div style="flex:1"></div>
-          <button class="btn-full" onclick="navigate('lessons',document.querySelector('[data-page=lessons]'));showToast('Leçon chargée !','success')">Commencer la leçon</button>
+          <button class="btn-full" id="nextLessonBtn" onclick="navigate('lessons',document.querySelector('[data-page=lessons]'))">Commencer la leçon</button>
         </div>
       </div>
 
@@ -874,11 +831,6 @@
 
     <!-- ===== PAGE: SESSION DU JOUR ===== -->
     <div class="page" id="page-session">
-      <div class="state-demo-bar">
-        <button class="state-btn active" onclick="showSessionState(0,this)">Avant la session</button>
-        <button class="state-btn" onclick="showSessionState(1,this)">En cours</button>
-        <button class="state-btn" onclick="showSessionState(2,this)">Fin de session</button>
-      </div>
 
       <!-- State 0: Before -->
       <div class="session-state active" id="sessionState0">
@@ -886,15 +838,15 @@
           <div class="card" style="padding:32px;">
             <div class="card-title" style="font-size:22px;margin-bottom:6px;">Sur quoi tu travailles aujourd'hui ?</div>
             <div class="card-sub" style="margin-bottom:24px;">Définir ta tâche principale aide ton cerveau à entrer en focus plus vite.</div>
-            <textarea class="input-field" rows="3" placeholder="Ex: Révision du chapitre 3, Rédaction du business plan..."></textarea>
+            <textarea class="input-field" id="sessionTaskInput" rows="3" placeholder="Ex: Révision du chapitre 3, Rédaction du business plan..."></textarea>
             <div class="section-label">Durée souhaitée</div>
-            <div class="pill-group">
-              <button class="pill-btn" onclick="selectPill(this)">25 min</button>
-              <button class="pill-btn selected" onclick="selectPill(this)">45 min</button>
-              <button class="pill-btn" onclick="selectPill(this)">90 min</button>
+            <div class="pill-group" id="sessionDurationPills">
+              <button class="pill-btn" data-duration="25" onclick="selectPill(this)">25 min</button>
+              <button class="pill-btn selected" data-duration="45" onclick="selectPill(this)">45 min</button>
+              <button class="pill-btn" data-duration="90" onclick="selectPill(this)">90 min</button>
             </div>
             <div class="section-label">Ton état ce matin ?</div>
-            <div class="mood-btns" style="margin-bottom:28px;">
+            <div class="mood-btns" id="sessionMoodBtns" style="margin-bottom:28px;">
               <button class="mood-btn" style="padding:14px 8px;" onclick="selectMood(this)">
                 <span class="emoji" style="font-size:28px;">⚡</span>
                 <span style="font-size:13px;">Affûté</span>
@@ -908,7 +860,7 @@
                 <span style="font-size:13px;">Chargé</span>
               </button>
             </div>
-            <button class="btn-full" style="padding:16px;font-size:16px;" onclick="showSessionState(1,document.querySelectorAll('.state-btn')[1]);showToast('Session lancée ! Bonne concentration 🧠','success')">
+            <button class="btn-full" style="padding:16px;font-size:16px;" onclick="startSession()">
               <span style="display:flex;align-items:center;justify-content:center;gap:10px;">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><polygon points="2,1 15,8 2,15" fill="white"/></svg>
                 Lancer la session
@@ -937,14 +889,14 @@
                   <div class="timer-sub">minutes restantes</div>
                 </div>
               </div>
-              <div class="timer-task">Business plan — Chapitre 2</div>
+              <div class="timer-task" id="sessionTaskLabel">Session de focus</div>
               <div class="timer-status">
                 <span class="pulsing-dot"></span>
                 Session en cours...
               </div>
               <div class="timer-actions">
                 <button class="btn-secondary" onclick="showToast('Mode Esprit Calme activé','info')">🌊 Esprit calme</button>
-                <button class="btn-danger" onclick="showSessionState(2,document.querySelectorAll('.state-btn')[2]);showToast('Session terminée','success')">Terminer</button>
+                <button class="btn-danger" onclick="endSession()">Terminer</button>
               </div>
             </div>
           </div>
@@ -958,24 +910,24 @@
             <div class="check-anim">
               <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M8 20L16 28L32 12" stroke="#16A34A" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
-            <div class="end-title">Session terminée !<br>47 minutes de focus pur. 🧠</div>
+            <div class="end-title" id="sessionEndTitle">Session terminée !</div>
             <div class="end-quote">"Tu viens de prouver quelque chose à ton cortex préfrontal — qu'il est capable de tenir. Chaque session est une répétition. Continue."</div>
             <div class="end-stats">
               <div class="end-stat">
-                <div class="end-stat-value">47</div>
+                <div class="end-stat-value" id="sessionEndMinutes">0</div>
                 <div class="end-stat-label">minutes</div>
               </div>
               <div class="end-stat">
-                <div class="end-stat-value">82%</div>
+                <div class="end-stat-value" id="sessionEndFocus">—</div>
                 <div class="end-stat-label">Score focus</div>
               </div>
               <div class="end-stat">
-                <div class="end-stat-value">B·07</div>
+                <div class="end-stat-value" id="sessionEndLesson">—</div>
                 <div class="end-stat-label">Leçon du jour</div>
               </div>
             </div>
             <div class="end-actions">
-              <button class="btn-outline" onclick="showSessionState(0,document.querySelectorAll('.state-btn')[0])">Nouvelle session</button>
+              <button class="btn-outline" onclick="resetSession()">Nouvelle session</button>
               <button class="btn-full" onclick="navigate('progression',document.querySelector('[data-page=progression]'))">Voir ma progression</button>
             </div>
           </div>
@@ -990,20 +942,20 @@
           <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M16 5C12 5 8.5 7.5 7.5 11.2C6 11.7 5 13.1 5 14.8C5 16.8 6.4 18.4 8.3 18.8C9 21 11.2 22.5 14 22.5H18C20.8 22.5 23 21 23.7 18.8C25.6 18.4 27 16.8 27 14.8C27 13.1 26 11.7 24.5 11.2C23.5 7.5 20 5 16 5Z" fill="#6C5CE7" opacity="0.8"/><circle cx="13" cy="15" r="2" fill="white"/><circle cx="19" cy="15" r="2" fill="white"/><path d="M13 19C13.7 20.2 14.7 21 16 21C17.3 21 18.3 20.2 19 19" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
         </div>
         <div class="phase-info">
-          <div class="phase-title">Phase 2 — Détection</div>
-          <div class="phase-sub">Jour 14 sur 30 · Tu construis tes premiers patterns cognitifs</div>
-          <div class="phase-progress"><div class="phase-fill"></div></div>
+          <div class="phase-title" id="brainPhaseTitle">Phase 1 — Découverte</div>
+          <div class="phase-sub" id="brainPhaseSub">Jour 1 sur 30 · Tu démarres ton parcours cognitif</div>
+          <div class="phase-progress"><div class="phase-fill" id="brainPhaseFill" style="width:0%;"></div></div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
-          <div class="stat-badge badge-violet">J14/30</div>
-          <div class="stat-badge badge-orange">47%</div>
+          <div class="stat-badge badge-violet" id="brainPhaseDayBadge">J1/30</div>
+          <div class="stat-badge badge-orange" id="brainPhasePercentBadge">0%</div>
         </div>
       </div>
 
       <div class="brain-grid">
         <div class="card">
           <div class="card-title">Profil cognitif</div>
-          <div class="card-sub" style="margin-bottom:16px;">Radar de tes 5 axes clés</div>
+          <div class="card-sub" style="margin-bottom:16px;" id="radarNote">Radar de tes 5 axes clés</div>
           <div class="radar-wrap" style="overflow:visible;">
             <!-- SVG 340x310, center (170,155), r=88. Labels with rect backgrounds -->
             <svg width="340" height="310" viewBox="0 0 340 310" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
@@ -1038,15 +990,15 @@
                    Régularité    80%→70.4→ (170-70.4*0.588,155+70.4*0.809)=(170-41.4,155+56.9)=(128.6,211.9)
                    Récupération  65%→57.2→ (170-57.2*0.951,155-57.2*0.309)=(170-54.4,155-17.7)=(115.6,137.3)
               -->
-              <polygon
-                points="170,89 220.2,138.7 198.5,194.2 128.6,211.9 115.6,137.3"
+              <polygon id="radarPolygon"
+                points="170,155 170,155 170,155 170,155 170,155"
                 fill="url(#radarGrad)" stroke="#6C5CE7" stroke-width="2.5" stroke-linejoin="round" opacity="0.9"/>
               <!-- Data dots -->
-              <circle cx="170" cy="89" r="5" fill="#6C5CE7" stroke="#fff" stroke-width="2"/>
-              <circle cx="220.2" cy="138.7" r="5" fill="#6C5CE7" stroke="#fff" stroke-width="2"/>
-              <circle cx="198.5" cy="194.2" r="5" fill="#6C5CE7" stroke="#fff" stroke-width="2"/>
-              <circle cx="128.6" cy="211.9" r="5" fill="#6C5CE7" stroke="#fff" stroke-width="2"/>
-              <circle cx="115.6" cy="137.3" r="5" fill="#6C5CE7" stroke="#fff" stroke-width="2"/>
+              <circle id="radarDot0" cx="170" cy="155" r="5" fill="#6C5CE7" stroke="#fff" stroke-width="2"/>
+              <circle id="radarDot1" cx="170" cy="155" r="5" fill="#6C5CE7" stroke="#fff" stroke-width="2"/>
+              <circle id="radarDot2" cx="170" cy="155" r="5" fill="#6C5CE7" stroke="#fff" stroke-width="2"/>
+              <circle id="radarDot3" cx="170" cy="155" r="5" fill="#6C5CE7" stroke="#fff" stroke-width="2"/>
+              <circle id="radarDot4" cx="170" cy="155" r="5" fill="#6C5CE7" stroke="#fff" stroke-width="2"/>
               <!-- Labels with white pill backgrounds for full visibility -->
               <!-- Concentration (top) -->
               <rect x="120" y="44" width="100" height="20" rx="6" fill="white" opacity="0.95"/>
@@ -1064,11 +1016,11 @@
               <rect x="0" y="116" width="90" height="20" rx="6" fill="white" opacity="0.95"/>
               <text x="45" y="131" text-anchor="middle" font-size="12" font-weight="700" fill="#1C1917" font-family="DM Sans,sans-serif">Récupération</text>
               <!-- % value badges -->
-              <text x="183" y="87" font-size="10" fill="#6C5CE7" font-family="Space Mono,monospace" font-weight="700">75%</text>
-              <text x="224" y="136" font-size="10" fill="#6C5CE7" font-family="Space Mono,monospace" font-weight="700">60%</text>
-              <text x="202" y="208" font-size="10" fill="#6C5CE7" font-family="Space Mono,monospace" font-weight="700">55%</text>
-              <text x="104" y="224" font-size="10" fill="#6C5CE7" font-family="Space Mono,monospace" font-weight="700">80%</text>
-              <text x="86" y="134" font-size="10" fill="#6C5CE7" font-family="Space Mono,monospace" font-weight="700">65%</text>
+              <text id="radarPct0" x="183" y="87" font-size="10" fill="#6C5CE7" font-family="Space Mono,monospace" font-weight="700">0%</text>
+              <text id="radarPct1" x="224" y="136" font-size="10" fill="#6C5CE7" font-family="Space Mono,monospace" font-weight="700">0%</text>
+              <text id="radarPct2" x="202" y="208" font-size="10" fill="#6C5CE7" font-family="Space Mono,monospace" font-weight="700">0%</text>
+              <text id="radarPct3" x="104" y="224" font-size="10" fill="#6C5CE7" font-family="Space Mono,monospace" font-weight="700">0%</text>
+              <text id="radarPct4" x="86" y="134" font-size="10" fill="#6C5CE7" font-family="Space Mono,monospace" font-weight="700">0%</text>
             </svg>
           </div>
         </div>
@@ -1076,31 +1028,19 @@
         <div style="display:flex;flex-direction:column;gap:16px;">
           <div class="card">
             <div class="card-title" style="margin-bottom:12px;">Patterns détectés</div>
-            <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;flex-direction:column;gap:10px;" id="patternsList">
               <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
-                <span style="font-size:18px;">🔵</span>
-                <div style="font-size:13px;color:var(--text);line-height:1.5;">Focus optimal entre <strong>8h–10h</strong> le mardi et mercredi</div>
-              </div>
-              <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
-                <span style="font-size:18px;">🟠</span>
-                <div style="font-size:13px;color:var(--text);line-height:1.5;">Décrochage fréquent après <strong>35 min</strong> de session</div>
-              </div>
-              <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
-                <span style="font-size:18px;">🟢</span>
-                <div style="font-size:13px;color:var(--text);line-height:1.5;">Régularité en hausse : <strong>+30%</strong> vs mois dernier</div>
+                <span style="font-size:18px;">💡</span>
+                <div style="font-size:13px;color:var(--text);line-height:1.5;">Complète quelques sessions pour que Prédicta détecte tes patterns de focus.</div>
               </div>
             </div>
           </div>
           <div class="card">
             <div class="card-title" style="margin-bottom:12px;">Saboteurs identifiés</div>
-            <div style="display:flex;flex-direction:column;gap:10px;">
-              <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--error-light);border-radius:12px;border:1px solid rgba(220,38,38,0.15);">
-                <span style="font-size:18px;">⚠️</span>
-                <div style="font-size:13px;color:var(--error);line-height:1.5;font-weight:500;">Notifications téléphone pendant les sessions</div>
-              </div>
-              <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--error-light);border-radius:12px;border:1px solid rgba(220,38,38,0.15);">
-                <span style="font-size:18px;">⚠️</span>
-                <div style="font-size:13px;color:var(--error);line-height:1.5;font-weight:500;">Manque de sommeil le dimanche soir (sessions lundi faibles)</div>
+            <div style="display:flex;flex-direction:column;gap:10px;" id="saboteursList">
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
+                <span style="font-size:18px;">💡</span>
+                <div style="font-size:13px;color:var(--text);line-height:1.5;">Pas encore assez de données pour identifier des saboteurs.</div>
               </div>
             </div>
           </div>
@@ -1132,9 +1072,9 @@
         <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;">
           <div>
             <div class="card-title">Micro-leçons</div>
-            <div class="card-sub">18 leçons complétées sur 30</div>
+            <div class="card-sub" id="lessonsCompletedLabel">0 leçon complétée sur 30</div>
           </div>
-          <div style="font-family:'Space Mono',monospace;font-size:20px;color:var(--violet);font-weight:700;">60%</div>
+          <div style="font-family:'Space Mono',monospace;font-size:20px;color:var(--violet);font-weight:700;" id="lessonsPercent">0%</div>
         </div>
         <div class="progress-bar-big" style="margin-top:14px;">
           <div class="progress-bar-big-fill" id="lessonProgress" style="width:0%;transition:width 1.2s ease;"></div>
@@ -1161,15 +1101,15 @@
         <div class="card-sub" style="margin-bottom:20px;">Comparaison depuis ton premier jour</div>
         <div class="before-after">
           <div class="ba-card card" style="border:none;box-shadow:none;background:var(--bg);">
-            <div class="ba-label">J1 — Avant</div>
-            <div class="ba-value before">15 <span style="font-size:20px;">min</span></div>
+            <div class="ba-label">Premières sessions</div>
+            <div class="ba-value before" id="progBeforeVal">0 <span style="font-size:20px;">min</span></div>
             <div style="font-size:12px;color:var(--text-sec);margin-top:6px;">Focus moyen initial</div>
           </div>
           <div class="ba-arrow">→</div>
           <div class="ba-card card" style="border:none;box-shadow:none;background:var(--violet-light);">
             <div class="ba-label">Aujourd'hui</div>
-            <div class="ba-value after">47 <span style="font-size:20px;">min</span></div>
-            <div class="stat-badge badge-green" style="margin-top:8px;">+213% en 14 jours</div>
+            <div class="ba-value after" id="progAfterVal">0 <span style="font-size:20px;">min</span></div>
+            <div class="stat-badge badge-green" id="progDeltaBadge" style="margin-top:8px;display:none;"></div>
           </div>
         </div>
       </div>
@@ -1205,22 +1145,22 @@
 
       <div class="card" style="margin-bottom:20px;">
         <div class="card-title" style="margin-bottom:4px;">Rapport hebdomadaire</div>
-        <div class="card-sub" style="margin-bottom:16px;">Semaine du 2 juin 2026</div>
+        <div class="card-sub" style="margin-bottom:16px;" id="progWeekLabel">7 derniers jours</div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;flex-wrap:wrap;">
           <div style="background:var(--bg);border-radius:14px;padding:16px;border:1px solid var(--border);text-align:center;">
-            <div style="font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--violet);">12</div>
+            <div style="font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--violet);" id="progWeekSessions">0</div>
             <div style="font-size:11px;color:var(--text-sec);margin-top:4px;">Sessions</div>
           </div>
           <div style="background:var(--bg);border-radius:14px;padding:16px;border:1px solid var(--border);text-align:center;">
-            <div style="font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--violet);">9h 26m</div>
+            <div style="font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--violet);" id="progWeekFocusTotal">0h 0m</div>
             <div style="font-size:11px;color:var(--text-sec);margin-top:4px;">Focus total</div>
           </div>
           <div style="background:var(--bg);border-radius:14px;padding:16px;border:1px solid var(--border);text-align:center;">
-            <div style="font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--success);">75%</div>
+            <div style="font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--success);" id="progWeekCompletion">0%</div>
             <div style="font-size:11px;color:var(--text-sec);margin-top:4px;">Taux completion</div>
           </div>
           <div style="background:var(--bg);border-radius:14px;padding:16px;border:1px solid var(--border);text-align:center;">
-            <div style="font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--orange);">4</div>
+            <div style="font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--orange);" id="progWeekLessons">0</div>
             <div style="font-size:11px;color:var(--text-sec);margin-top:4px;">Leçons terminées</div>
           </div>
         </div>
@@ -1329,11 +1269,11 @@ function navigate(pageId, navEl) {
   }
   // Trigger page-specific init
   if (pageId === 'lessons') {
-    setTimeout(() => { document.getElementById('lessonProgress').style.width = '60%'; }, 200);
     const activeTab = document.querySelector('#themeTabs .theme-tab.active');
     renderLessons(activeTab ? activeTab.dataset.filter : 'all');
   }
-  if (pageId === 'progression') drawProgChart();
+  if (pageId === 'progression') renderProgression();
+  if (pageId === 'brain') renderBrainPage();
 }
 
 // ===== Mobile Sidebar =====
@@ -1365,38 +1305,9 @@ function showToast(msg, type = 'info') {
   }, 3200);
 }
 
-// ===== Counter Animation =====
-function animateCounters() {
-  const stats = document.querySelectorAll('.stat-value[data-target]');
-  stats.forEach(el => {
-    const target = parseInt(el.dataset.target);
-    const suffix = el.dataset.suffix || '';
-    let start = 0;
-    const duration = 1200;
-    const step = (timestamp) => {
-      if (!start) start = timestamp;
-      const progress = Math.min((timestamp - start) / duration, 1);
-      const ease = 1 - Math.pow(1 - progress, 3);
-      el.textContent = Math.floor(ease * target) + suffix;
-      if (progress < 1) requestAnimationFrame(step);
-      else el.textContent = target + suffix;
-    };
-    requestAnimationFrame(step);
-  });
-}
-
-// ===== Remove shimmer =====
-function removeShimmers() {
-  setTimeout(() => {
-    document.querySelectorAll('.shimmer').forEach(el => el.classList.remove('shimmer'));
-    animateCounters();
-  }, 800);
-}
-removeShimmers();
-
 // ===== Focus Chart (bezier) =====
-function drawFocusChart() {
-  const data = [25, 38, 45, 30, 52, 47, 60];
+function drawFocusChart(data) {
+  data = data || [0, 0, 0, 0, 0, 0, 0];
   const xs = [90, 170, 250, 330, 410, 490, 570];
   const minY = 0, maxY = 60;
   const chartTop = 20, chartBottom = 180;
@@ -1451,13 +1362,12 @@ function drawFocusChart() {
     dotsG.appendChild(text);
   });
 }
-drawFocusChart();
 
 // ===== Progression Chart =====
-function drawProgChart() {
-  const raw = [15,17,16,20,18,22,24,21,25,23,27,30,28,32,29,35,33,37,34,38,36,40,39,42,43,41,45,44,47,47];
-  const xs = raw.map((_,i) => 20 + i * (660/29));
-  const minY = 0, maxY = 60;
+function drawProgChart(data) {
+  const raw = data && data.length ? data : new Array(30).fill(0);
+  const xs = raw.map((_,i) => 20 + i * (660/(raw.length - 1)));
+  const minY = 0, maxY = Math.max(60, ...raw);
   const chartTop = 20, chartBottom = 180;
   const H = chartBottom - chartTop;
   function yPos(v) { return chartBottom - ((v - minY) / (maxY - minY)) * H; }
@@ -1476,16 +1386,12 @@ function drawProgChart() {
   document.getElementById('progArea').setAttribute('d', lp + ` L ${pts[pts.length-1].x} ${chartBottom} L ${pts[0].x} ${chartBottom} Z`);
 }
 
-// ===== Heatmap =====
-function buildHeatmap() {
-  const data = [
-    [0.3,0.9,0.6,0.4,0.7,0.2,0.1],
-    [0.5,0.8,0.7,0.6,0.8,0.3,0.2],
-    [0.4,0.95,0.8,0.5,0.9,0.4,0.3],
-    [0.6,1.0,0.85,0.7,0.75,0.5,0.4],
-  ];
+// ===== Heatmap (built from real session data) =====
+function buildHeatmap(data) {
+  data = data || [[0,0,0,0,0,0,0],[0,0,0,0,0,0,0],[0,0,0,0,0,0,0],[0,0,0,0,0,0,0]];
   const weeks = ['S-4','S-3','S-2','S-1'];
   const grid = document.getElementById('heatmapGrid');
+  if (!grid) return;
   grid.innerHTML = '';
   data.forEach((row,wi) => {
     const rowEl = document.createElement('div');
@@ -1496,10 +1402,11 @@ function buildHeatmap() {
     rowEl.appendChild(label);
     const cells = document.createElement('div');
     cells.style.cssText = 'flex:1;display:grid;grid-template-columns:repeat(7,1fr);gap:6px;';
-    row.forEach(v => {
+    row.forEach(min => {
+      const v = Math.min(1, min / 60);
       const cell = document.createElement('div');
       cell.style.cssText = `aspect-ratio:1;border-radius:6px;background:rgba(108,92,231,${v * 0.85 + 0.05});cursor:pointer;transition:transform 0.15s;`;
-      cell.title = `${Math.round(v * 60)} min`;
+      cell.title = `${min} min`;
       cell.onmouseenter = () => cell.style.transform = 'scale(1.15)';
       cell.onmouseleave = () => cell.style.transform = '';
       cells.appendChild(cell);
@@ -1508,7 +1415,6 @@ function buildHeatmap() {
     grid.appendChild(rowEl);
   });
 }
-buildHeatmap();
 
 // ===== Session States =====
 function showSessionState(idx, btn) {
@@ -1558,11 +1464,16 @@ function updateTimerDisplay() {
 
 // ===== Mood Selection =====
 function selectMood(btn) {
-  const siblings = btn.closest('.mood-btns').querySelectorAll('.mood-btn');
+  const group = btn.closest('.mood-btns');
+  const siblings = group.querySelectorAll('.mood-btn');
   siblings.forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   const mood = btn.querySelector('span:last-child').textContent;
-  showToast(`Humeur enregistrée : ${mood}`, 'success');
+  if (group.id === 'sessionMoodBtns') {
+    currentSession.mood = mood;
+  } else {
+    showToast(`Humeur enregistrée : ${mood}`, 'success');
+  }
 }
 
 // ===== Pill Selection =====
@@ -1570,6 +1481,78 @@ function selectPill(btn) {
   const siblings = btn.closest('.pill-group').querySelectorAll('.pill-btn');
   siblings.forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
+}
+
+// ===== Real session tracking =====
+const currentSession = { task: '', mood: null };
+
+function startSession() {
+  const taskInput = document.getElementById('sessionTaskInput');
+  const task = (taskInput?.value || '').trim();
+  currentSession.task = task;
+
+  const selectedPill = document.querySelector('#sessionDurationPills .pill-btn.selected');
+  const minutes = selectedPill ? Number(selectedPill.dataset.duration) : 45;
+  timerTotal = minutes * 60;
+  timerRemaining = timerTotal;
+
+  const taskLabel = document.getElementById('sessionTaskLabel');
+  if (taskLabel) taskLabel.textContent = task || 'Session de focus';
+
+  showSessionState(1);
+  showToast('Session lancée ! Bonne concentration 🧠', 'success');
+}
+
+async function endSession() {
+  stopTimer();
+  const elapsedSec = timerTotal - timerRemaining;
+  const durationMin = Math.max(1, Math.round(elapsedSec / 60));
+  const status = timerRemaining === 0 ? 'completed' : 'interrupted';
+  const focusScore = Math.max(0, Math.min(100, Math.round((elapsedSec / timerTotal) * 100)));
+
+  document.getElementById('sessionEndTitle').textContent = status === 'completed'
+    ? `Session terminée !`
+    : `Session interrompue.`;
+  document.getElementById('sessionEndMinutes').textContent = String(durationMin);
+  document.getElementById('sessionEndFocus').textContent = `${focusScore}%`;
+
+  const nextLessonId = lessonOrder.find(id => lessonStates[id] === 'available');
+  document.getElementById('sessionEndLesson').textContent = nextLessonId || '—';
+
+  showSessionState(2);
+
+  try {
+    await predictaLogSession({
+      durationMin,
+      focusScore,
+      status,
+      notes: currentSession.task,
+    });
+    showToast('Session enregistrée !', 'success');
+    refreshDashboardData();
+  } catch (err) {
+    console.error('[predicta] endSession error', err.message);
+    showToast("Erreur lors de l'enregistrement de la session", 'error');
+  }
+}
+
+function resetSession() {
+  currentSession.task = '';
+  currentSession.mood = null;
+
+  const taskInput = document.getElementById('sessionTaskInput');
+  if (taskInput) taskInput.value = '';
+
+  document.querySelectorAll('#sessionDurationPills .pill-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector('#sessionDurationPills .pill-btn[data-duration="45"]')?.classList.add('selected');
+
+  document.querySelectorAll('#sessionMoodBtns .mood-btn').forEach(b => b.classList.remove('selected'));
+
+  timerTotal = 45 * 60;
+  timerRemaining = timerTotal;
+  updateTimerDisplay();
+
+  showSessionState(0);
 }
 
 // ===== All 30 Lessons Data with full content =====
@@ -1757,18 +1740,74 @@ const allLessons = [
 
 const lessonMap = Object.fromEntries(allLessons.map(l => [l.id, l]));
 
+// ===== Lesson progress (real data, one lesson per day) =====
+const lessonOrder = allLessons.map(l => l.id);
+let lessonProgressMap = {};
+let lessonStates = {};
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function computeLessonStates() {
+  lessonStates = {};
+  const completedToday = Object.values(lessonProgressMap).some(
+    (p) => p.status === 'done' && p.completed_at && p.completed_at.slice(0, 10) === todayStr()
+  );
+  let nextFound = false;
+  for (const id of lessonOrder) {
+    const prog = lessonProgressMap[id];
+    if (prog && prog.status === 'done') {
+      lessonStates[id] = 'done';
+    } else if (!nextFound) {
+      nextFound = true;
+      lessonStates[id] = completedToday ? 'today-locked' : 'available';
+    } else {
+      lessonStates[id] = 'locked';
+    }
+  }
+}
+
+async function loadLessonProgress() {
+  lessonProgressMap = await predictaGetLessonProgress();
+  computeLessonStates();
+  updateLessonStats();
+  updateNextLessonCard();
+}
+
+function updateLessonStats() {
+  const completed = Object.values(lessonProgressMap).filter((p) => p.status === 'done').length;
+  const total = lessonOrder.length;
+  const pct = Math.round((completed / total) * 100);
+
+  const label = document.getElementById('lessonsCompletedLabel');
+  const percentEl = document.getElementById('lessonsPercent');
+  const bar = document.getElementById('lessonProgress');
+  if (label) label.textContent = `${completed} leçon${completed > 1 ? 's' : ''} complétée${completed > 1 ? 's' : ''} sur ${total}`;
+  if (percentEl) percentEl.textContent = `${pct}%`;
+  if (bar) bar.style.width = `${pct}%`;
+
+  const stat2 = document.getElementById('stat2');
+  const stat2Badge = document.getElementById('stat2Badge');
+  if (stat2) stat2.textContent = `${completed}/${total}`;
+  if (stat2Badge) stat2Badge.textContent = completed === 0 ? 'Pas encore commencé' : `${completed} terminée${completed > 1 ? 's' : ''}`;
+}
+
 function renderLessons(filter) {
   const grid = document.getElementById('lessonsGrid');
   if (!grid) return;
   const filtered = filter === 'all' ? allLessons : allLessons.filter(l => l.theme === filter);
   grid.innerHTML = filtered.map(l => {
-    const statusIcon = l.status === 'done' ? '✅' : l.status === 'todo' ? '→' : '🔒';
-    const lockedStyle = l.status === 'locked' ? 'opacity:0.7;' : '';
+    const state = lessonStates[l.id] || 'locked';
+    const isLocked = state === 'locked' || state === 'today-locked';
+    const statusIcon = state === 'done' ? '✅' : state === 'available' ? '→' : '🔒';
+    const lockedStyle = isLocked ? 'opacity:0.7;' : '';
+    const overlayText = state === 'done' ? 'Revoir →' : isLocked ? 'Verrouillée' : 'Commencer →';
     return `<div class="lesson-card" data-theme="${l.theme}" onclick="openLesson('${l.id}')" style="${lockedStyle}cursor:pointer;">
-      <div class="start-overlay"><span>${l.status === 'locked' ? 'Voir la leçon →' : 'Commencer →'}</span></div>
-      <span class="stat-badge ${l.status === 'locked' ? '' : l.color}" style="font-size:10px;margin-bottom:8px;${l.status === 'locked' ? 'background:#f0ebe3;color:#78716c;' : ''}">${l.label}</span>
+      <div class="start-overlay"><span>${overlayText}</span></div>
+      <span class="stat-badge ${isLocked ? '' : l.color}" style="font-size:10px;margin-bottom:8px;${isLocked ? 'background:#f0ebe3;color:#78716c;' : ''}">${l.label}</span>
       <div class="lesson-num">Leçon ${l.id}</div>
-      <div class="lesson-card-title" style="${l.status === 'locked' ? 'color:var(--text-sec);' : ''}">${l.title}</div>
+      <div class="lesson-card-title" style="${isLocked ? 'color:var(--text-sec);' : ''}">${l.title}</div>
       <div class="lesson-footer"><span class="lesson-dur">⏱ ${l.dur}</span><span class="lesson-status">${statusIcon}</span></div>
     </div>`;
   }).join('');
@@ -1777,6 +1816,18 @@ function renderLessons(filter) {
 function openLesson(id) {
   const l = lessonMap[id];
   if (!l) return;
+  const state = lessonStates[id] || 'locked';
+
+  if (state === 'locked') {
+    showToast('Cette leçon se débloquera quand tu auras terminé les précédentes.', 'info');
+    return;
+  }
+  if (state === 'today-locked') {
+    showToast('Tu as déjà terminé ta leçon du jour. Reviens demain pour la suite !', 'info');
+    return;
+  }
+
+  const isDone = state === 'done';
   const modal = document.createElement('div');
   modal.className = 'lesson-modal-backdrop';
   modal.innerHTML = `
@@ -1804,15 +1855,66 @@ function openLesson(id) {
           <div class="lesson-action-text">${l.action}</div>
         </div>
         <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:10px;">
-          <button class="btn-full" onclick="this.closest('.lesson-modal-backdrop').remove();navigate('session',document.querySelector('[data-page=session]'))">
-            ▶ Lancer une session maintenant
-          </button>
+          ${isDone
+            ? `<div class="stat-badge badge-green" style="flex:1;justify-content:center;padding:12px;">✅ Leçon terminée</div>`
+            : `<button class="btn-full" onclick="markLessonDone('${l.id}')">✅ Marquer comme terminée</button>`
+          }
           <button class="btn-outline" style="flex:1;" onclick="this.closest('.lesson-modal-backdrop').remove()">Fermer</button>
         </div>
       </div>
     </div>`;
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
   document.body.appendChild(modal);
+}
+
+async function markLessonDone(id) {
+  try {
+    await predictaSetLessonStatus(id, 'done');
+    await loadLessonProgress();
+    document.querySelector('.lesson-modal-backdrop')?.remove();
+    const activeTab = document.querySelector('#themeTabs .theme-tab.active');
+    renderLessons(activeTab ? activeTab.dataset.filter : 'all');
+    showToast('Leçon marquée comme terminée !', 'success');
+  } catch (err) {
+    console.error('[predicta] markLessonDone error', err.message);
+    showToast('Erreur lors de la validation de la leçon', 'error');
+  }
+}
+
+function updateNextLessonCard() {
+  const themeEl = document.getElementById('nextLessonTheme');
+  const titleEl = document.getElementById('nextLessonTitle');
+  const excerptEl = document.getElementById('nextLessonExcerpt');
+  const btn = document.getElementById('nextLessonBtn');
+  if (!themeEl || !titleEl || !excerptEl || !btn) return;
+
+  const nextId = lessonOrder.find(id => lessonStates[id] === 'available');
+  if (nextId) {
+    const l = lessonMap[nextId];
+    themeEl.textContent = `Thème ${l.theme} — Leçon ${l.id}`;
+    titleEl.textContent = l.title;
+    excerptEl.textContent = l.science.replace(/<[^>]+>/g, '').slice(0, 130) + '…';
+    btn.textContent = 'Commencer la leçon';
+    btn.disabled = false;
+    return;
+  }
+
+  const todayLockedId = lessonOrder.find(id => lessonStates[id] === 'today-locked');
+  if (todayLockedId) {
+    const l = lessonMap[todayLockedId];
+    themeEl.textContent = `Thème ${l.theme} — Leçon ${l.id}`;
+    titleEl.textContent = l.title;
+    excerptEl.textContent = "Tu as déjà terminé ta leçon du jour. Reviens demain pour continuer !";
+    btn.textContent = 'Revenir demain';
+    btn.disabled = true;
+    return;
+  }
+
+  themeEl.textContent = 'Bravo !';
+  titleEl.textContent = 'Toutes les leçons sont terminées';
+  excerptEl.textContent = "Tu as complété les 30 micro-leçons Prédicta. Continue tes sessions pour progresser.";
+  btn.textContent = 'Voir mes leçons';
+  btn.disabled = false;
 }
 
 // ===== Theme tab filtering =====
@@ -1840,50 +1942,45 @@ function toggleSwitch(el) {
   }
 }
 
-// ===== History table filter =====
-const historyData = {
-  week: [
-    { date:'06/06 09h00', task:'Business plan', dur:'47 min', state:'Complétée', badge:'badge-green', focus:82 },
-    { date:'05/06 10h15', task:'Révision examen', dur:'25 min', state:'Interrompue', badge:'badge-orange', focus:54 },
-    { date:'04/06 08h30', task:'Lecture / Recherche', dur:'60 min', state:'Complétée', badge:'badge-green', focus:91 },
-    { date:'03/06 14h00', task:'Projet client', dur:'30 min', state:'Complétée', badge:'badge-green', focus:70 },
-    { date:'02/06 09h45', task:'Rédaction rapport', dur:'45 min', state:'Complétée', badge:'badge-green', focus:78 },
-  ],
-  month: [
-    { date:'06/06 09h00', task:'Business plan', dur:'47 min', state:'Complétée', badge:'badge-green', focus:82 },
-    { date:'05/06 10h15', task:'Révision examen', dur:'25 min', state:'Interrompue', badge:'badge-orange', focus:54 },
-    { date:'04/06 08h30', task:'Lecture / Recherche', dur:'60 min', state:'Complétée', badge:'badge-green', focus:91 },
-    { date:'03/06 14h00', task:'Projet client', dur:'30 min', state:'Complétée', badge:'badge-green', focus:70 },
-    { date:'01/06 09h45', task:'Rédaction rapport', dur:'45 min', state:'Complétée', badge:'badge-green', focus:78 },
-    { date:'29/05 08h00', task:'Préparation présentation', dur:'90 min', state:'Complétée', badge:'badge-green', focus:88 },
-    { date:'27/05 10h30', task:'Révision cours', dur:'35 min', state:'Interrompue', badge:'badge-orange', focus:48 },
-    { date:'25/05 09h00', task:'Business plan', dur:'45 min', state:'Complétée', badge:'badge-green', focus:75 },
-    { date:'22/05 11h00', task:'Lecture / Recherche', dur:'20 min', state:'Interrompue', badge:'badge-orange', focus:40 },
-    { date:'20/05 08h30', task:'Projet client', dur:'60 min', state:'Complétée', badge:'badge-green', focus:85 },
-    { date:'18/05 09h15', task:'Rédaction', dur:'40 min', state:'Complétée', badge:'badge-green', focus:72 },
-    { date:'15/05 10h00', task:'Révision examen', dur:'30 min', state:'Complétée', badge:'badge-green', focus:65 },
-  ]
-};
+// ===== History table filter (real sessions) =====
+let progressionSessions = [];
 
 function filterHistory(period, btn) {
-  document.querySelectorAll('.history-filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) {
+    document.querySelectorAll('.history-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
   const tbody = document.getElementById('historyTableBody');
   if (!tbody) return;
-  tbody.innerHTML = historyData[period].map(r => `
-    <tr>
-      <td>${r.date}</td>
-      <td style="color:var(--text-sec);">${r.task}</td>
-      <td><span style="font-family:'Space Mono',monospace;font-size:12px;">${r.dur}</span></td>
-      <td><span class="stat-badge ${r.badge}" style="font-size:11px;">${r.state}</span></td>
-      <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:${r.focus}%"></div></div><span class="progress-pct">${r.focus}%</span></div></td>
-    </tr>`).join('');
-}
-filterHistory('week', document.querySelector('.history-filter-btn'));
 
-// ===== Init lessons & history on load =====
-renderLessons('all');
-filterHistory('week', document.querySelector('.history-filter-btn'));
+  const now = new Date();
+  const days = period === 'month' ? 30 : 7;
+  const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+  const filtered = progressionSessions.filter(s => new Date(s.started_at) >= cutoff);
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-sec);padding:24px 0;">Aucune session sur cette période.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(s => {
+    const d = new Date(s.started_at);
+    const dateStr = `${d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+    const stateLabel = s.status === 'completed' ? 'Complétée' : s.status === 'interrupted' ? 'Interrompue' : 'En cours';
+    const badge = s.status === 'completed' ? 'badge-green' : s.status === 'interrupted' ? 'badge-orange' : 'badge-violet';
+    const taskLabel = s.notes ? escapeHtml(s.notes) : 'Session de focus';
+    const focusCell = s.focus_score != null
+      ? `<div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:${s.focus_score}%"></div></div><span class="progress-pct">${s.focus_score}%</span></div>`
+      : '—';
+    return `<tr>
+      <td>${dateStr}</td>
+      <td style="color:var(--text-sec);">${taskLabel}</td>
+      <td><span style="font-family:'Space Mono',monospace;font-size:12px;">${s.duration_min} min</span></td>
+      <td><span class="stat-badge ${badge}" style="font-size:11px;">${stateLabel}</span></td>
+      <td>${focusCell}</td>
+    </tr>`;
+  }).join('');
+}
 
 // ===== Settings: session duration pills =====
 function selectDurationPill(btn) {
@@ -2005,13 +2102,287 @@ async function initCoach() {
   }
 }
 
+// ===== Real data: dashboard, progression & brain pages =====
+let cachedProfile = null;
+let cachedSessions = [];
+
+function computeWeekFocusData(sessions) {
+  // Mon..Sun minutes for the current week
+  const data = [0, 0, 0, 0, 0, 0, 0];
+  const now = new Date();
+  const dayIdx = (now.getDay() + 6) % 7; // Mon=0..Sun=6
+  const monday = new Date(now);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(now.getDate() - dayIdx);
+
+  sessions.forEach(s => {
+    const d = new Date(s.started_at);
+    if (d >= monday) {
+      const idx = (d.getDay() + 6) % 7;
+      data[idx] += s.duration_min;
+    }
+  });
+  return data;
+}
+
+async function refreshDashboardData() {
+  cachedSessions = await predictaGetRecentSessions(60);
+
+  // Stats: sessions this week & average focus duration
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const thisWeek = cachedSessions.filter(s => new Date(s.started_at) >= weekAgo);
+  const completedThisWeek = thisWeek.filter(s => s.status === 'completed');
+
+  const stat0 = document.getElementById('stat0');
+  if (stat0) stat0.textContent = String(thisWeek.length);
+
+  const avgFocusMin = completedThisWeek.length
+    ? Math.round(completedThisWeek.reduce((sum, s) => sum + s.duration_min, 0) / completedThisWeek.length)
+    : 0;
+  const stat1 = document.getElementById('stat1');
+  if (stat1) stat1.textContent = `${avgFocusMin} min`;
+
+  // Recent sessions table
+  const recentBody = document.getElementById('recentSessionsBody');
+  if (recentBody) {
+    if (!cachedSessions.length) {
+      recentBody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-sec);padding:24px 0;">Aucune session pour l'instant. Lance ta première session !</td></tr>`;
+    } else {
+      recentBody.innerHTML = cachedSessions.slice(0, 5).map(s => {
+        const d = new Date(s.started_at);
+        const dateStr = `${d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+        const stateLabel = s.status === 'completed' ? 'Complétée' : s.status === 'interrupted' ? 'Interrompue' : 'En cours';
+        const badge = s.status === 'completed' ? 'badge-green' : s.status === 'interrupted' ? 'badge-orange' : 'badge-violet';
+        const focusCell = s.focus_score != null
+          ? `<div class="progress-cell"><div class="progress-bar"><div class="progress-fill" style="width:${s.focus_score}%"></div></div><span class="progress-pct">${s.focus_score}%</span></div>`
+          : '—';
+        return `<tr>
+          <td>${dateStr}</td>
+          <td><span style="font-family:'Space Mono',monospace;font-size:12px;">${s.duration_min} min</span></td>
+          <td><span class="stat-badge ${badge}" style="font-size:11px;">${stateLabel}</span></td>
+          <td>${focusCell}</td>
+        </tr>`;
+      }).join('');
+    }
+  }
+
+  // Focus chart (this week)
+  const weekData = computeWeekFocusData(cachedSessions);
+  drawFocusChart(weekData);
+  const weekTotal = weekData.reduce((a, b) => a + b, 0);
+  const badgeEl = document.getElementById('focusChartBadge');
+  if (badgeEl) {
+    if (weekTotal > 0) {
+      badgeEl.style.display = '';
+      badgeEl.textContent = `${weekTotal} min cette semaine`;
+    } else {
+      badgeEl.style.display = 'none';
+    }
+  }
+}
+
+// ===== Progression page =====
+async function renderProgression() {
+  progressionSessions = cachedSessions.length ? cachedSessions : await predictaGetRecentSessions(60);
+  const chronological = [...progressionSessions].reverse(); // oldest first
+
+  const avgDur = arr => arr.length ? Math.round(arr.reduce((s, x) => s + x.duration_min, 0) / arr.length) : 0;
+  const beforeVal = avgDur(chronological.slice(0, Math.min(3, chronological.length)));
+  const afterVal = avgDur(chronological.slice(-Math.min(3, chronological.length)));
+
+  document.getElementById('progBeforeVal').innerHTML = `${beforeVal} <span style="font-size:20px;">min</span>`;
+  document.getElementById('progAfterVal').innerHTML = `${afterVal} <span style="font-size:20px;">min</span>`;
+
+  const deltaBadge = document.getElementById('progDeltaBadge');
+  if (chronological.length < 2) {
+    deltaBadge.style.display = 'none';
+  } else {
+    const pct = beforeVal > 0 ? Math.round(((afterVal - beforeVal) / beforeVal) * 100) : (afterVal > 0 ? 100 : 0);
+    deltaBadge.style.display = '';
+    deltaBadge.textContent = `${pct >= 0 ? '+' : ''}${pct}% depuis le début`;
+    deltaBadge.className = `stat-badge ${pct >= 0 ? 'badge-green' : 'badge-orange'}`;
+  }
+
+  // 30-day chart
+  const now = new Date();
+  const days = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(now);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(now.getDate() - i);
+    days.push(d);
+  }
+  const dayTotals = days.map(d => {
+    const next = new Date(d);
+    next.setDate(d.getDate() + 1);
+    return progressionSessions
+      .filter(s => { const sd = new Date(s.started_at); return sd >= d && sd < next; })
+      .reduce((sum, s) => sum + s.duration_min, 0);
+  });
+  drawProgChart(dayTotals);
+
+  // Weekly report
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const weekSessions = progressionSessions.filter(s => new Date(s.started_at) >= weekAgo);
+  const weekCompleted = weekSessions.filter(s => s.status === 'completed');
+  const totalMin = weekSessions.reduce((s, x) => s + x.duration_min, 0);
+
+  document.getElementById('progWeekSessions').textContent = String(weekSessions.length);
+  document.getElementById('progWeekFocusTotal').textContent = `${Math.floor(totalMin / 60)}h ${totalMin % 60}m`;
+  document.getElementById('progWeekCompletion').textContent = weekSessions.length
+    ? `${Math.round((weekCompleted.length / weekSessions.length) * 100)}%`
+    : '0%';
+
+  const lessonsThisWeek = Object.values(lessonProgressMap).filter(
+    p => p.status === 'done' && p.completed_at && new Date(p.completed_at) >= weekAgo
+  ).length;
+  document.getElementById('progWeekLessons').textContent = String(lessonsThisWeek);
+
+  // History table
+  const activeBtn = document.querySelector('.history-filter-btn.active') || document.querySelector('.history-filter-btn');
+  filterHistory(activeBtn?.dataset.period || 'week', null);
+}
+
+// ===== Brain page =====
+const radarAxes = ['concentration', 'memoire', 'regulation', 'regularite', 'recuperation'];
+
+function updateRadar(values) {
+  const center = 170, centerY = 155, maxR = 88;
+  const points = radarAxes.map((key, i) => {
+    const pct = Math.max(0, Math.min(100, values[key] || 0));
+    const r = (pct / 100) * maxR;
+    const angle = (i * 72) * Math.PI / 180; // 0=top, clockwise
+    const x = center + r * Math.sin(angle);
+    const y = centerY - r * Math.cos(angle);
+    return { x, y, pct };
+  });
+
+  const polygon = document.getElementById('radarPolygon');
+  if (polygon) polygon.setAttribute('points', points.map(p => `${p.x},${p.y}`).join(' '));
+
+  points.forEach((p, i) => {
+    const dot = document.getElementById(`radarDot${i}`);
+    if (dot) { dot.setAttribute('cx', p.x); dot.setAttribute('cy', p.y); }
+    const pctEl = document.getElementById(`radarPct${i}`);
+    if (pctEl) pctEl.textContent = `${Math.round(p.pct)}%`;
+  });
+}
+
+async function renderBrainPage() {
+  const brain = await predictaGetLatestBrainMetrics();
+
+  const note = document.getElementById('radarNote');
+  if (brain) {
+    updateRadar({
+      concentration: brain.concentration,
+      memoire: brain.memoire,
+      regulation: brain.regulation,
+      regularite: brain.regularite,
+      recuperation: brain.recuperation,
+    });
+    if (note) note.textContent = 'Radar de tes 5 axes clés';
+  } else {
+    updateRadar({ concentration: 0, memoire: 0, regulation: 0, regularite: 0, recuperation: 0 });
+    if (note) note.textContent = 'Complète quelques sessions pour débloquer ton profil cognitif';
+  }
+
+  // Heatmap from real sessions (last 4 weeks, Mon..Sun)
+  const sessions = cachedSessions.length ? cachedSessions : await predictaGetRecentSessions(60);
+  const now = new Date();
+  const dayIdx = (now.getDay() + 6) % 7;
+  const thisMonday = new Date(now);
+  thisMonday.setHours(0, 0, 0, 0);
+  thisMonday.setDate(now.getDate() - dayIdx);
+
+  const grid = [[0,0,0,0,0,0,0],[0,0,0,0,0,0,0],[0,0,0,0,0,0,0],[0,0,0,0,0,0,0]];
+  sessions.forEach(s => {
+    const d = new Date(s.started_at);
+    const diffDays = Math.floor((thisMonday - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 86400000);
+    const weekIdx = 3 - Math.floor(diffDays / 7); // 3 = this week
+    const dayOfWeek = (d.getDay() + 6) % 7;
+    if (weekIdx >= 0 && weekIdx <= 3) {
+      grid[weekIdx][dayOfWeek] += s.duration_min;
+    }
+  });
+  buildHeatmap(grid);
+
+  // Patterns / saboteurs (only show insights once there's enough data)
+  const patternsList = document.getElementById('patternsList');
+  const saboteursList = document.getElementById('saboteursList');
+  const completedSessions = sessions.filter(s => s.status === 'completed');
+
+  if (patternsList) {
+    if (completedSessions.length >= 5) {
+      const totalMin = completedSessions.reduce((s, x) => s + x.duration_min, 0);
+      const avgMin = Math.round(totalMin / completedSessions.length);
+      patternsList.innerHTML = `
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
+          <span style="font-size:18px;">🔵</span>
+          <div style="font-size:13px;color:var(--text);line-height:1.5;">Durée moyenne de session : <strong>${avgMin} min</strong> sur ${completedSessions.length} sessions complétées.</div>
+        </div>`;
+    } else {
+      patternsList.innerHTML = `
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
+          <span style="font-size:18px;">💡</span>
+          <div style="font-size:13px;color:var(--text);line-height:1.5;">Complète quelques sessions pour que Prédicta détecte tes patterns de focus.</div>
+        </div>`;
+    }
+  }
+
+  if (saboteursList) {
+    const interrupted = sessions.filter(s => s.status === 'interrupted');
+    if (sessions.length >= 5 && interrupted.length > 0) {
+      const rate = Math.round((interrupted.length / sessions.length) * 100);
+      saboteursList.innerHTML = `
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--error-light);border-radius:12px;border:1px solid rgba(220,38,38,0.15);">
+          <span style="font-size:18px;">⚠️</span>
+          <div style="font-size:13px;color:var(--error);line-height:1.5;font-weight:500;">${rate}% de tes sessions sont interrompues avant la fin.</div>
+        </div>`;
+    } else {
+      saboteursList.innerHTML = `
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
+          <span style="font-size:18px;">💡</span>
+          <div style="font-size:13px;color:var(--text);line-height:1.5;">Pas encore assez de données pour identifier des saboteurs.</div>
+        </div>`;
+    }
+  }
+
+  // Phase header
+  const completedLessons = Object.values(lessonProgressMap).filter(p => p.status === 'done').length;
+  const phase = cachedProfile?.phase || 'Phase 1 — Découverte';
+  const [phaseNum, phaseName] = phase.split('—').map(s => s.trim());
+  const pct = Math.round((completedLessons / lessonOrder.length) * 100);
+  const day = Math.min(30, completedLessons + 1);
+
+  document.getElementById('brainPhaseTitle').textContent = phase;
+  document.getElementById('brainPhaseSub').textContent = `Jour ${day} sur 30 · ${phaseName || 'Découverte'}`;
+  document.getElementById('brainPhaseFill').style.width = `${pct}%`;
+  document.getElementById('brainPhaseDayBadge').textContent = `J${day}/30`;
+  document.getElementById('brainPhasePercentBadge').textContent = `${pct}%`;
+}
+
 // ===== Auth bootstrap =====
 async function initDashboard() {
   const session = await predictaRequireAuth();
   if (!session) return; // redirected to landing page
 
-  const profile = await predictaGetProfile();
-  const displayName = profile?.display_name || session.user.email.split('@')[0];
+  let profile = await predictaGetProfile();
+
+  // Self-heal display name: if the profile still has the email-prefix
+  // default but the user provided a real name at signup, use that.
+  const metaName = (session.user.user_metadata?.display_name || '').trim();
+  const emailPrefix = session.user.email.split('@')[0];
+  if (profile && metaName && profile.display_name === emailPrefix && metaName !== emailPrefix) {
+    try {
+      profile = await predictaUpdateProfile({ display_name: metaName });
+    } catch (err) {
+      console.error('[predicta] display name self-heal error', err.message);
+    }
+  }
+
+  cachedProfile = profile;
+  const displayName = profile?.display_name || metaName || emailPrefix;
 
   document.getElementById('sidebarUserName').textContent = displayName;
   document.getElementById('sidebarUserPhase').textContent = profile?.phase || 'Phase 1 — Découverte';
@@ -2030,7 +2401,18 @@ async function initDashboard() {
     if (notifEl && profile.notifications_enabled === false) toggleSwitch(notifEl);
   }
 
-  setTimeout(() => showToast(`Bienvenue ${displayName} ! Ton focus monte en Phase 2 🧠`, 'success'), 1200);
+  // Phase stat card
+  const phase = profile?.phase || 'Phase 1 — Découverte';
+  const [phaseNum, phaseName] = phase.split('—').map(s => s.trim());
+  const stat3 = document.getElementById('stat3');
+  const stat3Badge = document.getElementById('stat3Badge');
+  if (stat3) stat3.textContent = phaseNum || 'Phase 1';
+  if (stat3Badge) stat3Badge.textContent = phaseName || 'Découverte';
+
+  await loadLessonProgress();
+  await refreshDashboardData();
+
+  setTimeout(() => showToast(`Bienvenue ${displayName} !`, 'success'), 1200);
 
   initCoach();
 }

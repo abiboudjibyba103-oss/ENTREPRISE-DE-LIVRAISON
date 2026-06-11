@@ -233,6 +233,28 @@ async function predictaGetLatestBrainMetrics() {
 }
 
 /**
+ * Loads the current user's most recent sessions (default: last 30),
+ * most recent first.
+ */
+async function predictaGetRecentSessions(limit = 30) {
+  const session = await predictaGetSession();
+  if (!session) return [];
+
+  const { data, error } = await supabaseClient
+    .from('sessions')
+    .select('id, duration_min, focus_score, status, started_at, ended_at, notes')
+    .eq('user_id', session.user.id)
+    .order('started_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('[predicta] getRecentSessions error', error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+/**
  * Records a completed work session for the current user.
  * `durationMin` and `focusScore` are validated client-side as a
  * first line of defense, but the authoritative checks are the
