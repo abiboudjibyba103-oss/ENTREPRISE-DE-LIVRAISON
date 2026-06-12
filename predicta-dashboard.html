@@ -715,25 +715,12 @@
           <div class="card-title">Message du Coach</div>
           <div class="card-sub" style="margin-bottom:16px;">Personnalisé pour toi</div>
           <div class="coach-header">
-            <div class="coach-avatar">
-              <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                <path d="M6 16C6 11.58 9.58 8 14 8C18.42 8 22 11.58 22 16V22L20 21L18 22L16 21L14 22L12 21L10 22L8 21L6 22V16Z" fill="white" opacity="0.95"/>
-                <circle cx="11" cy="15.5" r="1.8" fill="#6C5CE7"/>
-                <circle cx="17" cy="15.5" r="1.8" fill="#6C5CE7"/>
-                <circle cx="11.6" cy="14.9" r="0.6" fill="white"/>
-                <circle cx="17.6" cy="14.9" r="0.6" fill="white"/>
-              </svg>
-            </div>
             <div>
               <div class="coach-label">Coach Prédicta</div>
               <div class="coach-name">Aujourd'hui</div>
             </div>
           </div>
-          <div class="coach-chat" id="coachChat">
-            <div class="coach-bubble ai">
-              "Abibou. Ton focus moyen a progressé de 8 minutes ce mois. Ton meilleur moment reste le mardi matin. Protège cette plage cette semaine."
-            </div>
-          </div>
+          <div class="coach-chat" id="coachChat"></div>
           <div class="coach-input-row">
             <input type="text" class="coach-input" id="coachInput" placeholder="Pose une question à ton coach..." maxlength="500" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCoachMessage();}">
             <button class="coach-send-btn" id="coachSendBtn" onclick="sendCoachMessage()" aria-label="Envoyer">
@@ -805,23 +792,11 @@
       <!-- Insights Row -->
       <div style="margin-bottom:8px;">
         <div class="card-title" style="margin-bottom:16px;">Insights du Coach</div>
-        <div class="insights-grid">
+        <div class="insights-grid" id="insightsGrid">
           <div class="insight-card">
             <div style="display:flex;align-items:flex-start;gap:10px;">
               <span class="insight-dot" style="margin-top:5px;flex-shrink:0;"></span>
-              <div class="insight-text">Ton pic cognitif est le mardi entre 8h et 10h. Protège cette plage et réserve-la à ta tâche la plus difficile.</div>
-            </div>
-          </div>
-          <div class="insight-card orange">
-            <div style="display:flex;align-items:flex-start;gap:10px;">
-              <span class="insight-dot orange" style="margin-top:5px;flex-shrink:0;"></span>
-              <div class="insight-text">Tu décroches souvent après 35 minutes. Essaie des sessions de 30 min cette semaine — qualité avant durée.</div>
-            </div>
-          </div>
-          <div class="insight-card green">
-            <div style="display:flex;align-items:flex-start;gap:10px;">
-              <span class="insight-dot green" style="margin-top:5px;flex-shrink:0;"></span>
-              <div class="insight-text">3 sessions complétées cette semaine. Tu es dans la Phase 2 — les patterns cognitifs émergent.</div>
+              <div class="insight-text">Lance ta première session pour commencer à recevoir des insights personnalisés.</div>
             </div>
           </div>
         </div>
@@ -1219,7 +1194,7 @@
           <button class="btn-full" onclick="saveSettings()">Enregistrer les modifications</button>
         </div>
       </div>
-      <div class="card" style="max-width:600px;">
+      <div class="card" style="max-width:600px;margin-bottom:20px;">
         <div class="card-title" style="margin-bottom:16px;">Abonnement</div>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--violet-light);border-radius:14px;border:1.5px solid var(--violet);">
           <div>
@@ -1228,6 +1203,9 @@
           </div>
           <div class="stat-badge badge-violet">Actif</div>
         </div>
+      </div>
+      <div class="card" style="max-width:600px;">
+        <button class="btn-danger" style="width:100%;" onclick="predictaSignOut()">Se déconnecter</button>
       </div>
     </div><!-- /page-settings -->
 
@@ -1274,6 +1252,7 @@ function navigate(pageId, navEl) {
   }
   if (pageId === 'progression') renderProgression();
   if (pageId === 'brain') renderBrainPage();
+  if (pageId === 'settings') populateSettingsPage();
 }
 
 // ===== Mobile Sidebar =====
@@ -1743,7 +1722,9 @@ const lessonMap = Object.fromEntries(allLessons.map(l => [l.id, l]));
 // ===== Lesson progress (real data, one lesson per day) =====
 const lessonOrder = allLessons.map(l => l.id);
 let lessonProgressMap = {};
-let lessonStates = {};
+// Default state until real progress loads: the first lesson is always
+// available for a brand-new user, everything else stays locked.
+let lessonStates = { [lessonOrder[0]]: 'available' };
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
@@ -1773,6 +1754,14 @@ async function loadLessonProgress() {
   computeLessonStates();
   updateLessonStats();
   updateNextLessonCard();
+
+  // If the user already navigated to the lessons page before this
+  // resolved, re-render it now with the real lesson states.
+  const lessonsPage = document.getElementById('page-lessons');
+  if (lessonsPage && lessonsPage.classList.contains('active')) {
+    const activeTab = document.querySelector('#themeTabs .theme-tab.active');
+    renderLessons(activeTab ? activeTab.dataset.filter : 'all');
+  }
 }
 
 function updateLessonStats() {
@@ -1996,8 +1985,13 @@ async function saveSettings() {
   const notifEl = document.getElementById('toggleNotif');
   const notificationsEnabled = notifEl ? notifEl.dataset.on !== 'false' : true;
 
+  if (!displayName) {
+    showToast('Le nom d\'affichage ne peut pas être vide', 'error');
+    return;
+  }
+
   try {
-    await predictaUpdateProfile({
+    cachedProfile = await predictaUpdateProfile({
       display_name: displayName,
       default_session_minutes: defaultMinutes,
       notifications_enabled: notificationsEnabled,
@@ -2007,7 +2001,7 @@ async function saveSettings() {
     showToast('Paramètres sauvegardés !', 'success');
   } catch (err) {
     console.error('[predicta] saveSettings error', err.message);
-    showToast('Erreur lors de la sauvegarde', 'error');
+    showToast(`Erreur lors de la sauvegarde : ${err.message}`, 'error');
   }
 }
 
@@ -2098,13 +2092,37 @@ async function initCoach() {
   } catch (err) {
     console.error('[predicta] coach init error', err.message);
     removeCoachTyping();
-    // Keep the default static message on error
+    document.getElementById('coachChat').innerHTML = '';
+    addCoachBubble('ai', "Le coach est momentanément indisponible. Réessaie un peu plus tard, ou pose-lui une question ci-dessous.");
   }
 }
 
 // ===== Real data: dashboard, progression & brain pages =====
 let cachedProfile = null;
+let cachedSession = null;
 let cachedSessions = [];
+
+// ===== Settings page: keep fields in sync with real account data =====
+function populateSettingsPage() {
+  if (!cachedSession) return;
+  const settingsName = document.getElementById('settingsDisplayName');
+  const settingsEmail = document.getElementById('settingsEmail');
+  const displayName = cachedProfile?.display_name || cachedSession.user.email.split('@')[0];
+  if (settingsName) settingsName.value = displayName;
+  if (settingsEmail) settingsEmail.value = cachedSession.user.email;
+
+  if (cachedProfile) {
+    const pill = document.querySelector(`#settingsDurationPills .pill-btn[data-duration="${cachedProfile.default_session_minutes}"]`);
+    if (pill) selectDurationPill(pill);
+
+    const notifEl = document.getElementById('toggleNotif');
+    if (notifEl) {
+      const shouldBeOn = cachedProfile.notifications_enabled !== false;
+      const isOn = notifEl.dataset.on !== 'false';
+      if (shouldBeOn !== isOn) toggleSwitch(notifEl);
+    }
+  }
+}
 
 function computeWeekFocusData(sessions) {
   // Mon..Sun minutes for the current week
@@ -2180,6 +2198,64 @@ async function refreshDashboardData() {
       badgeEl.style.display = 'none';
     }
   }
+
+  updateInsights();
+}
+
+// ===== Insights du Coach (real data) =====
+function updateInsights() {
+  const grid = document.getElementById('insightsGrid');
+  if (!grid) return;
+
+  const sessions = cachedSessions;
+  const completed = sessions.filter(s => s.status === 'completed');
+  const insights = [];
+
+  if (sessions.length === 0) {
+    insights.push({ color: '', text: 'Lance ta première session pour commencer à recevoir des insights personnalisés du coach.' });
+  } else {
+    if (completed.length >= 3) {
+      const byDay = {};
+      completed.forEach(s => {
+        const d = new Date(s.started_at);
+        const key = d.toLocaleDateString('fr-FR', { weekday: 'long' });
+        if (!byDay[key]) byDay[key] = { total: 0, count: 0 };
+        byDay[key].total += s.focus_score != null ? s.focus_score : s.duration_min;
+        byDay[key].count += 1;
+      });
+      let bestDay = null, bestAvg = -1;
+      for (const [day, v] of Object.entries(byDay)) {
+        const avg = v.total / v.count;
+        if (avg > bestAvg) { bestAvg = avg; bestDay = day; }
+      }
+      if (bestDay) {
+        insights.push({ color: '', text: `Ton meilleur jour pour te concentrer semble être le ${bestDay}. Essaie d'y réserver ta tâche la plus exigeante.` });
+      }
+    }
+
+    const interrupted = sessions.filter(s => s.status === 'interrupted');
+    if (sessions.length >= 3 && interrupted.length > 0) {
+      const rate = Math.round((interrupted.length / sessions.length) * 100);
+      insights.push({ color: 'orange', text: `${rate}% de tes sessions sont interrompues avant la fin. Essaie des durées plus courtes — qualité avant durée.` });
+    }
+
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thisWeekCompleted = completed.filter(s => new Date(s.started_at) >= weekAgo);
+    const phase = cachedProfile?.phase || 'Phase 1 — Découverte';
+    insights.push({
+      color: 'green',
+      text: `${thisWeekCompleted.length} session${thisWeekCompleted.length === 1 ? '' : 's'} complétée${thisWeekCompleted.length === 1 ? '' : 's'} cette semaine. Tu es en ${phase}.`,
+    });
+  }
+
+  grid.innerHTML = insights.slice(0, 3).map(ins => `
+    <div class="insight-card ${ins.color}">
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <span class="insight-dot ${ins.color}" style="margin-top:5px;flex-shrink:0;"></span>
+        <div class="insight-text">${ins.text}</div>
+      </div>
+    </div>`).join('');
 }
 
 // ===== Progression page =====
@@ -2366,6 +2442,7 @@ async function renderBrainPage() {
 async function initDashboard() {
   const session = await predictaRequireAuth();
   if (!session) return; // redirected to landing page
+  cachedSession = session;
 
   let profile = await predictaGetProfile();
 
