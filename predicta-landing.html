@@ -442,102 +442,6 @@
     .step-card p { font-size: 13px; color: var(--text-sec); margin: 0; }
 
     /* =============================================
-       FEATURES GRID
-    ============================================= */
-    #features { padding: 100px 0; background: #fff; }
-    .features-header { text-align: center; max-width: 580px; margin: 0 auto 64px; }
-    .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; }
-    .feature-card {
-      border-radius: var(--radius); padding: 36px;
-      background: var(--bg); border: 1px solid var(--border);
-      display: flex; flex-direction: column;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      overflow: hidden;
-    }
-    .feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
-    .feature-card-header {
-      display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
-    }
-    .feature-icon-wrap {
-      width: 48px; height: 48px; border-radius: 14px;
-      background: var(--violet-light); display: flex;
-      align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .feature-card h3 {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-weight: 700; font-size: 18px;
-    }
-    .feature-card p { color: var(--text-sec); font-size: 14px; line-height: 1.7; margin-bottom: 24px; }
-    .mini-preview {
-      margin-top: auto; border-radius: 14px;
-      background: #fff; border: 1px solid var(--border);
-      padding: 16px; min-height: 100px; position: relative; overflow: hidden;
-    }
-
-    /* Mini Timer */
-    .mini-timer { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100px; gap: 8px; }
-    .timer-display {
-      font-family: 'Space Mono', monospace; font-size: 28px;
-      font-weight: 700; color: var(--violet);
-    }
-    .timer-bar { width: 100%; height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; }
-    .timer-fill {
-      height: 100%; width: 0%; background: linear-gradient(90deg, var(--violet), var(--orange));
-      border-radius: 4px; animation: timer-grow 25s linear infinite;
-    }
-    @keyframes timer-grow { 0% { width: 0%; } 100% { width: 100%; } }
-    .timer-label { font-size: 11px; color: var(--text-sec); font-weight: 500; }
-
-    /* Mini Chat */
-    .mini-chat { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
-    .chat-bubble {
-      padding: 8px 12px; border-radius: 12px;
-      font-size: 12px; line-height: 1.5; max-width: 80%;
-      animation: bubble-in 0.5s ease forwards; opacity: 0;
-    }
-    .chat-bubble.ai { background: var(--violet-light); color: var(--violet); align-self: flex-start; border-radius: 12px 12px 12px 4px; animation-delay: 0.2s; }
-    .chat-bubble.user { background: #F3F4F6; color: var(--text); align-self: flex-end; border-radius: 12px 12px 4px 12px; animation-delay: 0.8s; }
-    .chat-bubble.ai.second { animation-delay: 1.4s; }
-    @keyframes bubble-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    .chat-typing { display: flex; gap: 4px; align-items: center; padding: 8px 12px; background: var(--violet-light); border-radius: 12px 12px 12px 4px; width: fit-content; }
-    .chat-typing span { width: 6px; height: 6px; background: var(--violet); border-radius: 50%; animation: typing-bounce 1.2s ease-in-out infinite; }
-    .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
-    .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes typing-bounce { 0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }
-
-    /* Mini Lesson */
-    .mini-lesson-card {
-      height: 96px; position: relative; perspective: 600px;
-      cursor: pointer;
-    }
-    .mini-lesson-inner {
-      position: absolute; inset: 0; transform-style: preserve-3d;
-      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .mini-lesson-card:hover .mini-lesson-inner { transform: rotateY(180deg); }
-    .mini-lesson-front, .mini-lesson-back {
-      position: absolute; inset: 0; backface-visibility: hidden;
-      border-radius: 10px; display: flex; flex-direction: column;
-      justify-content: center; padding: 12px;
-    }
-    .mini-lesson-front { background: linear-gradient(135deg, var(--violet-light), #F5F3FF); }
-    .mini-lesson-back { background: linear-gradient(135deg, #FFF7ED, #FEF3C7); transform: rotateY(180deg); }
-    .mini-lesson-front .lesson-num { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--violet); font-weight: 700; }
-    .mini-lesson-front .lesson-title { font-size: 13px; font-weight: 700; color: var(--text); margin-top: 6px; }
-    .mini-lesson-front .flip-hint { font-size: 10px; color: var(--text-sec); margin-top: 4px; }
-    .mini-lesson-back p { font-size: 12px; color: var(--text-sec); line-height: 1.5; }
-
-    /* Mini Chart */
-    .mini-chart { height: 96px; display: flex; align-items: flex-end; gap: 6px; padding-top: 8px; }
-    .chart-bar {
-      flex: 1; border-radius: 4px 4px 0 0;
-      background: linear-gradient(to top, var(--violet), #A78BFA);
-      animation: bar-grow 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-      transform-origin: bottom; transform: scaleY(0);
-    }
-    @keyframes bar-grow { to { transform: scaleY(1); } }
-
-    /* =============================================
        MICRO-LESSONS
     ============================================= */
     #micro-lessons {
@@ -795,7 +699,6 @@
       .brain-ring-2 { width: 220px; height: 220px; }
       .brain-ring-3 { width: 160px; height: 160px; }
       .pillars-grid { grid-template-columns: 1fr; }
-      .features-grid { grid-template-columns: 1fr; }
       .steps-wrapper { grid-template-columns: 1fr; }
       .step-connector { display: none; }
       .timeline-track { grid-template-columns: 1fr; }
@@ -807,7 +710,7 @@
       .section-title { font-size: clamp(26px, 6vw, 36px) !important; }
       .section-subtitle { font-size: 15px !important; }
       .hero-subtitle { font-size: 16px; }
-      .problem-card p, .pillar-card p, .feature-card p, .step p, .phase-desc { font-size: 14px; line-height: 1.75; }
+      .problem-card p, .pillar-card p, .step p, .phase-desc { font-size: 14px; line-height: 1.75; }
       section { padding: 72px 0; }
     }
   </style>
@@ -1022,7 +925,7 @@
           <span style="font-size:12px;font-weight:700;color:var(--orange);">30 secondes</span>
         </div>
         <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:6px;letter-spacing:0.01em;">07h30 — Check-in matin</div>
-        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:10px;color:var(--text);">Prédicta te prend le pouls</h3>
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:10px;color:var(--text);">Check-in cognitif quotidien</h3>
         <p style="font-size:14px;color:var(--text-sec);line-height:1.75;margin-bottom:16px;">Prédicta te pose une question. Ton état du jour : Affûté, Neutre, ou Chargé. En fonction de ta réponse, il adapte ton programme.</p>
         <div style="background:var(--violet-light);border-radius:12px;height:72px;display:flex;align-items:center;justify-content:center;gap:8px;">
           <span style="background:#fff;color:var(--violet);font-size:12px;font-weight:700;padding:6px 12px;border-radius:20px;border:1.5px solid rgba(108,92,231,0.25);">⚡ Affûté</span>
@@ -1037,7 +940,7 @@
           <span style="font-size:12px;font-weight:700;color:var(--orange);">45 min</span>
         </div>
         <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:6px;letter-spacing:0.01em;">08h00 — Tu lances ta session</div>
-        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:10px;color:var(--text);">Le timer démarre</h3>
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:10px;color:var(--text);">Session quotidienne calibrée</h3>
         <p style="font-size:14px;color:var(--text-sec);line-height:1.75;margin-bottom:16px;">Tu définis ta tâche. Le timer démarre. Prédicta bloque les distractions et t'envoie un message vocal de lancement. Ton cerveau sait ce qu'il doit faire.</p>
         <div style="background:#F5F3FF;border-radius:12px;height:72px;display:flex;align-items:center;justify-content:center;gap:16px;">
           <svg width="44" height="44" viewBox="0 0 44 44">
@@ -1054,7 +957,7 @@
           <span style="font-size:12px;font-weight:700;color:var(--orange);">automatique</span>
         </div>
         <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:6px;letter-spacing:0.01em;">08h47 — Le coach analyse</div>
-        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:10px;color:var(--text);">Mesure silencieuse</h3>
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:10px;color:var(--text);">Prédictions personnalisées en arrière-plan</h3>
         <p style="font-size:14px;color:var(--text-sec);line-height:1.75;margin-bottom:16px;">Session terminée. Prédicta mesure ta durée réelle, ton niveau de décrochage, compare avec tes sessions précédentes. Il prépare son feedback.</p>
         <div style="background:#F5F3FF;border-radius:12px;height:72px;display:flex;align-items:flex-end;justify-content:center;gap:5px;padding:10px 16px;">
           <div style="flex:1;border-radius:3px 3px 0 0;background:linear-gradient(to top,#6C5CE7,#A78BFA);height:40%;"></div>
@@ -1071,7 +974,7 @@
           <span style="font-size:12px;font-weight:700;color:var(--orange);">vocal</span>
         </div>
         <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:6px;letter-spacing:0.01em;">09h00 — Message vocal personnalisé</div>
-        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:10px;color:var(--text);">Le coach te parle</h3>
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:10px;color:var(--text);">Coach IA cognitif</h3>
         <p style="font-size:14px;color:var(--text-sec);line-height:1.75;margin-bottom:16px;">Pas un message générique — un message basé sur TES données du jour. "Abibou. Tu as tenu 47 minutes. C'est ton record de la semaine."</p>
         <div style="background:#F5F3FF;border-radius:12px;height:72px;display:flex;align-items:center;padding:0 16px;gap:12px;">
           <div style="width:36px;height:36px;background:var(--violet);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -1093,7 +996,7 @@
           <span style="font-size:12px;font-weight:700;color:var(--orange);">2 min</span>
         </div>
         <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:6px;letter-spacing:0.01em;">19h00 — Micro-leçon du soir</div>
-        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:10px;color:var(--text);">La science explique ton comportement</h3>
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:10px;color:var(--text);">Micro-leçon scientifique du soir</h3>
         <p style="font-size:14px;color:var(--text-sec);line-height:1.75;margin-bottom:16px;">Une leçon tirée de ta journée. Si tu as décroché à 30 min, tu apprends pourquoi le coût de transition coûte 23 minutes. La science explique TON comportement.</p>
         <div style="background:linear-gradient(135deg,var(--violet-light),#F5F3FF);border-radius:12px;height:72px;display:flex;align-items:center;padding:0 16px;gap:12px;">
           <div style="flex:1;">
@@ -1176,110 +1079,6 @@
     </div>
   </div>
 </section>
-
-<!-- =============================================
-     FEATURES GRID
-============================================= -->
-<section id="features">
-  <div class="container">
-    <div class="features-header fade-up">
-      <span class="section-tag">Fonctionnalités</span>
-      <h2 class="section-title" style="font-size:clamp(32px,4vw,48px);margin-bottom:16px;">Tout ce dont ton cerveau<br>a besoin</h2>
-      <p class="section-subtitle">Des outils conçus pour le long terme, pas pour la motivation du lundi matin.</p>
-    </div>
-    <div class="features-grid">
-
-      <!-- Feature 1: Timer -->
-      <div class="feature-card fade-up stagger-1">
-        <div class="feature-card-header">
-          <div class="feature-icon-wrap">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
-          <h3>Sessions quotidiennes</h3>
-        </div>
-        <p>Un timer qui apprend ta cadence naturelle. Pas de Pomodoro générique — des sessions calibrées sur ton cerveau.</p>
-        <div class="mini-preview">
-          <div class="mini-timer">
-            <div class="timer-display" id="timer-display">25:00</div>
-            <div class="timer-bar"><div class="timer-fill"></div></div>
-            <div class="timer-label">Deep Work · Session 3/5 aujourd'hui</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Feature 2: Coach IA -->
-      <div class="feature-card fade-up stagger-2">
-        <div class="feature-card-header">
-          <div class="feature-icon-wrap">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          </div>
-          <h3>Coach IA cognitif</h3>
-        </div>
-        <p>Un coach qui te connaît vraiment. Il répond en fonction de TON profil — pas de réponses génériques.</p>
-        <div class="mini-preview" style="padding:12px;">
-          <div class="mini-chat">
-            <div class="chat-bubble ai">Ton énergie cognitive est haute ce matin. C'est le moment pour la tâche difficile. 🧠</div>
-            <div class="chat-bubble user">J'ai du mal à commencer...</div>
-            <div class="chat-bubble ai second">Normal. Commence par 5 minutes. Ton cerveau prendra le relais.</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Feature 3: Micro-leçons -->
-      <div class="feature-card fade-up stagger-3">
-        <div class="feature-card-header">
-          <div class="feature-icon-wrap">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-          </div>
-          <h3>30 Micro-leçons scientifiques</h3>
-        </div>
-        <p>2 minutes. Un concept neuroscientifique réel. Une application concrète pour ta journée.</p>
-        <div class="mini-preview" style="padding:0;">
-          <div class="mini-lesson-card" style="margin:0;height:100px;">
-            <div class="mini-lesson-inner">
-              <div class="mini-lesson-front">
-                <div class="lesson-num">LEÇON A1</div>
-                <div class="lesson-title">L'attention n'est pas infinie</div>
-                <div class="flip-hint">Survoler pour voir →</div>
-              </div>
-              <div class="mini-lesson-back">
-                <p>Roy Baumeister : l'ego depletion explique pourquoi tu cèdes le soir. Gère ton capital attentionnel.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Feature 4: Prédictions -->
-      <div class="feature-card fade-up stagger-4">
-        <div class="feature-card-header">
-          <div class="feature-icon-wrap">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          </div>
-          <h3>Prédictions personnalisées</h3>
-        </div>
-        <p>À J30, Prédicta prédit tes patterns. À J90, il anticipe avant que tu sentes le problème.</p>
-        <div class="mini-preview">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <span style="font-size:11px;color:var(--text-sec);">Énergie cognitive · Cette semaine</span>
-            <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--violet);font-weight:700;">J47</span>
-          </div>
-          <div class="mini-chart">
-            <div class="chart-bar" style="height:60%;animation-delay:0.1s"></div>
-            <div class="chart-bar" style="height:80%;animation-delay:0.2s"></div>
-            <div class="chart-bar" style="height:55%;animation-delay:0.3s"></div>
-            <div class="chart-bar" style="height:90%;animation-delay:0.4s"></div>
-            <div class="chart-bar" style="height:70%;animation-delay:0.5s;background:linear-gradient(to top,#EA580C,#FB923C)"></div>
-            <div class="chart-bar" style="height:85%;animation-delay:0.6s"></div>
-            <div class="chart-bar" style="height:75%;animation-delay:0.7s;opacity:0.4;border:2px dashed var(--violet);background:transparent"></div>
-          </div>
-          <div style="text-align:center;margin-top:6px;font-size:10px;color:var(--text-sec);">Creux prévu demain 16h — alerte programmée ✓</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
 
 <!-- =============================================
      JOURNEY
@@ -1610,19 +1409,6 @@
     });
   }, { threshold: 0.2 });
   if (timelineTrack) timelineObserver.observe(timelineTrack);
-
-  /* --- Timer countdown animation --- */
-  let timerSeconds = 25 * 60;
-  const timerEl = document.getElementById('timer-display');
-  if (timerEl) {
-    setInterval(() => {
-      timerSeconds = Math.max(0, timerSeconds - 1);
-      if (timerSeconds === 0) timerSeconds = 25 * 60;
-      const m = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
-      const s = (timerSeconds % 60).toString().padStart(2, '0');
-      timerEl.textContent = `${m}:${s}`;
-    }, 1000);
-  }
 
   /* --- Magnetic button effect --- */
   document.querySelectorAll('.magnetic').forEach(el => {
