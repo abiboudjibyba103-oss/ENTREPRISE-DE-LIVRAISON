@@ -1,27 +1,14 @@
-# LivrExpress 2 — Landing Page
+# Prédicta
 
-Prototype généré automatiquement pour la landing page cinématographique "LivrExpress 2" (Preset: Signal Brutaliste).
-
-Instructions rapides:
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Run dev server:
-
-```bash
-npm run dev
-```
-
-Stack: React 19, Vite, TailwindCSS 3.4.17, GSAP 3, Lucide React.
+Site statique (HTML/CSS/JS, sans build) pour Prédicta — coaching cognitif basé sur Supabase.
 
 Fichiers importants:
-- `index.html` — fonts et root.
-- `src/main.jsx` — bootstrap React.
-- `src/App.jsx` — toute l'application (composants inclus).
-- `src/index.css` — Tailwind + overlay bruit + tokens de design.
+- `index.html` — landing page.
+- `predicta-auth.html` — connexion / inscription.
+- `predicta-dashboard.html` — tableau de bord utilisateur.
+- `js/supabase-client.js` — client Supabase partagé par toutes les pages.
+- `supabase/schema.sql` — schéma de base de données, policies RLS et triggers à exécuter dans l'éditeur SQL de Supabase.
+- `supabase/functions/` — Edge Functions Supabase (coach IA, rate limiting).
 
-Remplace les images Unsplash et le logo selon tes assets.
+Aucune installation ni étape de build n'est nécessaire : ouvre `index.html`
+via un serveur statique (ou déploie le dossier sur Vercel) et c'est prêt.
