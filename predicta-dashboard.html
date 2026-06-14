@@ -2073,7 +2073,8 @@ async function sendCoachMessage() {
   } catch (err) {
     console.error('[predicta] coach chat error', err.message);
     removeCoachTyping();
-    addCoachBubble('ai', "Désolé, je n'arrive pas à répondre pour le moment. Réessaie dans un instant.");
+    const isDailyLimit = /aujourd.hui/i.test(err.message || '');
+    addCoachBubble('ai', isDailyLimit ? err.message : "Désolé, je n'arrive pas à répondre pour le moment. Réessaie dans un instant.");
   } finally {
     coachBusy = false;
     sendBtn.disabled = false;

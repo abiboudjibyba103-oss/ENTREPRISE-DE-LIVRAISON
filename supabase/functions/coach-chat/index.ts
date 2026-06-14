@@ -75,6 +75,34 @@ Deno.serve(async (req) => {
         .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_MESSAGE_LEN) }))
     : [];
 
+  // Rate limit: at most 1 coach exchange per user per day. The daily
+  // greeting (empty message + empty history) replays the latest
+  // prediction instead of calling the LLM again, so the dashboard
+  // always has something to show.
+  const startOfDay = new Date();
+  startOfDay.setUTCHours(0, 0, 0, 0);
+
+  const { data: todaysPredictions } = await supabaseAdmin
+    .from('predictions')
+    .select('prediction_text, created_at')
+    .eq('user_id', user.id)
+    .gte('created_at', startOfDay.toISOString())
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  const alreadyUsedToday = (todaysPredictions ?? []).length > 0;
+
+  if (alreadyUsedToday) {
+    if (!message) {
+      // Greeting request: just replay today's existing reply.
+      return json({ reply: todaysPredictions![0].prediction_text });
+    }
+    return json(
+      { error: 'Tu as déjà utilisé ton échange avec le coach aujourd\'hui. Reviens demain pour un nouveau message !' },
+      429
+    );
+  }
+
   // Load the user's real data to ground the coach's response.
   const [{ data: profile }, { data: sessions }, { data: brain }, { data: lessons }] = await Promise.all([
     supabaseAdmin.from('profiles').select('*').eq('id', user.id).maybeSingle(),
