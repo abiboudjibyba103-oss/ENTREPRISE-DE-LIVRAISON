@@ -317,7 +317,19 @@ async function predictaCoachChat(message, history) {
     body: { message: safeMessage, history: safeHistory },
   });
 
-  if (error) throw error;
+  if (error) {
+    // When the edge function returns a non-2xx status, supabase-js
+    // sets `error` to a generic FunctionsHttpError and leaves `data`
+    // null. The real message (e.g. the daily-limit notice) is in the
+    // response body, reachable via `error.context`.
+    let body = null;
+    try {
+      body = await error.context?.clone?.().json?.();
+    } catch (_) {
+      // ignore parse failures, fall back to the generic error
+    }
+    throw body?.error ? new Error(body.error) : error;
+  }
   if (data?.error) throw new Error(data.error);
   return { reply: data.reply, limitReached: !!data.limitReached };
 }
