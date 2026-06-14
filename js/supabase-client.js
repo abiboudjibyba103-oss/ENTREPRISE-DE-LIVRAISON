@@ -320,15 +320,15 @@ async function predictaCoachChat(message, history) {
   if (error) {
     // When the edge function returns a non-2xx status, supabase-js
     // sets `error` to a generic FunctionsHttpError and leaves `data`
-    // null. The real message (e.g. the daily-limit notice) is in the
-    // response body, reachable via `error.context`.
-    let body = null;
-    try {
-      body = await error.context?.clone?.().json?.();
-    } catch (_) {
-      // ignore parse failures, fall back to the generic error
+    // null, with the original HTTP status on `error.context.status`.
+    const status = error.context?.status;
+    if (status === 429) {
+      throw new Error("Tu as déjà posé ta question au coach aujourd'hui. Reviens demain pour une nouvelle question !");
     }
-    throw body?.error ? new Error(body.error) : error;
+    if (status === 401) {
+      throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
+    }
+    throw error;
   }
   if (data?.error) throw new Error(data.error);
   return { reply: data.reply, limitReached: !!data.limitReached };
