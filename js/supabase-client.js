@@ -313,9 +313,22 @@ async function predictaCoachChat(message, history) {
         .map((m) => ({ role: m.role, content: m.content.slice(0, 500) }))
     : [];
 
-  const { data, error } = await supabaseClient.functions.invoke('coach-chat', {
-    body: { message: safeMessage, history: safeHistory },
-  });
+  const invokeCoach = () =>
+    supabaseClient.functions.invoke('coach-chat', {
+      body: { message: safeMessage, history: safeHistory },
+    });
+
+  let { data, error } = await invokeCoach();
+
+  // The access token may have expired without being refreshed in time
+  // (e.g. a tab left open for a while). Refresh once and retry before
+  // giving up.
+  if (error?.context?.status === 401) {
+    const { data: refreshed, error: refreshError } = await supabaseClient.auth.refreshSession();
+    if (!refreshError && refreshed?.session) {
+      ({ data, error } = await invokeCoach());
+    }
+  }
 
   if (error) {
     // When the edge function returns a non-2xx status, supabase-js
