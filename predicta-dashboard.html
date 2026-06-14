@@ -2064,12 +2064,15 @@ async function sendCoachMessage() {
   showCoachTyping();
 
   try {
-    const reply = await predictaCoachChat(text, coachHistory);
+    const { reply, limitReached } = await predictaCoachChat(text, coachHistory);
     removeCoachTyping();
     addCoachBubble('ai', reply);
     coachHistory.push({ role: 'user', content: text });
     coachHistory.push({ role: 'assistant', content: reply });
     coachHistory = coachHistory.slice(-10);
+    if (limitReached) {
+      addCoachBubble('ai', "Tu as posé ta question du jour ! Reviens demain pour échanger à nouveau avec le coach.");
+    }
   } catch (err) {
     console.error('[predicta] coach chat error', err.message);
     removeCoachTyping();
@@ -2085,7 +2088,7 @@ async function sendCoachMessage() {
 async function initCoach() {
   showCoachTyping();
   try {
-    const reply = await predictaCoachChat('', []);
+    const { reply } = await predictaCoachChat('', []);
     removeCoachTyping();
     document.getElementById('coachChat').innerHTML = '';
     addCoachBubble('ai', reply);

@@ -75,30 +75,23 @@ Deno.serve(async (req) => {
         .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_MESSAGE_LEN) }))
     : [];
 
-  // Rate limit: at most 1 coach exchange per user per day. The daily
-  // greeting (empty message + empty history) replays the latest
-  // prediction instead of calling the LLM again, so the dashboard
-  // always has something to show.
+  // Rate limit: at most 1 user question per day. The daily greeting
+  // (empty message) is always answered and doesn't count against
+  // this limit.
   const startOfDay = new Date();
   startOfDay.setUTCHours(0, 0, 0, 0);
 
-  const { data: todaysPredictions } = await supabaseAdmin
+  const { count: questionsToday } = await supabaseAdmin
     .from('predictions')
-    .select('prediction_text, created_at')
+    .select('id', { count: 'exact', head: true })
     .eq('user_id', user.id)
-    .gte('created_at', startOfDay.toISOString())
-    .order('created_at', { ascending: false })
-    .limit(1);
+    .gte('created_at', startOfDay.toISOString());
 
-  const alreadyUsedToday = (todaysPredictions ?? []).length > 0;
+  const limitReached = (questionsToday ?? 0) > 0;
 
-  if (alreadyUsedToday) {
-    if (!message) {
-      // Greeting request: just replay today's existing reply.
-      return json({ reply: todaysPredictions![0].prediction_text });
-    }
+  if (message && limitReached) {
     return json(
-      { error: 'Tu as déjà utilisé ton échange avec le coach aujourd\'hui. Reviens demain pour un nouveau message !' },
+      { error: 'Tu as déjà posé ta question au coach aujourd\'hui. Reviens demain pour une nouvelle question !' },
       429
     );
   }
@@ -188,13 +181,16 @@ ${contextLines.join('\n')}`;
   const aiData = await aiRes.json();
   const reply: string = aiData.choices?.[0]?.message?.content?.trim() || "Je n'ai pas pu générer de réponse, réessaie dans un instant.";
 
-  // Best-effort: keep a history of coach messages.
-  await supabaseAdmin.from('predictions').insert({
-    user_id: user.id,
-    prediction_text: reply.slice(0, 2000),
-  });
+  // Best-effort: keep a history of coach messages. Only real user
+  // questions count toward the daily limit, not the greeting.
+  if (message) {
+    await supabaseAdmin.from('predictions').insert({
+      user_id: user.id,
+      prediction_text: reply.slice(0, 2000),
+    });
+  }
 
-  return json({ reply });
+  return json({ reply, limitReached: !!message || limitReached });
 });
 
 function json(data: unknown, status = 200) {

@@ -319,5 +319,5 @@ async function predictaCoachChat(message, history) {
 
   if (error) throw error;
   if (data?.error) throw new Error(data.error);
-  return data.reply;
+  return { reply: data.reply, limitReached: !!data.limitReached };
 }
