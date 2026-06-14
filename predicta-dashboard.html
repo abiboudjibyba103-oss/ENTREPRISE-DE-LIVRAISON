@@ -1196,12 +1196,12 @@
       </div>
       <div class="card" style="max-width:600px;margin-bottom:20px;">
         <div class="card-title" style="margin-bottom:16px;">Abonnement</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--violet-light);border-radius:14px;border:1.5px solid var(--violet);">
+        <div id="subscriptionCard" style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--violet-light);border-radius:14px;border:1.5px solid var(--violet);gap:12px;">
           <div>
-            <div style="font-size:15px;font-weight:700;color:var(--violet);">Plan Pro</div>
-            <div style="font-size:12px;color:var(--text-sec);">Accès à toutes les leçons · Rapport hebdomadaire</div>
+            <div id="subscriptionPlanName" style="font-size:15px;font-weight:700;color:var(--violet);">Plan Gratuit</div>
+            <div id="subscriptionPlanDesc" style="font-size:12px;color:var(--text-sec);">1 leçon par jour · 1 question au coach par jour</div>
           </div>
-          <div class="stat-badge badge-violet">Actif</div>
+          <button id="subscriptionUpgradeBtn" class="stat-badge badge-violet" style="border:none;cursor:pointer;" onclick="showToast('La mise à niveau Pro arrive bientôt !', 'success')">Passer à Pro</button>
         </div>
       </div>
       <div class="card" style="max-width:600px;">
@@ -1732,7 +1732,8 @@ function todayStr() {
 
 function computeLessonStates() {
   lessonStates = {};
-  const completedToday = Object.values(lessonProgressMap).some(
+  const isPro = cachedProfile?.plan === 'pro';
+  const completedToday = !isPro && Object.values(lessonProgressMap).some(
     (p) => p.status === 'done' && p.completed_at && p.completed_at.slice(0, 10) === todayStr()
   );
   let nextFound = false;
@@ -2125,6 +2126,23 @@ function populateSettingsPage() {
       const isOn = notifEl.dataset.on !== 'false';
       if (shouldBeOn !== isOn) toggleSwitch(notifEl);
     }
+  }
+
+  // Subscription card: reflect the real plan from profiles.plan
+  const isPro = cachedProfile?.plan === 'pro';
+  const planName = document.getElementById('subscriptionPlanName');
+  const planDesc = document.getElementById('subscriptionPlanDesc');
+  const upgradeBtn = document.getElementById('subscriptionUpgradeBtn');
+  if (planName) planName.textContent = isPro ? 'Plan Pro' : 'Plan Gratuit';
+  if (planDesc) {
+    planDesc.textContent = isPro
+      ? 'Leçons illimitées · 5 questions au coach par jour'
+      : '1 leçon par jour · 1 question au coach par jour';
+  }
+  if (upgradeBtn) {
+    upgradeBtn.textContent = isPro ? 'Actif' : 'Passer à Pro';
+    upgradeBtn.style.cursor = isPro ? 'default' : 'pointer';
+    upgradeBtn.onclick = isPro ? null : () => showToast('La mise à niveau Pro arrive bientôt !', 'success');
   }
 }
 

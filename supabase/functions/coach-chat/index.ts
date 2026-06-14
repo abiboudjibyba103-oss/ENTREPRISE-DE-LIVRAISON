@@ -75,9 +75,12 @@ Deno.serve(async (req) => {
         .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_MESSAGE_LEN) }))
     : [];
 
-  // Rate limit: at most 1 user question per day. The daily greeting
-  // (empty message) is always answered and doesn't count against
-  // this limit.
+  // Rate limit: free users get 1 question/day, Pro users get 5.
+  // The daily greeting (empty message) is always answered and
+  // doesn't count against this limit.
+  const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', user.id).maybeSingle();
+  const dailyLimit = profile?.plan === 'pro' ? 5 : 1;
+
   const startOfDay = new Date();
   startOfDay.setUTCHours(0, 0, 0, 0);
 
@@ -87,18 +90,17 @@ Deno.serve(async (req) => {
     .eq('user_id', user.id)
     .gte('created_at', startOfDay.toISOString());
 
-  const limitReached = (questionsToday ?? 0) > 0;
+  const limitReached = (questionsToday ?? 0) >= dailyLimit;
 
   if (message && limitReached) {
-    return json(
-      { error: 'Tu as déjà posé ta question au coach aujourd\'hui. Reviens demain pour une nouvelle question !' },
-      429
-    );
+    const limitMessage = dailyLimit === 1
+      ? 'Tu as déjà posé ta question au coach aujourd\'hui. Reviens demain pour une nouvelle question !'
+      : `Tu as atteint ta limite de ${dailyLimit} questions au coach pour aujourd'hui. Reviens demain !`;
+    return json({ error: limitMessage }, 429);
   }
 
   // Load the user's real data to ground the coach's response.
-  const [{ data: profile }, { data: sessions }, { data: brain }, { data: lessons }] = await Promise.all([
-    supabaseAdmin.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+  const [{ data: sessions }, { data: brain }, { data: lessons }] = await Promise.all([
     supabaseAdmin
       .from('sessions')
       .select('duration_min, focus_score, status, started_at')
