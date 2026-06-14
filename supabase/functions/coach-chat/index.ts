@@ -75,11 +75,16 @@ Deno.serve(async (req) => {
         .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_MESSAGE_LEN) }))
     : [];
 
-  // Rate limit: free users get 1 question/day, Pro users get 5.
-  // The daily greeting (empty message) is always answered and
-  // doesn't count against this limit.
+  // The AI coach is a Pro-only feature.
   const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', user.id).maybeSingle();
-  const dailyLimit = profile?.plan === 'pro' ? 5 : 1;
+  if (profile?.plan !== 'pro') {
+    return json({ error: 'Le coach IA est réservé au Plan Pro. Passe à Pro pour en profiter !' }, 403);
+  }
+
+  // Rate limit: Pro users get 5 questions/day. The daily greeting
+  // (empty message) is always answered and doesn't count against
+  // this limit.
+  const dailyLimit = 5;
 
   const startOfDay = new Date();
   startOfDay.setUTCHours(0, 0, 0, 0);
@@ -93,10 +98,10 @@ Deno.serve(async (req) => {
   const limitReached = (questionsToday ?? 0) >= dailyLimit;
 
   if (message && limitReached) {
-    const limitMessage = dailyLimit === 1
-      ? 'Tu as déjà posé ta question au coach aujourd\'hui. Reviens demain pour une nouvelle question !'
-      : `Tu as atteint ta limite de ${dailyLimit} questions au coach pour aujourd'hui. Reviens demain !`;
-    return json({ error: limitMessage }, 429);
+    return json(
+      { error: `Tu as atteint ta limite de ${dailyLimit} questions au coach pour aujourd'hui. Reviens demain !` },
+      429
+    );
   }
 
   // Load the user's real data to ground the coach's response.

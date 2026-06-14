@@ -2052,6 +2052,7 @@ function removeCoachTyping() {
 
 async function sendCoachMessage() {
   if (coachBusy) return;
+  if (cachedProfile?.plan !== 'pro') return;
   const input = document.getElementById('coachInput');
   const text = input.value.trim();
   if (!text) return;
@@ -2087,6 +2088,17 @@ async function sendCoachMessage() {
 }
 
 async function initCoach() {
+  // The AI coach is a Pro-only feature.
+  if (cachedProfile?.plan !== 'pro') {
+    document.getElementById('coachChat').innerHTML = '';
+    addCoachBubble('ai', "Le coach IA est réservé au Plan Pro. Passe à Pro dans les Réglages pour profiter de conseils personnalisés au quotidien !");
+    const input = document.getElementById('coachInput');
+    const sendBtn = document.getElementById('coachSendBtn');
+    if (input) { input.disabled = true; input.placeholder = 'Coach réservé au Plan Pro'; }
+    if (sendBtn) sendBtn.disabled = true;
+    return;
+  }
+
   showCoachTyping();
   try {
     const { reply } = await predictaCoachChat('', []);
