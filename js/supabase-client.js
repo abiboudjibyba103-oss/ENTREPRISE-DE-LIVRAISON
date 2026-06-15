@@ -33,22 +33,43 @@ async function predictaGetSession() {
 }
 
 /**
- * Sends a magic-link sign-in email. Used by the landing page form.
- * Also inserts the email into the public waitlist table.
+ * Pre-launch sign-up: registers name + email + phone on the waitlist via
+ * the `waitlist-join` edge function, optionally linking the signup to
+ * whoever referred them. Returns { referralCode, alreadyRegistered }.
  */
-async function predictaSignInWithEmail(email, redirectTo) {
-  // Best-effort waitlist capture (insert-only, RLS protected)
-  await supabaseClient.from('waitlist').insert({ email }).select().maybeSingle();
+async function predictaWaitlistJoin({ name, email, phone, ref }) {
+  const safeName = String(name || '').trim().slice(0, 100);
+  const safeEmail = String(email || '').trim().toLowerCase().slice(0, 255);
+  const safePhone = String(phone || '').trim().slice(0, 30);
+  const safeRef = String(ref || '').trim().toUpperCase().slice(0, 16);
 
-  const { error } = await supabaseClient.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: redirectTo || `${window.location.origin}/predicta-dashboard.html`,
-    },
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!safeName) throw new Error('Le nom est requis.');
+  if (!emailRegex.test(safeEmail)) throw new Error('Adresse email invalide.');
+  if (!safePhone) throw new Error('Le numéro de téléphone est requis.');
+
+  const { data, error } = await supabaseClient.functions.invoke('waitlist-join', {
+    body: { name: safeName, email: safeEmail, phone: safePhone, ref: safeRef },
   });
 
   if (error) throw error;
-  return true;
+  if (data?.error) throw new Error(data.error);
+  return { referralCode: data.referralCode, alreadyRegistered: !!data.alreadyRegistered };
+}
+
+/**
+ * Returns how many people joined the waitlist using the given referral code.
+ */
+async function predictaGetWaitlistReferralCount(code) {
+  const safeCode = String(code || '').trim().toUpperCase().slice(0, 16);
+  if (!safeCode) return 0;
+
+  const { data, error } = await supabaseClient.rpc('get_waitlist_referral_count', { code: safeCode });
+  if (error) {
+    console.error('[predicta] getWaitlistReferralCount error', error.message);
+    return 0;
+  }
+  return typeof data === 'number' ? data : 0;
 }
 
 /**

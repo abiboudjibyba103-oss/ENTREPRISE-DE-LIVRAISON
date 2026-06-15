@@ -212,15 +212,26 @@ create policy "predictions_delete_own" on public.predictions
 
 
 -- ------------------------------------------------------------
--- 6. waitlist — landing page email capture (no auth required)
+-- 6. waitlist — pre-launch sign-up (no auth required)
 --    Inserts are allowed for anyone, but reads/updates/deletes
---    are restricted to the service role only.
+--    are restricted to the service role only (used by the
+--    waitlist-join edge function).
 -- ------------------------------------------------------------
 create table if not exists public.waitlist (
-  id          uuid primary key default gen_random_uuid(),
-  email       text not null unique,
-  created_at  timestamptz not null default now()
+  id               uuid primary key default gen_random_uuid(),
+  email            text not null unique,
+  name             text,
+  phone            text,
+  referral_code    text unique,
+  referred_by_code text,
+  created_at       timestamptz not null default now()
 );
+
+-- Migration for pre-existing databases.
+alter table public.waitlist add column if not exists name text;
+alter table public.waitlist add column if not exists phone text;
+alter table public.waitlist add column if not exists referral_code text unique;
+alter table public.waitlist add column if not exists referred_by_code text;
 
 alter table public.waitlist enable row level security;
 
@@ -229,6 +240,46 @@ create policy "waitlist_insert_anyone" on public.waitlist
 
 -- No select/update/delete policy => only the service_role key
 -- (used server-side only, never in the browser) can read this table.
+
+-- Assigns a unique referral code to every new waitlist signup.
+create or replace function public.set_waitlist_referral_code()
+returns trigger
+language plpgsql
+as $$
+declare
+  new_code text;
+begin
+  if new.referral_code is null then
+    loop
+      new_code := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8));
+      exit when not exists (select 1 from public.waitlist where referral_code = new_code);
+    end loop;
+    new.referral_code := new_code;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists set_waitlist_referral_code on public.waitlist;
+create trigger set_waitlist_referral_code
+  before insert on public.waitlist
+  for each row execute procedure public.set_waitlist_referral_code();
+
+update public.waitlist set referral_code = upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8))
+  where referral_code is null;
+
+-- Lets anyone look up how many people joined the waitlist using their
+-- referral code, without exposing any other waitlist data.
+create or replace function public.get_waitlist_referral_count(code text)
+returns integer
+language sql
+security definer set search_path = public
+stable
+as $$
+  select count(*)::integer from public.waitlist where referred_by_code = upper(code);
+$$;
+
+grant execute on function public.get_waitlist_referral_count(text) to anon, authenticated;
 
 
 -- ------------------------------------------------------------
