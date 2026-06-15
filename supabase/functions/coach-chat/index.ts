@@ -75,17 +75,9 @@ Deno.serve(async (req) => {
         .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_MESSAGE_LEN) }))
     : [];
 
-  // The AI coach is a Pro-only feature.
-  const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', user.id).maybeSingle();
-  if (profile?.plan !== 'pro') {
-    return json({ error: 'Le coach IA est réservé au Plan Pro. Passe à Pro pour en profiter !' }, 403);
-  }
-
-  // Rate limit: Pro users get 5 questions/day. The daily greeting
+  // Rate limit: at most 1 user question per day. The daily greeting
   // (empty message) is always answered and doesn't count against
   // this limit.
-  const dailyLimit = 5;
-
   const startOfDay = new Date();
   startOfDay.setUTCHours(0, 0, 0, 0);
 
@@ -95,17 +87,18 @@ Deno.serve(async (req) => {
     .eq('user_id', user.id)
     .gte('created_at', startOfDay.toISOString());
 
-  const limitReached = (questionsToday ?? 0) >= dailyLimit;
+  const limitReached = (questionsToday ?? 0) > 0;
 
   if (message && limitReached) {
     return json(
-      { error: `Tu as atteint ta limite de ${dailyLimit} questions au coach pour aujourd'hui. Reviens demain !` },
+      { error: 'Tu as déjà posé ta question au coach aujourd\'hui. Reviens demain pour une nouvelle question !' },
       429
     );
   }
 
   // Load the user's real data to ground the coach's response.
-  const [{ data: sessions }, { data: brain }, { data: lessons }] = await Promise.all([
+  const [{ data: profile }, { data: sessions }, { data: brain }, { data: lessons }] = await Promise.all([
+    supabaseAdmin.from('profiles').select('*').eq('id', user.id).maybeSingle(),
     supabaseAdmin
       .from('sessions')
       .select('duration_min, focus_score, status, started_at')
