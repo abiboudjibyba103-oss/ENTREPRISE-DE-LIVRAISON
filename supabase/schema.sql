@@ -97,6 +97,34 @@ $$;
 
 grant execute on function public.get_referral_count() to authenticated;
 
+-- profiles_update_own (above) lets a user update ANY column of their own
+-- row, including plan, referral_code and referred_by. Without this guard,
+-- a user could self-upgrade their plan or rewrite their referral
+-- attribution directly via the PostgREST API (the anon key + their JWT is
+-- enough). Server-controlled columns are pinned back to their previous
+-- value unless the change comes from the service role.
+create or replace function public.protect_profile_columns()
+returns trigger
+language plpgsql
+as $$
+begin
+  if auth.role() <> 'service_role' then
+    new.plan := old.plan;
+    new.referral_code := old.referral_code;
+    new.referred_by := old.referred_by;
+    new.email := old.email;
+    new.id := old.id;
+    new.created_at := old.created_at;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists protect_profile_columns on public.profiles;
+create trigger protect_profile_columns
+  before update on public.profiles
+  for each row execute procedure public.protect_profile_columns();
+
 
 -- ------------------------------------------------------------
 -- 2. sessions — focus/work sessions

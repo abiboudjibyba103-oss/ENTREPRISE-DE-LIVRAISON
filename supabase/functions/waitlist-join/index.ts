@@ -63,7 +63,15 @@ Deno.serve(async (req) => {
     return json({ referralCode: existing.referral_code, alreadyRegistered: true });
   }
 
-  const referredByCode = REFERRAL_CODE_REGEX.test(refCode) ? refCode : null;
+  let referredByCode: string | null = null;
+  if (REFERRAL_CODE_REGEX.test(refCode)) {
+    const { data: referrer } = await supabaseAdmin
+      .from('waitlist')
+      .select('referral_code')
+      .eq('referral_code', refCode)
+      .maybeSingle();
+    if (referrer) referredByCode = refCode;
+  }
 
   const { data: inserted, error } = await supabaseAdmin
     .from('waitlist')
