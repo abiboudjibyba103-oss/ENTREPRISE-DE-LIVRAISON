@@ -264,6 +264,18 @@
     el.textContent = '';
   }
 
+  // A referral link looks like /predicta-auth.html?ref=ABC12345.
+  // Stash the code so it survives a tab switch to confirm the email,
+  // then reuse it for the signup request.
+  (function captureReferralCode() {
+    const code = new URLSearchParams(window.location.search).get('ref');
+    if (code) sessionStorage.setItem('predicta_referral_code', code);
+  })();
+
+  function getReferralCode() {
+    return sessionStorage.getItem('predicta_referral_code') || '';
+  }
+
   function setLoading(btnId, loading) {
     const btn = document.getElementById(btnId);
     btn.disabled = loading;
@@ -306,7 +318,7 @@
 
     setLoading('signup-submit', true);
     try {
-      const data = await predictaSignUpWithPassword(email, password, name);
+      const data = await predictaSignUpWithPassword(email, password, name, getReferralCode());
       if (data?.session) {
         showMessage('signup-success', 'Compte créé ! Redirection...');
         setTimeout(() => { window.location.href = '/predicta-dashboard.html'; }, 700);

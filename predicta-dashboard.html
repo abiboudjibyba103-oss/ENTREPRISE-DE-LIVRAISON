@@ -1195,6 +1195,15 @@
         </div>
       </div>
       <div class="card" style="max-width:600px;margin-bottom:20px;">
+        <div class="card-title" style="margin-bottom:6px;">Parrainage</div>
+        <div style="font-size:13px;color:var(--text-sec);margin-bottom:16px;">Partage ton lien : tes amis découvrent Prédicta, et tu vois ton nombre de filleuls grandir.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+          <input class="input-field" id="referralLinkInput" readonly style="height:44px;flex:1;min-width:200px;font-size:13px;" value="Chargement...">
+          <button class="btn-full" style="width:auto;height:44px;padding:0 20px;" onclick="copyReferralLink()">Copier le lien</button>
+        </div>
+        <div style="font-size:13px;color:var(--text-sec);">Filleuls inscrits : <strong id="referralCount" style="color:var(--text);">0</strong></div>
+      </div>
+      <div class="card" style="max-width:600px;margin-bottom:20px;">
         <div class="card-title" style="margin-bottom:16px;">Abonnement</div>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--violet-light);border-radius:14px;border:1.5px solid var(--violet);">
           <div>
@@ -2126,6 +2135,36 @@ function populateSettingsPage() {
       if (shouldBeOn !== isOn) toggleSwitch(notifEl);
     }
   }
+
+  populateReferralCard();
+}
+
+async function populateReferralCard() {
+  const linkInput = document.getElementById('referralLinkInput');
+  const countEl = document.getElementById('referralCount');
+  if (!linkInput || !countEl) return;
+
+  try {
+    const stats = await predictaGetReferralStats();
+    if (stats?.code) {
+      linkInput.value = `${window.location.origin}/predicta-auth.html?ref=${stats.code}`;
+    } else {
+      linkInput.value = 'Indisponible pour le moment';
+    }
+    countEl.textContent = stats?.count ?? 0;
+  } catch (err) {
+    console.error('[predicta] populateReferralCard error', err.message);
+    linkInput.value = 'Indisponible pour le moment';
+  }
+}
+
+function copyReferralLink() {
+  const linkInput = document.getElementById('referralLinkInput');
+  if (!linkInput || !linkInput.value || linkInput.value.startsWith('Indisponible') || linkInput.value === 'Chargement...') return;
+
+  navigator.clipboard.writeText(linkInput.value)
+    .then(() => showToast('Lien de parrainage copié !', 'success'))
+    .catch(() => showToast('Impossible de copier le lien.', 'error'));
 }
 
 function computeWeekFocusData(sessions) {

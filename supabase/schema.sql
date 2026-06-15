@@ -14,9 +14,20 @@ create table if not exists public.profiles (
   notifications_enabled    boolean not null default true,
   plan                     text not null default 'free' check (plan in ('free', 'pro')),
   phase                    text not null default 'Phase 1 — Découverte',
+  referral_code            text unique,
+  referred_by              uuid references public.profiles(id) on delete set null,
   created_at               timestamptz not null default now(),
   updated_at               timestamptz not null default now()
 );
+
+-- Migration for pre-existing databases: add the referral columns and
+-- backfill a unique code for every existing profile.
+alter table public.profiles add column if not exists referral_code text unique;
+alter table public.profiles add column if not exists referred_by uuid references public.profiles(id) on delete set null;
+
+update public.profiles
+  set referral_code = upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8))
+  where referral_code is null;
 
 alter table public.profiles enable row level security;
 
@@ -32,15 +43,37 @@ create policy "profiles_update_own" on public.profiles
 create policy "profiles_delete_own" on public.profiles
   for delete using (auth.uid() = id);
 
--- Auto-create a profile row whenever a new auth user signs up
+-- Auto-create a profile row whenever a new auth user signs up.
+-- Also generates a unique referral code for the new user and, if they
+-- signed up with someone else's referral code, links them via referred_by.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
+declare
+  new_code text;
+  referrer uuid;
 begin
-  insert into public.profiles (id, email, display_name)
-  values (new.id, new.email, coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1)));
+  loop
+    new_code := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8));
+    exit when not exists (select 1 from public.profiles where referral_code = new_code);
+  end loop;
+
+  if new.raw_user_meta_data->>'referral_code' is not null then
+    select id into referrer from public.profiles
+      where referral_code = upper(new.raw_user_meta_data->>'referral_code')
+      limit 1;
+  end if;
+
+  insert into public.profiles (id, email, display_name, referral_code, referred_by)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1)),
+    new_code,
+    referrer
+  );
   return new;
 end;
 $$;
@@ -49,6 +82,20 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- Lets a user know how many people they've referred, without exposing
+-- the referred users' profile rows directly (RLS only allows reading
+-- one's own profile row).
+create or replace function public.get_referral_count()
+returns integer
+language sql
+security definer set search_path = public
+stable
+as $$
+  select count(*)::integer from public.profiles where referred_by = auth.uid();
+$$;
+
+grant execute on function public.get_referral_count() to authenticated;
 
 
 -- ------------------------------------------------------------

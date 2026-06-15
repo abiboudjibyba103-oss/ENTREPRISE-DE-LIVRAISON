@@ -56,7 +56,7 @@ async function predictaSignInWithEmail(email, redirectTo) {
  * A `profiles` row is auto-created by the `handle_new_user` trigger,
  * using `displayName` from the user metadata.
  */
-async function predictaSignUpWithPassword(email, password, displayName) {
+async function predictaSignUpWithPassword(email, password, displayName, referralCode) {
   email = String(email || '').trim().toLowerCase();
   password = String(password || '');
 
@@ -64,11 +64,17 @@ async function predictaSignUpWithPassword(email, password, displayName) {
   if (!emailRegex.test(email)) throw new Error('Adresse email invalide');
   if (password.length < 8) throw new Error('Le mot de passe doit contenir au moins 8 caractères');
 
+  const signUpData = { display_name: (displayName || email.split('@')[0]).trim().slice(0, 80) };
+  const safeReferralCode = String(referralCode || '').trim().toUpperCase().slice(0, 16);
+  if (/^[A-Z0-9]{4,16}$/.test(safeReferralCode)) {
+    signUpData.referral_code = safeReferralCode;
+  }
+
   const { data, error } = await supabaseClient.auth.signUp({
     email,
     password,
     options: {
-      data: { display_name: (displayName || email.split('@')[0]).trim().slice(0, 80) },
+      data: signUpData,
       emailRedirectTo: `${window.location.origin}/predicta-dashboard.html`,
     },
   });
@@ -136,6 +142,25 @@ async function predictaGetProfile() {
     return null;
   }
   return data;
+}
+
+/**
+ * Returns the current user's referral code and how many people signed
+ * up using it: { code, count }.
+ */
+async function predictaGetReferralStats() {
+  const session = await predictaGetSession();
+  if (!session) return null;
+
+  const [{ data: profile, error: profileError }, { data: count, error: countError }] = await Promise.all([
+    supabaseClient.from('profiles').select('referral_code').eq('id', session.user.id).maybeSingle(),
+    supabaseClient.rpc('get_referral_count'),
+  ]);
+
+  if (profileError) console.error('[predicta] getReferralStats profile error', profileError.message);
+  if (countError) console.error('[predicta] getReferralStats count error', countError.message);
+
+  return { code: profile?.referral_code ?? null, count: typeof count === 'number' ? count : 0 };
 }
 
 /**
