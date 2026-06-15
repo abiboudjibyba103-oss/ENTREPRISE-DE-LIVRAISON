@@ -24,6 +24,9 @@ const CORS_HEADERS = {
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REFERRAL_CODE_REGEX = /^[A-Z0-9]{4,16}$/;
 
+const MAX_ATTEMPTS = 5;
+const WINDOW_MS = 60 * 1000; // 1 minute
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -50,6 +53,24 @@ Deno.serve(async (req) => {
   if (!phone) return json({ error: 'Le numéro de téléphone est requis.' }, 400);
 
   const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+  // Rate limit: at most 5 sign-up attempts per minute per IP.
+  const forwardedFor = req.headers.get('x-forwarded-for') ?? '';
+  const ip = forwardedFor.split(',')[0].trim() || 'unknown';
+  const windowStart = new Date(Date.now() - WINDOW_MS).toISOString();
+
+  const { count } = await supabaseAdmin
+    .from('auth_rate_limit')
+    .select('id', { count: 'exact', head: true })
+    .eq('ip_address', ip)
+    .eq('route', 'waitlist-join')
+    .gte('attempted_at', windowStart);
+
+  if ((count ?? 0) >= MAX_ATTEMPTS) {
+    return json({ error: 'Trop de tentatives. Réessaie dans une minute.' }, 429);
+  }
+
+  await supabaseAdmin.from('auth_rate_limit').insert({ ip_address: ip, route: 'waitlist-join' });
 
   // Already on the list? Return their existing referral code instead of
   // erroring, so resubmitting the form (or a duplicate click) is harmless.
