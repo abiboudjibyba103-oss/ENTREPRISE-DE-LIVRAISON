@@ -212,48 +212,36 @@ async function predictaUpdateProfile(patch) {
 /**
  * Loads lesson progress for the current user as a map { lesson_id: status }.
  */
-async function predictaGetLessonProgress() {
-  const session = await predictaGetSession();
-  if (!session) return {};
-
-  const { data, error } = await supabaseClient
-    .from('lesson_progress')
-    .select('lesson_id, status, completed_at')
-    .eq('user_id', session.user.id);
-
-  if (error) {
-    console.error('[predicta] getLessonProgress error', error.message);
-    return {};
-  }
-  return Object.fromEntries(data.map((row) => [row.lesson_id, row]));
-}
-
 /**
- * Marks a lesson as in_progress / done for the current user.
+ * Asks Prédicta to generate (or fetch the cached version of)
+ * today's personal teaching, grounded in the user's real
+ * sessions of the day (Supabase edge function `daily-lesson`).
+ * Returns { lessonText, hasSessionToday }: `lessonText` is null
+ * when the user hasn't done a session yet today.
  */
-async function predictaSetLessonStatus(lessonId, status) {
+async function predictaDailyLesson() {
   const session = await predictaGetSession();
   if (!session) throw new Error('Not authenticated');
 
-  if (!/^[A-F][1-5]$/.test(lessonId)) throw new Error('Invalid lesson id');
-  if (!['todo', 'in_progress', 'done'].includes(status)) throw new Error('Invalid status');
+  const invoke = () => supabaseClient.functions.invoke('daily-lesson', { body: {} });
 
-  const { data, error } = await supabaseClient
-    .from('lesson_progress')
-    .upsert(
-      {
-        user_id: session.user.id,
-        lesson_id: lessonId,
-        status,
-        completed_at: status === 'done' ? new Date().toISOString() : null,
-      },
-      { onConflict: 'user_id,lesson_id' }
-    )
-    .select()
-    .single();
+  let { data, error } = await invoke();
 
-  if (error) throw error;
-  return data;
+  if (error?.context?.status === 401) {
+    const { data: refreshed, error: refreshError } = await supabaseClient.auth.refreshSession();
+    if (!refreshError && refreshed?.session) {
+      ({ data, error } = await invoke());
+    }
+  }
+
+  if (error) {
+    if (error.context?.status === 401) {
+      throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
+    }
+    throw error;
+  }
+  if (data?.error) throw new Error(data.error);
+  return { lessonText: data.lessonText ?? null, hasSessionToday: !!data.hasSessionToday };
 }
 
 /**

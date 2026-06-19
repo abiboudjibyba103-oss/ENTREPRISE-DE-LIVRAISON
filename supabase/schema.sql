@@ -331,6 +331,31 @@ alter table public.auth_rate_limit enable row level security;
 
 
 -- ------------------------------------------------------------
+-- 8. daily_lessons — one AI-generated teaching per user per day,
+--    grounded in that day's real session data (replaces the old
+--    static 30-lesson catalogue). Written only by the
+--    `daily-lesson` edge function (service_role) — users can
+--    only read their own.
+-- ------------------------------------------------------------
+create table if not exists public.daily_lessons (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references auth.users(id) on delete cascade,
+  lesson_date  date not null default current_date,
+  lesson_text  text not null,
+  created_at   timestamptz not null default now(),
+  unique (user_id, lesson_date)
+);
+
+alter table public.daily_lessons enable row level security;
+
+create policy "daily_lessons_select_own" on public.daily_lessons
+  for select using (auth.uid() = user_id);
+
+-- No insert/update/delete policy: only the service_role key
+-- (used inside the daily-lesson edge function) can write rows.
+
+
+-- ------------------------------------------------------------
 -- updated_at trigger helper for profiles
 -- ------------------------------------------------------------
 create or replace function public.set_updated_at()
