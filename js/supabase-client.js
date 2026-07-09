@@ -9,8 +9,8 @@
    by the Row Level Security policies in supabase/schema.sql.
    ============================================================ */
 
-const SUPABASE_URL = 'https://hqdzbeykutvmjnuzhnwy.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_P-tNenm-AP1SIX8x6aIJRA_Cv9lpasr';
+const SUPABASE_URL = 'https://zxldqphiqhfpbqrrsazb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4bGRxcGhpcWhmcGJxcnJzYXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MTg0NTAsImV4cCI6MjA5NTI5NDQ1MH0.spgh0mGRllw08DdYRPRZHZn_F2psSptyOsHDQEI9a1I';
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
