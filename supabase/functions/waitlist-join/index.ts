@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     return json({ error: 'Method not allowed' }, 405);
   }
 
-  let body: { name?: string; email?: string; phone?: string; ref?: string };
+  let body: { name?: string; email?: string; ref?: string };
   try {
     body = await req.json();
   } catch {
@@ -45,12 +45,10 @@ Deno.serve(async (req) => {
 
   const name = String(body.name ?? '').trim().slice(0, 100);
   const email = String(body.email ?? '').trim().toLowerCase().slice(0, 255);
-  const phone = String(body.phone ?? '').trim().slice(0, 30);
   const refCode = String(body.ref ?? '').trim().toUpperCase().slice(0, 16);
 
-  if (!name) return json({ error: 'Le nom est requis.' }, 400);
+  if (!name) return json({ error: 'Le prénom est requis.' }, 400);
   if (!EMAIL_REGEX.test(email)) return json({ error: 'Adresse email invalide.' }, 400);
-  if (!phone) return json({ error: 'Le numéro de téléphone est requis.' }, 400);
 
   const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
@@ -96,7 +94,7 @@ Deno.serve(async (req) => {
 
   const { data: inserted, error } = await supabaseAdmin
     .from('waitlist')
-    .insert({ name, email, phone, referred_by_code: referredByCode })
+    .insert({ name, email, referred_by_code: referredByCode })
     .select('referral_code')
     .single();
 
