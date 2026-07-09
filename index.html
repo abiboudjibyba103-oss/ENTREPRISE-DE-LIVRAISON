@@ -781,10 +781,11 @@
       <div class="hero-content">
         <div class="hero-badge" id="hero-badge" style="opacity:0;transform:translateY(16px)">
           <span class="sparkle">✦</span>
-          Neuroscience · Comportement · Autonomie
+          Neuroscience de l'attention · Dakar
         </div>
-        <h1 class="hero-h1" id="hero-h1" aria-label="Ton cerveau t'échappe. Prédicta t'explique pourquoi.">
-          <!-- Words injected by JS -->
+        <h1 class="hero-h1" id="hero-h1">
+          Tu ne manques pas de <span class="accent-orange">volonté</span>.<br>
+          Tu manques de <span class="accent">compréhension</span>.
         </h1>
         <p class="hero-subtitle" id="hero-subtitle" style="opacity:0;transform:translateY(16px)">
           Procrastination, abandon, perte de focus — ce ne sont pas des défauts de caractère.<br>
@@ -1363,16 +1364,12 @@
     });
   });
 
-  /* --- Hero stagger reveal --- */
-  const heroText = "Ton cerveau t'échappe. Prédicta t'explique pourquoi.";
+  /* --- Hero reveal --- */
   const h1El = document.getElementById('hero-h1');
-  const words = heroText.split(' ');
-  h1El.innerHTML = words.map((word, i) => {
-    const delay = 0.3 + i * 0.06;
-    const isAccent = word.toLowerCase().includes('discipline') || word.toLowerCase().includes('compréhension');
-    const cls = isAccent ? 'reveal-word accent' : 'reveal-word';
-    return `<span class="${cls}" style="animation-delay:${delay}s">${word}</span> `;
-  }).join('');
+  h1El.style.cssText = 'opacity:0;transform:translateY(20px);';
+  setTimeout(() => {
+    h1El.style.cssText = 'opacity:1;transform:translateY(0);transition:opacity 0.7s ease,transform 0.7s ease;';
+  }, 150);
 
   // Animate other hero elements
   setTimeout(() => {
