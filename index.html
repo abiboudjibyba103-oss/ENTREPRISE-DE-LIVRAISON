@@ -781,13 +781,13 @@
       <div class="hero-content">
         <div class="hero-badge" id="hero-badge" style="opacity:0;transform:translateY(16px)">
           <span class="sparkle">✦</span>
-          Conçu pour les esprits ambitieux
+          Neuroscience · Comportement · Autonomie
         </div>
-        <h1 class="hero-h1" id="hero-h1" aria-label="L'application qui apprend comment ton cerveau se concentre.">
+        <h1 class="hero-h1" id="hero-h1" aria-label="Comprends pourquoi tu procrastines, pourquoi tu abandonnes, et ce qui se passe dans ton cerveau quand tu travailles.">
           <!-- Words injected by JS -->
         </h1>
         <p class="hero-subtitle" id="hero-subtitle" style="opacity:0;transform:translateY(16px)">
-          Sessions de travail, coach cognitif et prédictions personnalisées pour <strong>comprendre ton attention</strong> et devenir autonome.
+          Prédicta observe ton comportement réel, identifie ce qui te bloque, et t'explique — avec la science — <strong>pourquoi ton cerveau agit comme il le fait</strong>. Pour que tu n'aies plus besoin de l'app.
         </p>
         <div class="hero-ctas" id="hero-ctas" style="opacity:0;transform:translateY(16px)">
           <a href="#final-cta" class="btn btn-primary btn-lg magnetic">
@@ -880,13 +880,13 @@
 
           <!-- Floating info cards around brain -->
           <div style="position:absolute;top:30px;right:0;background:#fff;border-radius:12px;padding:10px 14px;box-shadow:0 4px 20px rgba(108,92,231,0.15);border:1px solid rgba(108,92,231,0.1);font-size:12px;font-weight:600;color:#6C5CE7;white-space:nowrap;animation:brain-float 5s ease-in-out infinite;animation-delay:-2s;">
-            <span style="font-family:'Space Mono',monospace;font-size:10px;display:block;color:#78716C;font-weight:400;">Focus score</span>
-            <span style="font-family:'Space Mono',monospace;font-size:18px;font-weight:700;">87%</span>
-            <span style="color:#16A34A;font-size:11px;"> ↑12%</span>
+            <span style="font-family:'Space Mono',monospace;font-size:10px;display:block;color:#78716C;font-weight:400;">Décrochage détecté</span>
+            <span style="font-family:'Space Mono',monospace;font-size:18px;font-weight:700;">23 min</span>
+            <span style="color:#EA580C;font-size:11px;"> coût de transition</span>
           </div>
           <div style="position:absolute;bottom:60px;left:-10px;background:#fff;border-radius:12px;padding:10px 14px;box-shadow:0 4px 20px rgba(234,88,12,0.12);border:1px solid rgba(234,88,12,0.1);font-size:12px;white-space:nowrap;animation:brain-float 7s ease-in-out infinite;animation-delay:-1s;">
-            <span style="font-family:'Space Mono',monospace;font-size:10px;display:block;color:#78716C;font-weight:400;">Session en cours</span>
-            <span style="font-weight:700;color:#1C1917;font-size:13px;">🧠 Deep Work · J14</span>
+            <span style="font-family:'Space Mono',monospace;font-size:10px;display:block;color:#78716C;font-weight:400;">Origine identifiée</span>
+            <span style="font-weight:700;color:#1C1917;font-size:13px;">🧠 Régulation émotionnelle · J14</span>
           </div>
         </div>
       </div>
@@ -1020,7 +1020,7 @@
         <p style="font-size:14px;color:var(--text-sec);line-height:1.75;margin-bottom:16px;">Une leçon tirée de ta journée. Si tu as décroché à 30 min, tu apprends pourquoi le coût de transition coûte 23 minutes. La science explique TON comportement.</p>
         <div style="background:linear-gradient(135deg,var(--violet-light),#F5F3FF);border-radius:12px;height:72px;display:flex;align-items:center;padding:0 16px;gap:12px;">
           <div style="flex:1;">
-            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--violet);font-weight:700;margin-bottom:4px;">LEÇON A4</div>
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--violet);font-weight:700;margin-bottom:4px;">ENSEIGNEMENT DU SOIR</div>
             <div style="font-size:13px;font-weight:700;color:var(--text);">Le coût de transition</div>
           </div>
           <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--violet);background:#fff;padding:4px 10px;border-radius:100px;font-weight:700;white-space:nowrap;">2 min</span>
@@ -1081,10 +1081,10 @@
       <div class="step fade-up stagger-2">
         <div class="step-number">02</div>
         <h3>Lance tes sessions quotidiennes</h3>
-        <p>Timer intelligent + message du coach contextuel + micro-leçon de 2 minutes. Chaque jour, tu comprends un peu plus.</p>
+        <p>Timer intelligent + message du coach contextuel + enseignement généré à partir de ta journée. Chaque soir, tu comprends ce qui s'est réellement passé dans ton cerveau.</p>
         <div class="step-card">
           <div class="step-card-label">Session active</div>
-          <p>Deep Work · 45 min · Coach actif · Leçon : Ego Depletion</p>
+          <p>Deep Work · 45 min · Coach actif · Enseignement du soir généré</p>
         </div>
       </div>
       <div class="step fade-up stagger-3">
@@ -1380,7 +1380,7 @@
   });
 
   /* --- Hero stagger reveal --- */
-  const heroText = "L'application qui apprend comment ton cerveau se concentre.";
+  const heroText = "Comprends pourquoi tu procrastines, pourquoi tu abandonnes, et ce qui se passe dans ton cerveau quand tu travailles.";
   const h1El = document.getElementById('hero-h1');
   const words = heroText.split(' ');
   h1El.innerHTML = words.map((word, i) => {
