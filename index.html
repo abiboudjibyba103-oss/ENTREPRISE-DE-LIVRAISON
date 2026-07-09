@@ -195,16 +195,16 @@
     .hero-badge .sparkle { font-size: 16px; animation: spin-slow 4s linear infinite; display: inline-block; }
     @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     .hero-h1 {
-      font-size: clamp(40px, 5vw, 64px);
+      font-size: clamp(32px, 4.5vw, 54px);
       font-family: 'Plus Jakarta Sans', sans-serif;
-      font-weight: 800; line-height: 1.1;
-      letter-spacing: -0.04em; margin-bottom: 24px;
+      font-weight: 800; line-height: 1.12;
+      letter-spacing: -0.03em; margin-bottom: 20px;
     }
     .hero-h1 .accent { color: var(--violet); }
     .hero-h1 .accent-orange { color: var(--orange); }
     .hero-subtitle {
-      font-size: 18px; color: var(--text-sec);
-      line-height: 1.75; margin-bottom: 40px; max-width: 480px;
+      font-size: 16px; color: var(--text-sec);
+      line-height: 1.65; margin-bottom: 36px; max-width: 440px;
     }
     .hero-subtitle strong { color: var(--text); font-weight: 600; }
     .hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; }
@@ -783,11 +783,12 @@
           <span class="sparkle">✦</span>
           Neuroscience · Comportement · Autonomie
         </div>
-        <h1 class="hero-h1" id="hero-h1" aria-label="Comprends pourquoi tu procrastines, pourquoi tu abandonnes, et ce qui se passe dans ton cerveau quand tu travailles.">
+        <h1 class="hero-h1" id="hero-h1" aria-label="Ton cerveau t'échappe. Prédicta t'explique pourquoi.">
           <!-- Words injected by JS -->
         </h1>
         <p class="hero-subtitle" id="hero-subtitle" style="opacity:0;transform:translateY(16px)">
-          Prédicta observe ton comportement réel, identifie ce qui te bloque, et t'explique — avec la science — <strong>pourquoi ton cerveau agit comme il le fait</strong>. Pour que tu n'aies plus besoin de l'app.
+          Procrastination, abandon, perte de focus — ce ne sont pas des défauts de caractère.<br>
+          <strong>Ce sont des mécanismes. Et on peut les comprendre.</strong>
         </p>
         <div class="hero-ctas" id="hero-ctas" style="opacity:0;transform:translateY(16px)">
           <a href="#final-cta" class="btn btn-primary btn-lg magnetic">
@@ -1250,44 +1251,27 @@
 <section id="final-cta">
   <div class="container">
     <div class="final-cta-inner fade-up">
-      <span class="section-tag" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.2);">Bientôt disponible</span>
-      <h2>Ton cerveau mérite mieux<br>que des tips.</h2>
-      <p>Prédicta n'est pas encore ouvert au public. Inscris-toi pour être informé(e) en priorité dès que l'app est prête.</p>
+      <span class="section-tag" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.2);">233 places · 17 jours · Gratuit</span>
+      <h2>Pour les personnes sérieuses.<br>Pas pour tout le monde.</h2>
+      <p style="max-width:460px;margin:0 auto 32px;">Je cherche 233 personnes prêtes à changer leur façon de travailler — et à tester l'app honnêtement. Elle est toute récente, il peut y avoir des bugs. En échange : accès complet, gratuit, pendant 17 jours.</p>
 
       <form class="waitlist-form" id="waitlist-form" onsubmit="handleWaitlistSubmit(event)">
-        <input type="text" class="cta-email-input" placeholder="Ton nom" required id="waitlist-name" maxlength="100" />
-        <input type="email" class="cta-email-input" placeholder="toi@email.com" required id="waitlist-email" maxlength="255" />
-        <input type="tel" class="cta-email-input" placeholder="Ton numéro WhatsApp" required id="waitlist-phone" maxlength="30" />
+        <input type="text" class="cta-email-input" placeholder="Ton prénom" required id="waitlist-name" maxlength="100" />
+        <input type="email" class="cta-email-input" placeholder="ton@email.com" required id="waitlist-email" maxlength="255" />
         <p id="waitlist-error" class="form-error" style="display:none;"></p>
         <button type="submit" class="btn btn-white btn-lg magnetic">
-          Rejoindre la liste d'accès anticipé
+          Je veux une place
         </button>
       </form>
 
-      <div class="waitlist-perks" id="waitlist-perks">
-        <h3>Pourquoi on te demande ton téléphone ?</h3>
-        <ul>
-          <li>Pour t'envoyer un message WhatsApp/SMS dès que l'app est prête — pas de spam, juste l'essentiel.</li>
-          <li><strong>Parraine tes amis :</strong> chaque "filleul" est une personne qui s'inscrit avec ton lien personnel ci-dessous (une fois affiché).</li>
-          <li><strong>Accès anticipé :</strong> dès qu'un ami s'inscrit grâce à toi, tu fais partie du petit groupe qui teste l'app avant tout le monde, dès qu'elle est prête.</li>
-          <li><strong>1 mois de Plan Pro gratuit</strong> par filleul, valable dès le lancement officiel du Plan Pro.</li>
-        </ul>
-      </div>
-
       <div class="waitlist-success" id="waitlist-success" style="display:none;">
-        <h3>Tu es inscrit(e) ! 🎉</h3>
-        <p>Voici ton lien de parrainage personnel. Partage-le avec tes amis : chaque inscription via ce lien (= un "filleul") te donne un <strong>accès anticipé</strong> et <strong>1 mois de Plan Pro gratuit</strong> au lancement.</p>
-        <div class="waitlist-share-row">
-          <input type="text" class="waitlist-link-input" id="waitlist-link" readonly />
-          <button type="button" class="btn btn-white magnetic" onclick="copyWaitlistLink()">Copier</button>
-          <a id="waitlist-whatsapp" class="btn btn-white magnetic" target="_blank" rel="noopener">Partager sur WhatsApp</a>
-        </div>
-        <div class="waitlist-count">Filleuls inscrits grâce à toi : <strong id="waitlist-referral-count">0</strong></div>
+        <h3 style="color:#fff;font-size:20px;font-weight:800;margin-bottom:10px;">Tu es dans les 233.</h3>
+        <p style="color:rgba(255,255,255,0.75);font-size:15px;">Tu recevras un email dès que ton accès est activé. Teste, explore, et dis-moi ce qui ne va pas — c'est ça qui rend l'app meilleure.</p>
       </div>
 
       <p class="cta-note">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        Gratuit — aucune carte requise
+        Gratuit · Aucune carte · Pas de spam
       </p>
     </div>
   </div>
@@ -1380,7 +1364,7 @@
   });
 
   /* --- Hero stagger reveal --- */
-  const heroText = "Comprends pourquoi tu procrastines, pourquoi tu abandonnes, et ce qui se passe dans ton cerveau quand tu travailles.";
+  const heroText = "Ton cerveau t'échappe. Prédicta t'explique pourquoi.";
   const h1El = document.getElementById('hero-h1');
   const words = heroText.split(' ');
   h1El.innerHTML = words.map((word, i) => {
@@ -1479,18 +1463,16 @@
     const btn = form.querySelector('button');
     const name = document.getElementById('waitlist-name').value.trim();
     const email = document.getElementById('waitlist-email').value.trim();
-    const phone = document.getElementById('waitlist-phone').value.trim();
 
     errorEl.style.display = 'none';
     btn.disabled = true;
     const originalText = btn.textContent;
-    btn.textContent = 'Envoi en cours...';
+    btn.textContent = 'En cours...';
 
     try {
-      const { referralCode } = await predictaWaitlistJoin({ name, email, phone, ref: getReferralCodeFromUrl() });
-      showWaitlistSuccess(referralCode);
+      await predictaWaitlistJoin({ name, email, ref: getReferralCodeFromUrl() });
       form.style.display = 'none';
-      document.getElementById('waitlist-perks').style.display = 'none';
+      document.getElementById('waitlist-success').style.display = 'block';
     } catch (err) {
       console.error('[predicta] waitlist join error', err.message);
       errorEl.textContent = err.message || "Une erreur est survenue, réessaie dans un instant.";
@@ -1499,28 +1481,6 @@
       btn.disabled = false;
       btn.textContent = originalText;
     }
-  }
-
-  async function showWaitlistSuccess(referralCode) {
-    const successEl = document.getElementById('waitlist-success');
-    const link = `${window.location.origin}/?ref=${referralCode}`;
-    document.getElementById('waitlist-link').value = link;
-
-    const whatsappText = encodeURIComponent(
-      `Salut ! Je viens de m'inscrire sur la liste d'accès anticipé de Prédicta, une app pour mieux comprendre et améliorer sa concentration. Inscris-toi avec mon lien : ${link}`
-    );
-    document.getElementById('waitlist-whatsapp').href = `https://wa.me/?text=${whatsappText}`;
-
-    successEl.style.display = 'block';
-
-    const count = await predictaGetWaitlistReferralCount(referralCode);
-    document.getElementById('waitlist-referral-count').textContent = count;
-  }
-
-  function copyWaitlistLink() {
-    const linkInput = document.getElementById('waitlist-link');
-    navigator.clipboard.writeText(linkInput.value).catch(() => {});
-    linkInput.select();
   }
 
   /* --- Smooth scroll for anchor links --- */
