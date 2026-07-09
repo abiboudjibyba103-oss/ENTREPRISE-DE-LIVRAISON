@@ -40,16 +40,14 @@ async function predictaGetSession() {
 async function predictaWaitlistJoin({ name, email, phone, ref }) {
   const safeName = String(name || '').trim().slice(0, 100);
   const safeEmail = String(email || '').trim().toLowerCase().slice(0, 255);
-  const safePhone = String(phone || '').trim().slice(0, 30);
   const safeRef = String(ref || '').trim().toUpperCase().slice(0, 16);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!safeName) throw new Error('Le nom est requis.');
+  if (!safeName) throw new Error('Le prénom est requis.');
   if (!emailRegex.test(safeEmail)) throw new Error('Adresse email invalide.');
-  if (!safePhone) throw new Error('Le numéro de téléphone est requis.');
 
   const { data, error } = await supabaseClient.functions.invoke('waitlist-join', {
-    body: { name: safeName, email: safeEmail, phone: safePhone, ref: safeRef },
+    body: { name: safeName, email: safeEmail, ref: safeRef },
   });
 
   if (error) throw error;
