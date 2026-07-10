@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
   }
 
   // Load the user's real data to ground the coach's response.
-  const [{ data: profile }, { data: sessions }, { data: brain }, { data: lessons }] = await Promise.all([
+  const [{ data: profile }, { data: sessions }, { data: brain }] = await Promise.all([
     supabaseAdmin.from('profiles').select('*').eq('id', user.id).maybeSingle(),
     supabaseAdmin
       .from('sessions')
@@ -112,21 +112,18 @@ Deno.serve(async (req) => {
       .order('recorded_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabaseAdmin.from('lesson_progress').select('lesson_id, status').eq('user_id', user.id),
   ]);
 
-  const completedLessons = (lessons ?? []).filter((l) => l.status === 'done').length;
   const focusScores = (sessions ?? []).map((s) => s.focus_score).filter((f): f is number => typeof f === 'number');
   const avgFocus = focusScores.length
     ? Math.round(focusScores.reduce((sum, f) => sum + f, 0) / focusScores.length)
     : null;
+  const completedSessions = (sessions ?? []).filter(s => s.status === 'completed').length;
 
   const contextLines = [
     `Prénom: ${profile?.display_name ?? 'utilisateur'}`,
-    `Phase actuelle: ${profile?.phase ?? 'Phase 1 — Découverte'}`,
-    `Sessions récentes (7 dernières): ${sessions?.length ?? 0}`,
-    avgFocus != null ? `Score de focus moyen récent: ${avgFocus}%` : null,
-    `Leçons complétées: ${completedLessons}/30`,
+    `Sessions récentes (7 dernières): ${sessions?.length ?? 0} dont ${completedSessions} complétées`,
+    avgFocus != null ? `Score d'attention moyen: ${avgFocus}%` : 'Pas encore de sessions enregistrées',
     brain
       ? `Profil cognitif (0-100): concentration ${brain.concentration}, mémoire ${brain.memoire}, régulation ${brain.regulation}, régularité ${brain.regularite}, récupération ${brain.recuperation}`
       : null,
