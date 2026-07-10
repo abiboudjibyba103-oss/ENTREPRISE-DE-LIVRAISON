@@ -670,8 +670,8 @@
         <div class="card">
           <div class="section-header">
             <div>
-              <div class="card-title">Focus cette semaine</div>
-              <div class="card-sub">Durée de focus par jour (minutes)</div>
+              <div class="card-title">Tes sessions cette semaine</div>
+              <div class="card-sub">Durée par jour (minutes) — données brutes pour Prédicta</div>
             </div>
             <div class="stat-badge badge-green" style="font-size:12px;" id="focusChartBadge"></div>
           </div>
@@ -753,7 +753,7 @@
           <div class="section-header">
             <div>
               <div class="card-title">Sessions récentes</div>
-              <div class="card-sub">Historique de tes sessions de focus</div>
+              <div class="card-sub">Ce que Prédicta a observé jusqu'ici</div>
             </div>
             <a class="see-all" onclick="navigate('progression',document.querySelector('[data-page=progression]'))">Voir tout →</a>
           </div>
@@ -790,7 +790,7 @@
           <div class="insight-card">
             <div style="display:flex;align-items:flex-start;gap:10px;">
               <span class="insight-dot" style="margin-top:5px;flex-shrink:0;"></span>
-              <div class="insight-text">Lance ta première session pour commencer à recevoir des insights personnalisés.</div>
+              <div class="insight-text">Lance ta première session — Prédicta a besoin de tes données pour comprendre comment tu fonctionnes.</div>
             </div>
           </div>
         </div>
@@ -806,7 +806,7 @@
         <div class="session-card-center">
           <div class="card" style="padding:32px;">
             <div class="card-title" style="font-size:22px;margin-bottom:6px;">Sur quoi tu travailles aujourd'hui ?</div>
-            <div class="card-sub" style="margin-bottom:24px;">Définir ta tâche principale aide ton cerveau à entrer en focus plus vite.</div>
+            <div class="card-sub" style="margin-bottom:24px;">Prédicta observe ta session pour comprendre comment TON attention fonctionne.</div>
             <textarea class="input-field" id="sessionTaskInput" rows="3" placeholder="Ex: Révision du chapitre 3, Rédaction du business plan..."></textarea>
             <div class="section-label">Durée souhaitée</div>
             <div class="pill-group" id="sessionDurationPills">
@@ -1000,7 +1000,7 @@
             <div style="display:flex;flex-direction:column;gap:10px;" id="patternsList">
               <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
                 <span style="font-size:18px;">💡</span>
-                <div style="font-size:13px;color:var(--text);line-height:1.5;">Complète quelques sessions pour que Prédicta détecte tes patterns de focus.</div>
+                <div style="font-size:13px;color:var(--text);line-height:1.5;">Complète quelques sessions pour que Prédicta détecte tes patterns d'attention.</div>
               </div>
             </div>
           </div>
@@ -1018,7 +1018,7 @@
 
       <div class="card">
         <div class="card-title" style="margin-bottom:6px;">Heatmap hebdomadaire</div>
-        <div class="card-sub" style="margin-bottom:14px;">Intensité de focus sur 4 semaines</div>
+        <div class="card-sub" style="margin-bottom:14px;">Intensité d'attention sur 4 semaines</div>
         <div style="display:flex;gap:6px;margin-bottom:6px;">
           <div style="width:30px;font-size:10px;color:var(--text-sec);text-align:center;"></div>
           <div style="flex:1;display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center;">
@@ -1047,13 +1047,13 @@
     <!-- ===== PAGE: MA PROGRESSION ===== -->
     <div class="page" id="page-progression">
       <div class="card" style="margin-bottom:20px;">
-        <div class="card-title" style="margin-bottom:4px;">Avant / Après — Focus moyen</div>
+        <div class="card-title" style="margin-bottom:4px;">Avant / Après — Capacité d'attention</div>
         <div class="card-sub" style="margin-bottom:20px;">Comparaison depuis ton premier jour</div>
         <div class="before-after">
           <div class="ba-card card" style="border:none;box-shadow:none;background:var(--bg);">
             <div class="ba-label">Premières sessions</div>
             <div class="ba-value before" id="progBeforeVal">0 <span style="font-size:20px;">min</span></div>
-            <div style="font-size:12px;color:var(--text-sec);margin-top:6px;">Focus moyen initial</div>
+            <div style="font-size:12px;color:var(--text-sec);margin-top:6px;">Attention initiale</div>
           </div>
           <div class="ba-arrow">→</div>
           <div class="ba-card card" style="border:none;box-shadow:none;background:var(--violet-light);">
@@ -1068,7 +1068,7 @@
         <div class="section-header">
           <div>
             <div class="card-title">Progression sur 30 jours</div>
-            <div class="card-sub">Focus moyen quotidien (minutes)</div>
+            <div class="card-sub">Durée moyenne par session (minutes)</div>
           </div>
           <div class="stat-badge badge-violet">30 jours</div>
         </div>
@@ -1460,7 +1460,7 @@ function startSession() {
   if (taskLabel) taskLabel.textContent = task || 'Session de focus';
 
   showSessionState(1);
-  showToast('Session lancée ! Bonne concentration 🧠', 'success');
+  showToast('Session lancée. Prédicta observe. 🧠', 'success');
 }
 
 async function endSession() {
@@ -1873,7 +1873,7 @@ async function refreshDashboardData() {
   const recentBody = document.getElementById('recentSessionsBody');
   if (recentBody) {
     if (!cachedSessions.length) {
-      recentBody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-sec);padding:24px 0;">Aucune session pour l'instant. Lance ta première session !</td></tr>`;
+      recentBody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-sec);padding:24px 0;">Aucune session pour l'instant. Lance en une — Prédicta a besoin de tes données.</td></tr>`;
     } else {
       recentBody.innerHTML = cachedSessions.slice(0, 5).map(s => {
         const d = new Date(s.started_at);
@@ -1920,7 +1920,7 @@ function updateInsights() {
   const insights = [];
 
   if (sessions.length === 0) {
-    insights.push({ color: '', text: 'Lance ta première session pour commencer à recevoir des insights personnalisés du coach.' });
+    insights.push({ color: '', text: 'Lance ta première session — Prédicta a besoin de tes données pour comprendre comment tu fonctionnes.' });
   } else {
     if (completed.length >= 3) {
       const byDay = {};
@@ -1937,7 +1937,7 @@ function updateInsights() {
         if (avg > bestAvg) { bestAvg = avg; bestDay = day; }
       }
       if (bestDay) {
-        insights.push({ color: '', text: `Ton meilleur jour pour te concentrer semble être le ${bestDay}. Essaie d'y réserver ta tâche la plus exigeante.` });
+        insights.push({ color: '', text: `Ton cerveau semble plus disponible le ${bestDay}. C'est le meilleur moment pour ta tâche la plus exigeante.` });
       }
     }
 
@@ -2109,7 +2109,7 @@ async function renderBrainPage() {
       patternsList.innerHTML = `
         <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
           <span style="font-size:18px;">💡</span>
-          <div style="font-size:13px;color:var(--text);line-height:1.5;">Complète quelques sessions pour que Prédicta détecte tes patterns de focus.</div>
+          <div style="font-size:13px;color:var(--text);line-height:1.5;">Complète quelques sessions pour que Prédicta détecte tes patterns d'attention.</div>
         </div>`;
     }
   }
