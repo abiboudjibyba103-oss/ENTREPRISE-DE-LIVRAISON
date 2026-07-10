@@ -1547,23 +1547,37 @@ async function loadDailyLesson() {
   renderDailyLessonPage();
 }
 
+function isEvening() {
+  return new Date().getHours() >= 17;
+}
+
 function renderDailyLessonCard() {
   const excerpt = document.getElementById('dailyLessonExcerpt');
   const btn = document.getElementById('dailyLessonBtn');
   if (!excerpt || !btn) return;
 
+  if (!dailyLessonHasSession) {
+    excerpt.textContent = 'Lance au moins une session aujourd\'hui — Prédicta analysera ta journée et t\'expliquera ce soir ce qui s\'est passé dans ton cerveau.';
+    btn.disabled = true;
+    btn.textContent = "Disponible ce soir";
+    return;
+  }
+
+  if (!isEvening()) {
+    excerpt.textContent = 'Tu as fait des sessions aujourd\'hui. Prédicta prépare ton enseignement. Reviens ce soir à partir de 17h pour le lire.';
+    btn.disabled = true;
+    btn.textContent = "Disponible à 17h";
+    return;
+  }
+
   if (dailyLessonText) {
     excerpt.textContent = dailyLessonText.slice(0, 140) + (dailyLessonText.length > 140 ? '…' : '');
     btn.disabled = false;
-    btn.textContent = "Voir l'enseignement du soir";
-  } else if (dailyLessonHasSession) {
-    excerpt.textContent = 'Ton enseignement du soir arrive...';
-    btn.disabled = true;
-    btn.textContent = 'Génération en cours...';
+    btn.textContent = "Lire l'enseignement du soir";
   } else {
-    excerpt.textContent = 'Termine au moins une session aujourd\'hui pour débloquer ton enseignement du soir.';
+    excerpt.textContent = 'Génération en cours...';
     btn.disabled = true;
-    btn.textContent = "Voir l'enseignement du soir";
+    btn.textContent = 'Un instant...';
   }
 }
 
@@ -1571,12 +1585,20 @@ function renderDailyLessonPage() {
   const body = document.getElementById('dailyLessonBody');
   if (!body) return;
 
+  if (!dailyLessonHasSession) {
+    body.textContent = "Lance une session aujourd'hui — Prédicta analysera ce qui s'est vraiment passé et t'expliquera ce soir pourquoi ton cerveau a réagi comme ça.";
+    return;
+  }
+
+  if (!isEvening()) {
+    body.textContent = "Tu as fait des sessions aujourd'hui. Prédicta prépare ton enseignement personnalisé. Reviens ce soir à partir de 17h pour le lire.";
+    return;
+  }
+
   if (dailyLessonText) {
     body.textContent = dailyLessonText;
-  } else if (dailyLessonHasSession) {
-    body.textContent = 'Ton enseignement du soir est en cours de génération, reviens dans un instant.';
   } else {
-    body.textContent = "Tu n'as pas encore fait de session aujourd'hui. Lance une session de focus : Prédicta analysera ce qui s'est vraiment passé et t'expliquera, ce soir, pourquoi.";
+    body.textContent = 'Génération en cours, reviens dans un instant.';
   }
 }
 
