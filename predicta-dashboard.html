@@ -1736,6 +1736,7 @@ async function sendCoachMessage() {
     coachHistory.push({ role: 'user', content: text });
     coachHistory.push({ role: 'assistant', content: reply });
     coachHistory = coachHistory.slice(-10);
+    saveCoachHistory();
     if (limitReached) {
       addCoachBubble('ai', "Tu as posé ta question du jour ! Reviens demain pour échanger à nouveau avec le coach.");
     }
@@ -1751,7 +1752,32 @@ async function sendCoachMessage() {
   }
 }
 
+function coachStorageKey() {
+  return 'predicta_coach_' + new Date().toISOString().slice(0, 10);
+}
+
+function saveCoachHistory() {
+  try {
+    sessionStorage.setItem(coachStorageKey(), JSON.stringify(coachHistory));
+  } catch(e) {}
+}
+
+function restoreCoachHistory() {
+  try {
+    const saved = sessionStorage.getItem(coachStorageKey());
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return null;
+}
+
 async function initCoach() {
+  const saved = restoreCoachHistory();
+  if (saved && saved.length > 0) {
+    coachHistory = saved;
+    document.getElementById('coachChat').innerHTML = '';
+    coachHistory.forEach(m => addCoachBubble(m.role === 'assistant' ? 'ai' : 'user', m.content));
+    return;
+  }
   showCoachTyping();
   try {
     const { reply } = await predictaCoachChat('', []);
@@ -1759,6 +1785,7 @@ async function initCoach() {
     document.getElementById('coachChat').innerHTML = '';
     addCoachBubble('ai', reply);
     coachHistory = [{ role: 'assistant', content: reply }];
+    saveCoachHistory();
   } catch (err) {
     console.error('[predicta] coach init error', err.message);
     removeCoachTyping();
