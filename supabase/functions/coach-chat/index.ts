@@ -25,7 +25,7 @@ const MAX_HISTORY = 10;
 const COACH_MODEL = 'llama-3.3-70b-versatile';
 
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://entreprise-de-livraison.vercel.app',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };

@@ -1257,7 +1257,12 @@ function showToast(msg, type = 'info') {
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   const icons = { success: '✅', error: '❌', info: '💡' };
-  toast.innerHTML = `<span>${icons[type] || '💡'}</span><span>${msg}</span>`;
+  const iconSpan = document.createElement('span');
+  iconSpan.textContent = icons[type] || '💡';
+  const msgSpan = document.createElement('span');
+  msgSpan.textContent = msg;
+  toast.appendChild(iconSpan);
+  toast.appendChild(msgSpan);
   container.appendChild(toast);
   setTimeout(() => {
     toast.classList.add('removing');

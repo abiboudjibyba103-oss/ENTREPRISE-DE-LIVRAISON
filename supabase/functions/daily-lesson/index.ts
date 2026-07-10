@@ -27,7 +27,7 @@ const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')!;
 const COACH_MODEL = 'llama-3.3-70b-versatile';
 
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://entreprise-de-livraison.vercel.app',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
@@ -100,6 +100,18 @@ Deno.serve(async (req) => {
 
   if (!todaySessions || todaySessions.length === 0) {
     return json({ lessonText: null, hasSessionToday: false });
+  }
+
+  // Return cached lesson if already generated today to avoid unnecessary Groq calls.
+  const { data: cached } = await supabaseAdmin
+    .from('daily_lessons')
+    .select('lesson_text')
+    .eq('user_id', user.id)
+    .eq('lesson_date', today)
+    .maybeSingle();
+
+  if (cached?.lesson_text) {
+    return json({ lessonText: cached.lesson_text, hasSessionToday: true });
   }
 
   const { data: profile } = await supabaseAdmin
