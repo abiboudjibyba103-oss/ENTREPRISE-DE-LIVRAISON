@@ -2045,8 +2045,8 @@ async function renderProgression() {
     ? `${Math.round((weekCompleted.length / weekSessions.length) * 100)}%`
     : '0%';
 
-  const lessonsThisWeek = Object.values(lessonProgressMap).filter(
-    p => p.status === 'done' && p.completed_at && new Date(p.completed_at) >= weekAgo
+  const lessonsThisWeek = cachedSessions.filter(
+    s => s.status === 'completed' && new Date(s.started_at) >= weekAgo
   ).length;
   document.getElementById('progWeekLessons').textContent = String(lessonsThisWeek);
 
