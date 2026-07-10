@@ -1222,6 +1222,7 @@
       <form class="waitlist-form" id="waitlist-form" onsubmit="handleWaitlistSubmit(event)">
         <input type="text" class="cta-email-input" placeholder="Ton prénom" required id="waitlist-name" maxlength="100" />
         <input type="email" class="cta-email-input" placeholder="ton@email.com" required id="waitlist-email" maxlength="255" />
+        <input type="password" class="cta-email-input" placeholder="Choisis un mot de passe" required id="waitlist-password" minlength="6" />
         <p id="waitlist-error" class="form-error" style="display:none;"></p>
         <button type="submit" class="btn btn-white btn-lg magnetic">
           Je veux une place
@@ -1229,8 +1230,8 @@
       </form>
 
       <div class="waitlist-success" id="waitlist-success" style="display:none;">
-        <h3 style="color:#fff;font-size:20px;font-weight:800;margin-bottom:10px;">Tu es dans les 233.</h3>
-        <p style="color:rgba(255,255,255,0.75);font-size:15px;">Tu recevras un email dès que ton accès est activé. Teste, explore, et dis-moi ce qui ne va pas — c'est ça qui rend l'app meilleure.</p>
+        <h3 style="color:#fff;font-size:20px;font-weight:800;margin-bottom:10px;">Bienvenue dans les 233. 🎉</h3>
+        <p style="color:rgba(255,255,255,0.75);font-size:15px;">Ton compte est créé. Tu vas être redirigé vers l'app dans quelques secondes...</p>
       </div>
 
       <p class="cta-note">
@@ -1423,21 +1424,29 @@
     const btn = form.querySelector('button');
     const name = document.getElementById('waitlist-name').value.trim();
     const email = document.getElementById('waitlist-email').value.trim();
+    const password = document.getElementById('waitlist-password').value;
 
     errorEl.style.display = 'none';
     btn.disabled = true;
     const originalText = btn.textContent;
-    btn.textContent = 'En cours...';
+    btn.textContent = 'Création en cours...';
 
     try {
-      await predictaWaitlistJoin({ name, email, ref: getReferralCodeFromUrl() });
+      const { error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: { data: { display_name: name } }
+      });
+      if (error) throw error;
       form.style.display = 'none';
       document.getElementById('waitlist-success').style.display = 'block';
+      setTimeout(() => {
+        window.location.href = '/predicta-dashboard.html';
+      }, 2000);
     } catch (err) {
-      console.error('[predicta] waitlist join error', err.message);
+      console.error('[predicta] signup error', err.message);
       errorEl.textContent = err.message || "Une erreur est survenue, réessaie dans un instant.";
       errorEl.style.display = 'block';
-    } finally {
       btn.disabled = false;
       btn.textContent = originalText;
     }
