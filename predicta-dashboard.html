@@ -551,7 +551,7 @@
         <path d="M9 3C6.5 3 4.5 4.7 4 7C3 7.4 2 8.5 2 10C2 11.7 3.2 13 4.8 13.3C5.3 14.9 6.9 16 9 16C11.1 16 12.7 14.9 13.2 13.3C14.8 13 16 11.7 16 10C16 8.5 15 7.4 14 7C13.5 4.7 11.5 3 9 3Z"/>
         <circle cx="9" cy="9" r="1"/>
       </svg>
-      Mon Cerveau
+      Comment je fonctionne
     </div>
     <div class="nav-item" data-page="lessons" onclick="navigate('lessons', this)">
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -912,7 +912,7 @@
         </div>
         <div class="phase-info">
           <div class="phase-title" id="brainPhaseTitle">Phase 1 — Découverte</div>
-          <div class="phase-sub" id="brainPhaseSub">Jour 1 sur 30 · Tu démarres ton parcours cognitif</div>
+          <div class="phase-sub" id="brainPhaseSub">Jour 1 sur 90 · Prédicta apprend comment tu fonctionnes</div>
           <div class="phase-progress"><div class="phase-fill" id="brainPhaseFill" style="width:0%;"></div></div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
@@ -923,8 +923,8 @@
 
       <div class="brain-grid">
         <div class="card">
-          <div class="card-title">Profil cognitif</div>
-          <div class="card-sub" style="margin-bottom:16px;" id="radarNote">Radar de tes 5 axes clés</div>
+          <div class="card-title">Comment ton attention se déploie</div>
+          <div class="card-sub" style="margin-bottom:16px;" id="radarNote">5 dimensions observées par Prédicta</div>
           <div class="radar-wrap" style="overflow:visible;">
             <!-- SVG 340x310, center (170,155), r=88. Labels with rect backgrounds -->
             <svg width="340" height="310" viewBox="0 0 340 310" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
@@ -1207,7 +1207,7 @@
 const pageTitles = {
   dashboard: 'Tableau de bord',
   session: 'Session du jour',
-  brain: 'Mon Cerveau',
+  brain: 'Comment je fonctionne',
   lessons: 'Micro-leçons',
   progression: 'Ma Progression',
   settings: 'Paramètres'
@@ -2124,37 +2124,50 @@ async function renderBrainPage() {
   const completedSessions = sessions.filter(s => s.status === 'completed');
 
   if (patternsList) {
-    if (completedSessions.length >= 5) {
+    if (completedSessions.length >= 1) {
       const totalMin = completedSessions.reduce((s, x) => s + x.duration_min, 0);
       const avgMin = Math.round(totalMin / completedSessions.length);
-      patternsList.innerHTML = `
+      const items = [
+        `Durée moyenne de session : <strong>${avgMin} min</strong> sur ${completedSessions.length} session${completedSessions.length > 1 ? 's' : ''} complétée${completedSessions.length > 1 ? 's' : ''}.`,
+      ];
+      if (completedSessions.length >= 3) {
+        const best = completedSessions.reduce((a, b) => a.duration_min > b.duration_min ? a : b);
+        items.push(`Meilleure session : <strong>${best.duration_min} min</strong> — ton cerveau est capable de tenir.`);
+      }
+      patternsList.innerHTML = items.map(text => `
         <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
           <span style="font-size:18px;">🔵</span>
-          <div style="font-size:13px;color:var(--text);line-height:1.5;">Durée moyenne de session : <strong>${avgMin} min</strong> sur ${completedSessions.length} sessions complétées.</div>
-        </div>`;
+          <div style="font-size:13px;color:var(--text);line-height:1.5;">${text}</div>
+        </div>`).join('');
     } else {
       patternsList.innerHTML = `
         <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
           <span style="font-size:18px;">💡</span>
-          <div style="font-size:13px;color:var(--text);line-height:1.5;">Complète quelques sessions pour que Prédicta détecte tes patterns d'attention.</div>
+          <div style="font-size:13px;color:var(--text);line-height:1.5;">Lance ta première session — Prédicta a besoin de t'observer pour détecter tes patterns.</div>
         </div>`;
     }
   }
 
   if (saboteursList) {
     const interrupted = sessions.filter(s => s.status === 'interrupted');
-    if (sessions.length >= 5 && interrupted.length > 0) {
+    if (sessions.length >= 1 && interrupted.length > 0) {
       const rate = Math.round((interrupted.length / sessions.length) * 100);
       saboteursList.innerHTML = `
         <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--error-light);border-radius:12px;border:1px solid rgba(220,38,38,0.15);">
           <span style="font-size:18px;">⚠️</span>
-          <div style="font-size:13px;color:var(--error);line-height:1.5;font-weight:500;">${rate}% de tes sessions sont interrompues avant la fin.</div>
+          <div style="font-size:13px;color:var(--error);line-height:1.5;font-weight:500;">${rate}% de tes sessions interrompues. L'enseignement du soir t'expliquera pourquoi.</div>
+        </div>`;
+    } else if (sessions.length >= 1) {
+      saboteursList.innerHTML = `
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
+          <span style="font-size:18px;">✅</span>
+          <div style="font-size:13px;color:var(--text);line-height:1.5;">Aucune interruption détectée pour l'instant. Continue — Prédicta observe.</div>
         </div>`;
     } else {
       saboteursList.innerHTML = `
         <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
           <span style="font-size:18px;">💡</span>
-          <div style="font-size:13px;color:var(--text);line-height:1.5;">Pas encore assez de données pour identifier des saboteurs.</div>
+          <div style="font-size:13px;color:var(--text);line-height:1.5;">Les saboteurs apparaissent après ta première session.</div>
         </div>`;
     }
   }
