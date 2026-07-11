@@ -484,19 +484,63 @@
     .sidebar.open { transform: translateX(0); }
     .sidebar-overlay.visible { display: block; }
     .main { margin-left: 0; }
-    .stats-grid { grid-template-columns: repeat(2,1fr); }
-    .mid-grid, .bot-grid { grid-template-columns: 1fr; }
-    .insights-grid { grid-template-columns: 1fr; }
-    .lessons-grid { grid-template-columns: repeat(2,1fr); }
-    .before-after { grid-template-columns: 1fr; }
-    .ba-arrow { display: none; }
-    .brain-grid { grid-template-columns: 1fr; }
-    .end-stats { grid-template-columns: 1fr; }
+    .navbar { padding: 0 16px; height: 60px; }
+    .navbar-date { display: none; }
+    .btn-primary span { display: none; }
+    .btn-primary { padding: 10px 14px; }
     .content-area { padding: 16px; }
+    .stats-grid { grid-template-columns: repeat(2,1fr); gap: 12px; margin-bottom: 16px; }
+    .stat-value { font-size: 22px; }
+    .mid-grid, .bot-grid { grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
+    .insights-grid { grid-template-columns: 1fr; gap: 10px; margin-bottom: 16px; }
+    .lessons-grid { grid-template-columns: repeat(2,1fr); }
+    .before-after { grid-template-columns: 1fr; gap: 12px; }
+    .ba-arrow { display: none; }
+    .brain-grid { grid-template-columns: 1fr; gap: 12px; }
+    .end-stats { grid-template-columns: repeat(3,1fr); gap: 10px; }
+    .end-stat-value { font-size: 18px; }
+    .timer-circle-wrap { width: 180px; height: 180px; }
+    .timer-time { font-size: 32px; }
+    .card { padding: 18px; }
+    .coach-chat { max-height: 200px; }
+    .pill-group { flex-wrap: wrap; }
+    .pill-btn { padding: 8px 16px; font-size: 13px; }
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .session-card-center { max-width: 100%; }
+    .phase-card { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .phase-icon { width: 48px; height: 48px; }
+    .ba-value { font-size: 32px; }
+    .theme-tabs { gap: 6px; }
+    .theme-tab { padding: 6px 12px; font-size: 12px; }
   }
+
   @media (max-width: 480px) {
-    .stats-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2,1fr); gap: 10px; }
+    .stat-card { padding: 16px; }
+    .stat-icon { width: 36px; height: 36px; margin-bottom: 10px; }
+    .stat-value { font-size: 20px; }
     .lessons-grid { grid-template-columns: 1fr; }
+    .end-stats { grid-template-columns: 1fr; gap: 8px; }
+    .end-actions { flex-direction: column; }
+    .timer-circle-wrap { width: 160px; height: 160px; }
+    .timer-time { font-size: 28px; }
+    .timer-actions { flex-direction: column; gap: 8px; }
+    .btn-secondary, .btn-danger { flex: none; width: 100%; }
+    .navbar-title { font-size: 15px; }
+    .card { padding: 14px; border-radius: 16px; }
+    .coach-input-row { gap: 6px; }
+    .mood-btns { gap: 6px; }
+    .mood-btn { padding: 8px 4px; font-size: 11px; }
+    .mood-btn .emoji { font-size: 18px; }
+    #toastContainer { top: 12px; right: 12px; left: 12px; }
+    .toast { min-width: unset; max-width: 100%; font-size: 13px; }
+    .brain-grid { grid-template-columns: 1fr; }
+    .heatmap-grid { gap: 4px; }
+    .lesson-modal { border-radius: 16px; }
+    .lesson-modal-header { padding: 20px 20px 0; }
+    .lesson-modal-body { padding: 16px 20px 20px; }
+    .ba-value { font-size: 28px; }
+    .section-card-center { max-width: 100%; }
   }
 
   /* Misc */
