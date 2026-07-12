@@ -32,6 +32,11 @@
   }
 
   html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+  @media (max-width: 768px) {
+    html, body { overflow: auto; height: auto; }
+    .main { height: auto; overflow: visible; }
+    .content-area { overflow: visible; height: auto; }
+  }
 
   /* ===== SIDEBAR ===== */
   .sidebar {

@@ -706,35 +706,98 @@
        RESPONSIVE
     ============================================= */
     @media (max-width: 1024px) {
-      .problems-grid { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; }
+      .problems-grid { grid-template-columns: 1fr 1fr; }
       .pillars-grid { grid-template-columns: 1fr 1fr; }
-      .lessons-grid { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; }
+      .lessons-grid { grid-template-columns: 1fr 1fr; }
       .timeline-track { grid-template-columns: 1fr 1fr; gap: 32px; }
       .timeline-line { display: none; }
       .footer-top { grid-template-columns: 1fr 1fr; }
     }
+
     @media (max-width: 768px) {
       html { font-size: 15px; }
+      .container { padding: 0 18px; }
       .nav-links, .nav-actions { display: none; }
       .hamburger { display: flex; }
-      .hero-inner { grid-template-columns: 1fr; gap: 48px; }
-      .brain-container { width: 300px; height: 300px; }
-      .brain-ring-1 { width: 280px; height: 280px; }
-      .brain-ring-2 { width: 220px; height: 220px; }
-      .brain-ring-3 { width: 160px; height: 160px; }
-      .pillars-grid { grid-template-columns: 1fr; }
-      .steps-wrapper { grid-template-columns: 1fr; }
-      .step-connector { display: none; }
-      .timeline-track { grid-template-columns: 1fr; }
-      .footer-top { grid-template-columns: 1fr; gap: 32px; }
-      .footer-bottom { flex-direction: column; align-items: flex-start; }
-      .hero-ctas { flex-direction: column; align-items: flex-start; }
-      .hero-h1 { font-size: clamp(30px, 7vw, 44px) !important; }
-      .section-title { font-size: clamp(26px, 6vw, 36px) !important; }
+
+      /* Hero */
+      #hero { padding: 100px 0 60px; min-height: auto; }
+      .hero-inner { grid-template-columns: 1fr; gap: 40px; }
+      .hero-visual { display: none; }
+      .hero-h1 { font-size: clamp(28px, 8vw, 40px) !important; }
+      .hero-subtitle { font-size: 15px; margin-bottom: 28px; }
+      .hero-subtitle br { display: none; }
+      .hero-ctas { flex-direction: column; align-items: stretch; }
+      .hero-ctas .btn { width: 100%; justify-content: center; }
+      .hero-trust { flex-wrap: wrap; }
+      .hero-badge { font-size: 12px; }
+
+      /* Sections */
+      section { padding: 64px 0; }
+      .section-title { font-size: clamp(24px, 6vw, 34px) !important; }
       .section-subtitle { font-size: 15px !important; }
-      .hero-subtitle { font-size: 16px; }
+      .problems-header, .solution-header, .lessons-header, .journey-header, .how-header { margin-bottom: 40px; }
+
+      /* Grids */
+      .problems-grid { grid-template-columns: 1fr; max-width: 100%; }
+      .pillars-grid { grid-template-columns: 1fr; }
+      .steps-wrapper { grid-template-columns: 1fr; gap: 32px; }
+      .step-connector { display: none; }
+      .lessons-grid { grid-template-columns: 1fr; max-width: 100%; }
+      .timeline-track { grid-template-columns: 1fr 1fr; gap: 24px; }
+
+      /* Cards */
+      .problem-card { padding: 24px; }
+      .pillar-card { padding: 24px; }
+      .lesson-card { padding: 24px; }
+      .step { padding: 0 8px; }
       .problem-card p, .pillar-card p, .step p, .phase-desc { font-size: 14px; line-height: 1.75; }
-      section { padding: 72px 0; }
+
+      /* CTA section */
+      #final-cta { padding: 80px 0; }
+      .final-cta-inner h2 { font-size: clamp(26px, 7vw, 38px) !important; }
+      .final-cta-inner p { font-size: 15px; }
+      .waitlist-form { max-width: 100%; }
+      .btn-lg { padding: 16px 28px; font-size: 16px; }
+
+      /* Founder quote */
+      #founder-quote { padding: 80px 0; }
+      .quote-text { font-size: clamp(17px, 4vw, 22px) !important; }
+
+      /* Journey */
+      .journey-cards-row { flex-direction: column; gap: 0; }
+      .journey-connector { width: auto; height: 40px; writing-mode: horizontal-tb; }
+      .journey-badge { writing-mode: horizontal-tb; transform: none; }
+      .journey-stat-card { padding: 24px 20px; }
+
+      /* Footer */
+      .footer-top { grid-template-columns: 1fr; gap: 28px; }
+      .footer-bottom { flex-direction: column; align-items: flex-start; gap: 10px; }
+      footer { padding: 48px 0 32px; }
+    }
+
+    @media (max-width: 480px) {
+      html { font-size: 14px; }
+      .container { padding: 0 16px; }
+      .hero-h1 { font-size: clamp(26px, 9vw, 34px) !important; letter-spacing: -0.02em; }
+      .hero-badge { font-size: 11px; padding: 6px 12px; }
+      .hero-ctas .btn-lg { padding: 15px 20px; font-size: 15px; }
+      .problems-grid { grid-template-columns: 1fr; }
+      .timeline-track { grid-template-columns: 1fr; }
+      .section-title { font-size: clamp(22px, 7vw, 30px) !important; }
+      .problem-card { padding: 20px; }
+      .pillar-card { padding: 20px; }
+      .pillar-icon { width: 44px; height: 44px; margin-bottom: 16px; }
+      .pillar-card h3 { font-size: 17px; }
+      .lesson-card { padding: 20px; }
+      .lesson-card h3 { font-size: 15px; }
+      .cta-email-input { padding: 14px 16px; font-size: 14px; }
+      .quote-text { font-size: 16px !important; }
+      #founder-quote { padding: 60px 0; }
+      #final-cta { padding: 60px 0; }
+      .journey-stat-card { padding: 20px 16px; }
+      .journey-stat-num { font-size: clamp(28px, 8vw, 40px) !important; }
+      .mobile-menu a { padding: 14px 20px; font-size: 15px; }
     }
   </style>
 </head>
