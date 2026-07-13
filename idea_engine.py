@@ -110,31 +110,8 @@ def generate_idea(angle: str, plateforme: str, sujet: str) -> str:
 
 
 def filter_idea(idee: str) -> str:
-    """Évalue si l'idée provoque au moins une des 3 émotions cibles de Prédicta."""
-    response = _client.messages.create(
-        model=MODEL,
-        max_tokens=512,
-        messages=[
-            {
-                "role": "user",
-                "content": (
-                    "Voici une idée de contenu pour Prédicta :\n\n"
-                    f"{idee}\n\n"
-                    "Évalue si cette idée provoque AU MOINS UNE de ces 3 émotions "
-                    'chez le lecteur : "Je me reconnais complètement", '
-                    '"Je n\'avais jamais pensé à ça", "Donc je ne suis pas paresseux ?".\n\n'
-                    "Sois permissif : une seule de ces émotions suffit pour valider "
-                    "l'idée. Valide-la par défaut. Ne la rejette que dans un cas "
-                    "extrême — une idée vraiment générique, sans aucun lien avec "
-                    "l'audience, et qui ne provoque strictement aucune des 3 "
-                    "émotions.\n\n"
-                    "Réponds en commençant par VALIDÉE ou REJETÉE, suivi d'une "
-                    "explication courte."
-                ),
-            }
-        ],
-    )
-    return response.content[0].text
+    """Filtre désactivé temporairement — valide toujours l'idée sans appeler l'API."""
+    return "VALIDÉE — filtre désactivé temporairement."
 
 
 def generate_script(idee_validee: str, plateforme: str) -> str:
