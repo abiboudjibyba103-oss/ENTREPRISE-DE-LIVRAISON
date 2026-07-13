@@ -565,6 +565,19 @@
   .state-btn.active, .state-btn:hover { background: var(--violet); color: #fff; border-color: var(--violet); }
 
   .prog-chart-wrap { margin-top: 16px; }
+
+  /* ===== INTERRUPTION QUESTIONS ===== */
+  .interruption-btn {
+    width: 100%; padding: 14px 18px; border-radius: 14px;
+    border: 1.5px solid var(--border); background: var(--bg);
+    font-size: 14px; font-weight: 500; cursor: pointer; text-align: left;
+    color: var(--text); font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s; line-height: 1.4;
+  }
+  .interruption-btn:hover { border-color: var(--violet); background: var(--violet-light); color: var(--violet); }
+  .interruption-btn.selected { border-color: var(--violet); background: var(--violet-light); color: var(--violet); font-weight: 600; }
+  .interruption-btn.other-btn { border-style: dashed; color: var(--text-sec); }
+  .interruption-btn.other-btn:hover { border-color: var(--orange); background: var(--orange-light); color: var(--orange); }
 </style>
 </head>
 <body>
@@ -925,11 +938,48 @@
       <div class="session-state" id="sessionState2">
         <div class="session-card-center">
           <div class="card" style="padding:32px;text-align:center;">
-            <div class="check-anim">
+            <div class="check-anim" id="sessionEndAnim">
               <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M8 20L16 28L32 12" stroke="#16A34A" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <div class="end-title" id="sessionEndTitle">Session terminée !</div>
-            <div class="end-quote" id="sessionEndCoachMsg">"Tu viens de prouver quelque chose à ton cortex préfrontal — qu'il est capable de tenir. Chaque session est une répétition. Continue."</div>
+
+            <!-- Questions d'interruption (visible seulement si session interrompue) -->
+            <div id="interruptionQuestions" style="display:none;margin-bottom:20px;">
+              <div style="font-size:14px;color:var(--text-sec);margin-bottom:16px;line-height:1.6;">
+                Prédicta ne devine pas — elle écoute.<br>
+                <strong style="color:var(--text);">Qu'est-ce qui t'a fait stopper ?</strong>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;" id="interruptionChoices">
+                <button class="interruption-btn" onclick="selectInterruption(this, 'Interruption externe — quelqu\'un ou quelque chose m\'a coupé dans mon élan')">
+                  ⚡ Quelque chose m'a coupé de l'extérieur
+                </button>
+                <button class="interruption-btn" onclick="selectInterruption(this, 'Décrochage mental — mon esprit a commencé à vagabonder vers autre chose')">
+                  🌀 Mon esprit est parti ailleurs tout seul
+                </button>
+                <button class="interruption-btn" onclick="selectInterruption(this, 'Blocage cognitif — la tâche me semblait floue, trop grande ou je ne savais plus par où commencer')">
+                  🧱 Je ne savais plus par où commencer
+                </button>
+                <button class="interruption-btn other-btn" onclick="document.getElementById('interruptionOtherWrap').style.display='block';this.style.display='none';">
+                  ✏️ Autre chose — je veux expliquer moi-même
+                </button>
+              </div>
+              <!-- Champ texte libre "Autre chose" -->
+              <div id="interruptionOtherWrap" style="display:none;margin-top:4px;">
+                <textarea id="interruptionOtherText" class="input-field" rows="2" placeholder="Explique en quelques mots ce qui s'est passé…" style="resize:none;font-size:13px;"></textarea>
+                <button class="btn-full" style="margin-top:10px;padding:12px;" onclick="confirmInterruptionOther()">Confirmer</button>
+              </div>
+              <button style="background:none;border:none;color:var(--text-sec);font-size:13px;cursor:pointer;margin-top:4px;font-family:'DM Sans',sans-serif;" onclick="skipInterruption()">
+                Passer cette étape
+              </button>
+            </div>
+
+            <!-- Réponse du coach après interruption -->
+            <div id="interruptionCoachReply" style="display:none;margin-bottom:20px;text-align:left;background:var(--violet-light);border-radius:14px;padding:16px 18px;border-left:4px solid var(--violet);">
+              <div style="font-size:11px;color:var(--violet);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Le Coach</div>
+              <div id="interruptionCoachText" style="font-size:14px;color:var(--text);line-height:1.7;"></div>
+            </div>
+
+            <div class="end-quote" id="sessionEndCoachMsg" style="display:none;">"Tu viens de prouver quelque chose à ton cortex préfrontal — qu'il est capable de tenir. Chaque session est une répétition. Continue."</div>
             <div class="end-stats">
               <div class="end-stat">
                 <div class="end-stat-value" id="sessionEndMinutes">0</div>
@@ -1517,16 +1567,36 @@ function startSession() {
   showToast('Session lancée. Prédicta observe. 🧠', 'success');
 }
 
+let lastSessionId = null;
+let lastSessionStatus = 'completed';
+
 async function endSession() {
   stopTimer();
   const elapsedSec = timerTotal - timerRemaining;
   const durationMin = Math.max(1, Math.round(elapsedSec / 60));
   const status = timerRemaining === 0 ? 'completed' : 'interrupted';
   const focusScore = Math.max(0, Math.min(100, Math.round((elapsedSec / timerTotal) * 100)));
+  lastSessionStatus = status;
+
+  // Reset interruption UI
+  document.getElementById('interruptionQuestions').style.display = 'none';
+  document.getElementById('interruptionCoachReply').style.display = 'none';
+  document.getElementById('interruptionOtherWrap').style.display = 'none';
+  document.getElementById('sessionEndCoachMsg').style.display = 'none';
+  document.querySelectorAll('.interruption-btn').forEach(b => b.classList.remove('selected'));
+
+  const anim = document.getElementById('sessionEndAnim');
+  if (status === 'interrupted') {
+    anim.style.background = 'var(--orange-light)';
+    anim.innerHTML = `<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="12" y="10" width="5" height="20" rx="2" fill="#EA580C"/><rect x="23" y="10" width="5" height="20" rx="2" fill="#EA580C"/></svg>`;
+  } else {
+    anim.style.background = 'var(--success-light)';
+    anim.innerHTML = `<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M8 20L16 28L32 12" stroke="#16A34A" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
 
   document.getElementById('sessionEndTitle').textContent = status === 'completed'
-    ? `Session terminée !`
-    : `Session interrompue.`;
+    ? 'Session terminée !'
+    : 'Session interrompue.';
   document.getElementById('sessionEndMinutes').textContent = String(durationMin);
   document.getElementById('sessionEndFocus').textContent = `${focusScore}%`;
   document.getElementById('sessionEndStatus').textContent = status === 'completed' ? '✅' : '⏸';
@@ -1534,19 +1604,64 @@ async function endSession() {
   showSessionState(2);
 
   try {
-    await predictaLogSession({
+    const logged = await predictaLogSession({
       durationMin,
       focusScore,
       status,
       notes: currentSession.task,
     });
+    lastSessionId = logged?.id ?? null;
     showToast('Session enregistrée !', 'success');
     refreshDashboardData();
-    showSessionEndCoachMessage();
     loadDailyLesson();
+
+    if (status === 'interrupted') {
+      document.getElementById('interruptionQuestions').style.display = 'block';
+    } else {
+      document.getElementById('sessionEndCoachMsg').style.display = 'block';
+      showSessionEndCoachMessage();
+    }
   } catch (err) {
     console.error('[predicta] endSession error', err.message);
     showToast("Erreur lors de l'enregistrement de la session", 'error');
+  }
+}
+
+async function selectInterruption(btn, reason) {
+  document.querySelectorAll('.interruption-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('interruptionOtherWrap').style.display = 'none';
+  await handleInterruptionReason(reason);
+}
+
+function confirmInterruptionOther() {
+  const text = document.getElementById('interruptionOtherText').value.trim();
+  if (!text) return;
+  handleInterruptionReason(text);
+}
+
+function skipInterruption() {
+  document.getElementById('interruptionQuestions').style.display = 'none';
+  document.getElementById('sessionEndCoachMsg').style.display = 'block';
+  showSessionEndCoachMessage();
+}
+
+async function handleInterruptionReason(reason) {
+  document.getElementById('interruptionQuestions').style.display = 'none';
+  const replyBox = document.getElementById('interruptionCoachReply');
+  const replyText = document.getElementById('interruptionCoachText');
+  replyBox.style.display = 'block';
+  replyText.textContent = '…';
+
+  try {
+    const { reply } = await predictaCoachChat(
+      `Ma session vient d'être interrompue. Raison : ${reason}. Explique-moi le mécanisme cérébral exact derrière ce qui vient de se passer, et donne-moi une seule action concrète pour ma prochaine session.`,
+      []
+    );
+    replyText.textContent = reply;
+  } catch (err) {
+    replyText.textContent = "Le coach est momentanément indisponible.";
+    console.error('[predicta] interruption coach error', err.message);
   }
 }
 
