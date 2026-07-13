@@ -11,6 +11,14 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "anthropic"])
     import anthropic
 
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "python-dotenv"])
+    from dotenv import load_dotenv
+
+load_dotenv()
+
 MODEL = "claude-sonnet-4-6"
 
 MEMORY_PATH = Path(__file__).parent / "predicta_memory.md"
