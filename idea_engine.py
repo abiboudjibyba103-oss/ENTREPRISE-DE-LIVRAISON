@@ -120,9 +120,14 @@ def filter_idea(idee: str) -> str:
                 "content": (
                     "Voici une idée de contenu pour Prédicta :\n\n"
                     f"{idee}\n\n"
-                    "Évalue si cette idée provoque au moins une de ces 3 émotions "
+                    "Évalue si cette idée provoque AU MOINS UNE de ces 3 émotions "
                     'chez le lecteur : "Je me reconnais complètement", '
                     '"Je n\'avais jamais pensé à ça", "Donc je ne suis pas paresseux ?".\n\n'
+                    "Sois permissif : une seule de ces émotions suffit pour valider "
+                    "l'idée. Valide-la par défaut. Ne la rejette que dans un cas "
+                    "extrême — une idée vraiment générique, sans aucun lien avec "
+                    "l'audience, et qui ne provoque strictement aucune des 3 "
+                    "émotions.\n\n"
                     "Réponds en commençant par VALIDÉE ou REJETÉE, suivi d'une "
                     "explication courte."
                 ),
