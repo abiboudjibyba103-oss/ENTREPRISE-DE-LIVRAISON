@@ -51,6 +51,33 @@ SUJETS = [
 _client = anthropic.Anthropic()
 
 
+def generate_subject(angle: str, plateforme: str) -> str:
+    """Génère automatiquement un sujet réel et pertinent pour l'audience Prédicta."""
+    response = _client.messages.create(
+        model=MODEL,
+        max_tokens=256,
+        system=PREDICTA_MEMORY,
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    "Génère un sujet pour un contenu Prédicta, adapté à cet angle "
+                    f"et à cette plateforme.\n\n"
+                    f"Angle : {angle}\n"
+                    f"Plateforme : {plateforme}\n\n"
+                    "Le sujet doit être une situation réelle, précise et concrète "
+                    "vécue par l'audience de Prédicta (personnes ambitieuses qui "
+                    "procrastinent, abandonnent, culpabilisent) — jamais générique, "
+                    "jamais un thème abstrait. Formule-le comme l'audience le "
+                    "dirait elle-même, en une phrase.\n\n"
+                    "Retourne uniquement le sujet, sans introduction ni explication."
+                ),
+            }
+        ],
+    )
+    return response.content[0].text.strip()
+
+
 def generate_idea(angle: str, plateforme: str, sujet: str) -> str:
     """Génère une idée de contenu complète selon l'angle, la plateforme et le sujet."""
     response = _client.messages.create(
