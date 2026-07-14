@@ -19,7 +19,7 @@ except ImportError:
 load_dotenv()
 
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY")
-VOICE_ID = "21m00Tcm4TlvDq8ikWAM"  # Rachel — voix claire et naturelle
+VOICE_ID = "wyZnrAs18zdIj8UgFSV8"
 MODEL_ID = "eleven_multilingual_v2"
 
 
