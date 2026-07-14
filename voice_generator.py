@@ -64,6 +64,13 @@ def _nettoyer_script(script_text: str) -> str:
     texte = re.sub(r"\benjeux hauts\b", "enjeux-hauts", texte, flags=re.IGNORECASE)
     texte = re.sub(r"\n{3,}", "\n\n", texte)  # une seule pause entre les paragraphes
 
+    # Edge TTS marque une longue pause à chaque retour à la ligne : on aplatit
+    # le texte sur une seule ligne continue pour réduire les silences entre phrases.
+    texte = re.sub(r"\.\n", ". ", texte)
+    texte = texte.replace("\n\n", " ")
+    texte = re.sub(r"\n+", " ", texte)
+    texte = re.sub(r" {2,}", " ", texte)
+
     return texte.strip()
 
 

@@ -131,6 +131,13 @@ def generate_script(idee_validee: str, plateforme: str) -> str:
     else:
         structure = "un script de 2 à 3 minutes, émotionnel, personnel, avec un CTA vers la liste d'attente Prédicta"
 
+    if plateforme == TIKTOK:
+        cta_final = "Prédicta t'explique pourquoi. 233 places gratuites. Lien dans la bio."
+    elif plateforme == INSTAGRAM:
+        cta_final = "Prédicta t'explique le mécanisme. Rejoins les 233 premiers testeurs gratuitement. Lien dans la bio."
+    else:
+        cta_final = "C'est exactement ce que j'ai voulu résoudre en construisant Prédicta. Liste d'attente ouverte — lien dans la description."
+
     response = _client.messages.create(
         model=MODEL,
         max_tokens=4096,
@@ -146,9 +153,9 @@ def generate_script(idee_validee: str, plateforme: str) -> str:
                     '"Je me reconnais complètement", "Je n\'avais jamais pensé à ça", '
                     '"Donc je ne suis pas paresseux ?".\n\n'
                     "Le CTA final doit être personnel et spécifique à Prédicta — "
-                    "jamais \"Lien en bio\" seul. Exemple : \"Si tu veux comprendre "
-                    "pourquoi ton cerveau fait ça — Prédicta t'explique le "
-                    "mécanisme. Liste d'attente ouverte. Lien dans la bio.\"\n\n"
+                    "jamais \"Lien en bio\" seul.\n\n"
+                    f'Le script doit se terminer EXACTEMENT par cette phrase : '
+                    f'"{cta_final}"\n\n'
                     "Retourne le script complet, prêt à être lu devant la caméra."
                 ),
             }
