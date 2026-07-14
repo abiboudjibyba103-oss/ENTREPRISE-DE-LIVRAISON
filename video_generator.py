@@ -181,7 +181,7 @@ def assemble_video(video_files: list, audio_file: str, output_path: str, platfor
     video_concatenee = ffmpeg.concat(*flux_video, v=1, a=0)
     audio_entree = ffmpeg.input(audio_file)
 
-    (
+    flux_sortie = (
         ffmpeg
         .output(
             video_concatenee,
@@ -193,7 +193,19 @@ def assemble_video(video_files: list, audio_file: str, output_path: str, platfor
         )
         .global_args("-shortest")
         .overwrite_output()
-        .run(quiet=True)
     )
+
+    commande = flux_sortie.compile()
+    print("Commande FFmpeg :")
+    print(" ".join(commande))
+
+    try:
+        _, stderr = flux_sortie.run(capture_stdout=True, capture_stderr=True)
+    except ffmpeg.Error as erreur:
+        print("Erreur FFmpeg :")
+        print(erreur.stderr.decode(errors="replace") if erreur.stderr else str(erreur))
+        raise
+
+    print(stderr.decode(errors="replace"))
 
     return output_path
