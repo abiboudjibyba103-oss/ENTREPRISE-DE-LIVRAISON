@@ -12,7 +12,24 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "edge-tts"])
     import edge_tts
 
+try:
+    from pydub import AudioSegment
+    from pydub.silence import detect_silence
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "pydub"])
+    from pydub import AudioSegment
+    from pydub.silence import detect_silence
+
+try:
+    import imageio_ffmpeg
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "imageio-ffmpeg"])
+    import imageio_ffmpeg
+
+AudioSegment.converter = imageio_ffmpeg.get_ffmpeg_exe()
+
 VOICE = "fr-FR-HenriNeural"  # voix masculine française, naturelle et gratuite
+SILENCE_MAX_MS = 150  # durée maximale conservée pour un silence entre phrases
 
 _HEADER_RE = re.compile(r"^#{1,6}\s*")
 _SEPARATEUR_RE = re.compile(r"^[-=_*]{3,}$")
@@ -75,8 +92,29 @@ def _nettoyer_script(script_text: str) -> str:
 
 
 async def _synthetiser(texte: str, chemin_audio: str) -> None:
-    communicate = edge_tts.Communicate(texte, VOICE, rate="+10%")
+    communicate = edge_tts.Communicate(texte, VOICE)
     await communicate.save(chemin_audio)
+
+
+def _reduire_silences(chemin_audio: str) -> None:
+    """Raccourcit les silences trop longs (fin de phrase) sans toucher au débit des mots."""
+    audio = AudioSegment.from_file(chemin_audio, format="mp3")
+    silences = detect_silence(
+        audio, min_silence_len=SILENCE_MAX_MS + 50, silence_thresh=audio.dBFS - 16
+    )
+
+    if not silences:
+        return
+
+    resultat = AudioSegment.empty()
+    position = 0
+    for debut, fin in silences:
+        resultat += audio[position:debut]
+        resultat += audio[debut : debut + SILENCE_MAX_MS]
+        position = fin
+    resultat += audio[position:]
+
+    resultat.export(chemin_audio, format="mp3")
 
 
 def generate_voice(script_text: str, output_filename: str) -> str:
@@ -87,5 +125,6 @@ def generate_voice(script_text: str, output_filename: str) -> str:
     chemin_audio = os.path.join("audio", output_filename)
 
     asyncio.run(_synthetiser(texte_propre, chemin_audio))
+    _reduire_silences(chemin_audio)
 
     return chemin_audio
