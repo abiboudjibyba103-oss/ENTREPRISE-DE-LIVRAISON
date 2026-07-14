@@ -21,6 +21,9 @@ _GRAS_RE = re.compile(r"\*\*(.+?)\*\*")
 _ITALIQUE_RE = re.compile(r"\*(.+?)\*")
 _PREDICTA_MAJ_RE = re.compile(r"\bPR[ÉE]DICTA\b")
 _NOTES_REALISATION_RE = re.compile(r"^#{0,6}\s*notes?\s+de\s+r[ée]alisation", re.IGNORECASE)
+_METADONNEES_RE = re.compile(
+    r"dur[ée]e estim[ée]e|d[ée]bit naturel|secondes|minutes", re.IGNORECASE
+)
 
 
 def _nettoyer_script(script_text: str) -> str:
@@ -43,6 +46,9 @@ def _nettoyer_script(script_text: str) -> str:
         if _SEPARATEUR_RE.match(ligne_stripped):
             continue
 
+        if _METADONNEES_RE.search(ligne_stripped):
+            continue  # métadonnées (durée estimée, débit naturel, secondes, minutes)
+
         # retire les balises entre crochets (timing, musique, métadonnées, etc.)
         ligne_propre = _CROCHETS_RE.sub("", ligne_stripped).strip()
 
@@ -55,13 +61,14 @@ def _nettoyer_script(script_text: str) -> str:
     texte = _GRAS_RE.sub(r"\1", texte)
     texte = _ITALIQUE_RE.sub(r"\1", texte)
     texte = _PREDICTA_MAJ_RE.sub("Prédicta", texte)
+    texte = re.sub(r"\benjeux hauts\b", "enjeux-hauts", texte, flags=re.IGNORECASE)
     texte = re.sub(r"\n{3,}", "\n\n", texte)  # une seule pause entre les paragraphes
 
     return texte.strip()
 
 
 async def _synthetiser(texte: str, chemin_audio: str) -> None:
-    communicate = edge_tts.Communicate(texte, VOICE)
+    communicate = edge_tts.Communicate(texte, VOICE, rate="+10%")
     await communicate.save(chemin_audio)
 
 

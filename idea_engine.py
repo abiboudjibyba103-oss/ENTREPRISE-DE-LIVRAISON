@@ -145,6 +145,10 @@ def generate_script(idee_validee: str, plateforme: str) -> str:
                     "Le script doit provoquer au moins une de ces émotions : "
                     '"Je me reconnais complètement", "Je n\'avais jamais pensé à ça", '
                     '"Donc je ne suis pas paresseux ?".\n\n'
+                    "Le CTA final doit être personnel et spécifique à Prédicta — "
+                    "jamais \"Lien en bio\" seul. Exemple : \"Si tu veux comprendre "
+                    "pourquoi ton cerveau fait ça — Prédicta t'explique le "
+                    "mécanisme. Liste d'attente ouverte. Lien dans la bio.\"\n\n"
                     "Retourne le script complet, prêt à être lu devant la caméra."
                 ),
             }
