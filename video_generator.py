@@ -144,8 +144,29 @@ def download_videos(keywords: list, output_dir: str, count_per_keyword: int = 2)
     return chemins_videos
 
 
+def _executer_ffmpeg(commande: list) -> None:
+    print("Commande FFmpeg :")
+    print(" ".join(commande))
+
+    resultat = subprocess.run(commande, capture_output=True, text=True)
+
+    if resultat.stderr:
+        print(resultat.stderr)
+
+    if resultat.returncode != 0:
+        raise RuntimeError(f"Échec de la commande FFmpeg (code {resultat.returncode}).")
+
+
 def assemble_video(video_files: list, audio_file: str, output_path: str, platform: str) -> str:
-    """Assemble les vidéos et la voix off en une vidéo finale via FFmpeg."""
+    """Assemble les vidéos et la voix off en une vidéo finale via FFmpeg, en 3 étapes :
+
+    1. Normalise chaque clip (résolution, SAR, framerate) dans temp_normalized/
+    2. Écrit la liste des clips normalisés dans concat_list.txt
+    3. Concatène les clips normalisés avec la voix off pour produire la vidéo finale
+
+    Cette approche évite les problèmes de SAR et de résolutions différentes
+    qui surviennent en assemblant directement des clips hétérogènes.
+    """
     if not video_files:
         raise ValueError("Aucune vidéo disponible pour le montage.")
 
@@ -161,51 +182,54 @@ def assemble_video(video_files: list, audio_file: str, output_path: str, platfor
     if dossier_sortie:
         os.makedirs(dossier_sortie, exist_ok=True)
 
-    flux_video = []
-    for chemin_video in video_files:
-        flux = (
-            ffmpeg
-            .input(chemin_video, stream_loop=-1, t=duree_par_clip)
-            .filter("scale", largeur, hauteur, force_original_aspect_ratio="decrease")
-            .filter("pad", largeur, hauteur, "(ow-iw)/2", "(oh-ih)/2")
-            .filter("fade", type="in", duration=FONDU_SECONDES, start_time=0)
-            .filter(
-                "fade",
-                type="out",
-                duration=FONDU_SECONDES,
-                start_time=max(duree_par_clip - FONDU_SECONDES, 0),
-            )
-        )
-        flux_video.append(flux)
+    dossier_normalise = "temp_normalized"
+    os.makedirs(dossier_normalise, exist_ok=True)
 
-    video_concatenee = ffmpeg.concat(*flux_video, v=1, a=0)
-    audio_entree = ffmpeg.input(audio_file)
-
-    flux_sortie = (
-        ffmpeg
-        .output(
-            video_concatenee,
-            audio_entree,
-            output_path,
-            vcodec="libx264",
-            acodec="aac",
-            pix_fmt="yuv420p",
-        )
-        .global_args("-shortest")
-        .overwrite_output()
+    fondu_debut = FONDU_SECONDES
+    fondu_fin = max(duree_par_clip - FONDU_SECONDES, 0)
+    filtre_video = (
+        f"scale={largeur}:{hauteur}:force_original_aspect_ratio=decrease,"
+        f"pad={largeur}:{hauteur}:(ow-iw)/2:(oh-ih)/2,setsar=1/1,"
+        f"fade=t=in:st=0:d={fondu_debut},"
+        f"fade=t=out:st={fondu_fin}:d={FONDU_SECONDES}"
     )
 
-    commande = flux_sortie.compile()
-    print("Commande FFmpeg :")
-    print(" ".join(commande))
+    # Étape 1 : normalise chaque clip (résolution, SAR, framerate identiques)
+    clips_normalises = []
+    for i, chemin_video in enumerate(video_files):
+        chemin_normalise = os.path.join(dossier_normalise, f"clip_{i}.mp4")
+        _executer_ffmpeg([
+            "ffmpeg",
+            "-stream_loop", "-1",
+            "-i", chemin_video,
+            "-vf", filtre_video,
+            "-t", str(duree_par_clip),
+            "-r", "30",
+            "-c:v", "libx264",
+            "-preset", "fast",
+            chemin_normalise,
+            "-y",
+        ])
+        clips_normalises.append(chemin_normalise)
 
-    try:
-        _, stderr = flux_sortie.run(capture_stdout=True, capture_stderr=True)
-    except ffmpeg.Error as erreur:
-        print("Erreur FFmpeg :")
-        print(erreur.stderr.decode(errors="replace") if erreur.stderr else str(erreur))
-        raise
+    # Étape 2 : liste des clips normalisés pour le concat demuxer
+    chemin_liste = "concat_list.txt"
+    with open(chemin_liste, "w", encoding="utf-8") as f:
+        for chemin_clip in clips_normalises:
+            f.write(f"file '{chemin_clip}'\n")
 
-    print(stderr.decode(errors="replace"))
+    # Étape 3 : concatène les clips normalisés avec la voix off
+    _executer_ffmpeg([
+        "ffmpeg",
+        "-f", "concat",
+        "-safe", "0",
+        "-i", chemin_liste,
+        "-i", audio_file,
+        "-c:v", "libx264",
+        "-c:a", "aac",
+        "-shortest",
+        output_path,
+        "-y",
+    ])
 
     return output_path
