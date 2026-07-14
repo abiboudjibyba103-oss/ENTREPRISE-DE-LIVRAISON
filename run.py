@@ -21,6 +21,7 @@ from idea_engine import (
     generate_script,
     generate_subject,
 )
+from voice_generator import generate_voice
 
 PLATEFORMES = {
     "1": ("YouTube", YOUTUBE),
@@ -122,6 +123,12 @@ def main() -> None:
 
     print("============================================")
     print(f"Script sauvegardé dans scripts/{nom_fichier}")
+    print("============================================")
+
+    print("Génération de la voix en cours...")
+    nom_fichier_audio = f"{label_plateforme}_{horodatage}.mp3"
+    generate_voice(script, nom_fichier_audio)
+    print(f"Audio sauvegardé dans audio/{nom_fichier_audio}")
     print("============================================")
 
 
