@@ -18,6 +18,10 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
     import requests
 
+import urllib3
+
+urllib3.disable_warnings()
+
 try:
     import ffmpeg
 except ImportError:
@@ -91,7 +95,7 @@ def extract_keywords(script_text: str) -> list:
 
 def _rechercher_pixabay(mot_cle: str) -> list:
     url = f"https://pixabay.com/api/videos/?key={PIXABAY_API_KEY}&q={quote(mot_cle)}&per_page=3"
-    response = requests.get(url)
+    response = requests.get(url, verify=False)
     response.raise_for_status()
     return response.json().get("hits", [])
 
