@@ -1,48 +1,41 @@
-"""Générateur de voix pour Prédicta via l'API ElevenLabs."""
+"""Générateur de voix pour Prédicta via Edge TTS."""
 
+import asyncio
 import os
+import re
 import subprocess
 import sys
 
 try:
-    import requests
+    import edge_tts
 except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
-    import requests
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "edge-tts"])
+    import edge_tts
 
-try:
-    from dotenv import load_dotenv
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "python-dotenv"])
-    from dotenv import load_dotenv
+VOICE = "fr-FR-HenriNeural"  # voix masculine française, naturelle et gratuite
 
-load_dotenv()
 
-ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY")
-VOICE_ID = "wyZnrAs18zdIj8UgFSV8"
-MODEL_ID = "eleven_multilingual_v2"
+def _nettoyer_script(script_text: str) -> str:
+    """Retire les balises markdown pour que la voix ne les lise pas."""
+    texte = script_text.replace("**", "")
+    texte = re.sub(r"^#+\s*", "", texte, flags=re.MULTILINE)
+    texte = re.sub(r"^-{3,}\s*$", "", texte, flags=re.MULTILINE)
+    texte = texte.replace("[", "").replace("]", "")
+    return texte.strip()
+
+
+async def _synthetiser(texte: str, chemin_audio: str) -> None:
+    communicate = edge_tts.Communicate(texte, VOICE)
+    await communicate.save(chemin_audio)
 
 
 def generate_voice(script_text: str, output_filename: str) -> str:
-    """Génère un fichier audio MP3 à partir d'un script texte via ElevenLabs."""
+    """Génère un fichier audio MP3 à partir d'un script texte via Edge TTS."""
     os.makedirs("audio", exist_ok=True)
 
-    url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}"
-    headers = {
-        "xi-api-key": ELEVENLABS_API_KEY,
-        "Content-Type": "application/json",
-        "Accept": "audio/mpeg",
-    }
-    payload = {
-        "text": script_text,
-        "model_id": MODEL_ID,
-    }
-
-    response = requests.post(url, headers=headers, json=payload)
-    response.raise_for_status()
-
+    texte_propre = _nettoyer_script(script_text)
     chemin_audio = os.path.join("audio", output_filename)
-    with open(chemin_audio, "wb") as f:
-        f.write(response.content)
+
+    asyncio.run(_synthetiser(texte_propre, chemin_audio))
 
     return chemin_audio
