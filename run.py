@@ -22,6 +22,7 @@ from idea_engine import (
     generate_subject,
 )
 from voice_generator import generate_voice
+from video_generator import assemble_video, download_videos, extract_keywords, ffmpeg_disponible
 
 PLATEFORMES = {
     "1": ("YouTube", YOUTUBE),
@@ -52,6 +53,12 @@ def demander_choix(prompt: str, options: dict) -> str:
 
 
 def main() -> None:
+    if not ffmpeg_disponible():
+        print("FFmpeg n'est pas installé. ")
+        print("Télécharge-le sur https://ffmpeg.org/download.html")
+        print("et ajoute-le au PATH de ton système.")
+        sys.exit(1)
+
     print("============================================")
     print("        PRÉDICTA — AGENT CONTENU")
     print("============================================")
@@ -127,8 +134,24 @@ def main() -> None:
 
     print("Génération de la voix en cours...")
     nom_fichier_audio = f"{label_plateforme}_{horodatage}.mp3"
-    generate_voice(script, nom_fichier_audio)
+    chemin_audio = generate_voice(script, nom_fichier_audio)
     print(f"Audio sauvegardé dans audio/{nom_fichier_audio}")
+    print("============================================")
+
+    print("Recherche de visuels africains en cours...")
+    mots_cles = extract_keywords(script)
+    chemins_videos = download_videos(mots_cles, "temp_videos")
+
+    print("Montage de la vidéo en cours...")
+    nom_fichier_video = f"{label_plateforme}_{horodatage}.mp4"
+    assemble_video(
+        chemins_videos,
+        chemin_audio,
+        os.path.join("videos", nom_fichier_video),
+        label_plateforme,
+    )
+
+    print(f"Vidéo finale sauvegardée dans videos/{nom_fichier_video}")
     print("============================================")
 
 
