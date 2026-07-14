@@ -5,6 +5,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 
 try:
     import edge_tts
@@ -14,11 +15,9 @@ except ImportError:
 
 try:
     from pydub import AudioSegment
-    from pydub.silence import detect_silence
 except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "pydub"])
     from pydub import AudioSegment
-    from pydub.silence import detect_silence
 
 try:
     import imageio_ffmpeg
@@ -29,7 +28,7 @@ except ImportError:
 AudioSegment.converter = imageio_ffmpeg.get_ffmpeg_exe()
 
 VOICE = "fr-FR-HenriNeural"  # voix masculine française, naturelle et gratuite
-SILENCE_MAX_MS = 150  # durée maximale conservée pour un silence entre phrases
+PAUSE_MS = 300  # petite pause entre chaque phrase, juste pour marquer la fin
 
 _HEADER_RE = re.compile(r"^#{1,6}\s*")
 _SEPARATEUR_RE = re.compile(r"^[-=_*]{3,}$")
@@ -41,10 +40,11 @@ _NOTES_REALISATION_RE = re.compile(r"^#{0,6}\s*notes?\s+de\s+r[ée]alisation", r
 _METADONNEES_RE = re.compile(
     r"dur[ée]e estim[ée]e|d[ée]bit naturel|secondes|minutes", re.IGNORECASE
 )
+_PHRASE_SEPARATEUR_RE = re.compile(r"(?<=[.!?])\s+")
 
 
-def _nettoyer_script(script_text: str) -> str:
-    """Ne garde que le texte pur destiné à être lu à voix haute."""
+def _nettoyer_script(script_text: str) -> list:
+    """Ne garde que les phrases pures destinées à être lues, une par élément."""
     lignes_utiles = []
 
     for ligne in script_text.splitlines():
@@ -54,7 +54,6 @@ def _nettoyer_script(script_text: str) -> str:
             break  # tout ce qui suit les notes de réalisation est ignoré
 
         if not ligne_stripped:
-            lignes_utiles.append("")
             continue
 
         if _HEADER_RE.match(ligne_stripped):
@@ -74,57 +73,51 @@ def _nettoyer_script(script_text: str) -> str:
 
         lignes_utiles.append(ligne_propre)
 
-    texte = "\n".join(lignes_utiles)
+    texte = " ".join(lignes_utiles)
     texte = _GRAS_RE.sub(r"\1", texte)
     texte = _ITALIQUE_RE.sub(r"\1", texte)
     texte = _PREDICTA_MAJ_RE.sub("Prédicta", texte)
     texte = re.sub(r"\benjeux hauts\b", "enjeux-hauts", texte, flags=re.IGNORECASE)
-    texte = re.sub(r"\n{3,}", "\n\n", texte)  # une seule pause entre les paragraphes
+    texte = re.sub(r" {2,}", " ", texte).strip()
 
-    # Edge TTS marque une longue pause à chaque retour à la ligne : on aplatit
-    # le texte sur une seule ligne continue pour réduire les silences entre phrases.
-    texte = re.sub(r"\.\n", ". ", texte)
-    texte = texte.replace("\n\n", " ")
-    texte = re.sub(r"\n+", " ", texte)
-    texte = re.sub(r" {2,}", " ", texte)
-
-    return texte.strip()
+    return [phrase.strip() for phrase in _PHRASE_SEPARATEUR_RE.split(texte) if phrase.strip()]
 
 
-async def _synthetiser(texte: str, chemin_audio: str) -> None:
-    communicate = edge_tts.Communicate(texte, VOICE)
-    await communicate.save(chemin_audio)
+async def _synthetiser_phrase(phrase: str, chemin: str) -> None:
+    communicate = edge_tts.Communicate(phrase, VOICE)
+    await communicate.save(chemin)
 
 
-def _reduire_silences(chemin_audio: str) -> None:
-    """Raccourcit les silences trop longs (fin de phrase) sans toucher au débit des mots."""
-    audio = AudioSegment.from_file(chemin_audio, format="mp3")
-    silences = detect_silence(
-        audio, min_silence_len=SILENCE_MAX_MS + 50, silence_thresh=audio.dBFS - 16
+async def _synthetiser_toutes(phrases: list, dossier_temp: str) -> list:
+    chemins = [os.path.join(dossier_temp, f"phrase_{i}.mp3") for i in range(len(phrases))]
+    await asyncio.gather(
+        *(_synthetiser_phrase(phrase, chemin) for phrase, chemin in zip(phrases, chemins))
     )
-
-    if not silences:
-        return
-
-    resultat = AudioSegment.empty()
-    position = 0
-    for debut, fin in silences:
-        resultat += audio[position:debut]
-        resultat += audio[debut : debut + SILENCE_MAX_MS]
-        position = fin
-    resultat += audio[position:]
-
-    resultat.export(chemin_audio, format="mp3")
+    return chemins
 
 
 def generate_voice(script_text: str, output_filename: str) -> str:
-    """Génère un fichier audio MP3 à partir d'un script texte via Edge TTS."""
+    """Génère un fichier audio MP3 à partir d'un script texte via Edge TTS.
+
+    Chaque phrase est synthétisée séparément puis recollée avec une petite
+    pause fixe (PAUSE_MS) entre chacune, pour un contrôle précis du silence
+    entre phrases — plutôt que de dépendre des pauses variables d'Edge TTS.
+    """
     os.makedirs("audio", exist_ok=True)
 
-    texte_propre = _nettoyer_script(script_text)
+    phrases = _nettoyer_script(script_text)
     chemin_audio = os.path.join("audio", output_filename)
 
-    asyncio.run(_synthetiser(texte_propre, chemin_audio))
-    _reduire_silences(chemin_audio)
+    with tempfile.TemporaryDirectory() as dossier_temp:
+        chemins_phrases = asyncio.run(_synthetiser_toutes(phrases, dossier_temp))
+
+        audio_final = AudioSegment.empty()
+        pause = AudioSegment.silent(duration=PAUSE_MS)
+        for i, chemin_phrase in enumerate(chemins_phrases):
+            audio_final += AudioSegment.from_file(chemin_phrase, format="mp3")
+            if i < len(chemins_phrases) - 1:
+                audio_final += pause
+
+        audio_final.export(chemin_audio, format="mp3")
 
     return chemin_audio
