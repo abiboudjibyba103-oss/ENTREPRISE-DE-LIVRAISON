@@ -1,6 +1,7 @@
 """Point d'entrée principal : génère un script vidéo complet pour Prédicta."""
 
 import os
+import re
 import sys
 from datetime import datetime
 
@@ -22,7 +23,12 @@ from idea_engine import (
     generate_subject,
 )
 from voice_generator import generate_voice
-from video_generator import assemble_video, download_videos, extract_keywords, ffmpeg_disponible
+from video_generator import (
+    assemble_video,
+    download_videos,
+    extract_keywords_per_section,
+    ffmpeg_disponible,
+)
 
 PLATEFORMES = {
     "1": ("YouTube", YOUTUBE),
@@ -42,6 +48,17 @@ ANGLES = {
 }
 
 MAX_TENTATIVES = 3
+
+_SEPARATEUR_SECTION_RE = re.compile(r"^\s*-{3,}\s*$", re.MULTILINE)
+
+
+def decouper_script_en_sections(script: str) -> list:
+    """Découpe le script en sections, chaque section étant un bloc de texte
+    séparé par '---'. Retourne la liste des sections (texte brut, dans l'ordre),
+    en ignorant les blocs vides.
+    """
+    sections = _SEPARATEUR_SECTION_RE.split(script)
+    return [section.strip() for section in sections if section.strip()]
 
 
 def demander_choix(prompt: str, options: dict) -> str:
@@ -138,8 +155,11 @@ def main() -> None:
     print(f"Audio sauvegardé dans audio/{nom_fichier_audio}")
     print("============================================")
 
+    print("Découpage du script en sections...")
+    sections = decouper_script_en_sections(script)
+
     print("Recherche de visuels africains en cours...")
-    mots_cles = extract_keywords(script)
+    mots_cles = extract_keywords_per_section(sections)
     chemins_videos = download_videos(mots_cles, "temp_videos")
 
     print("Montage de la vidéo en cours...")
@@ -149,6 +169,7 @@ def main() -> None:
         chemin_audio,
         os.path.join("videos", nom_fichier_video),
         label_plateforme,
+        sections,
     )
 
     print(f"Vidéo finale sauvegardée dans videos/{nom_fichier_video}")

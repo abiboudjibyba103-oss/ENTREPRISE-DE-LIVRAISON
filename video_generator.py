@@ -57,43 +57,57 @@ def ffmpeg_disponible() -> bool:
         return False
 
 
-def extract_keywords(script_text: str) -> list:
-    """Extrait 5 mots-clés visuels en anglais pour la recherche vidéo Pixabay."""
-    response = _client.messages.create(
-        model=MODEL,
-        max_tokens=256,
-        messages=[
-            {
-                "role": "user",
-                "content": (
-                    "Voici un script vidéo pour Prédicta :\n\n"
-                    f"{script_text}\n\n"
-                    "Extrais exactement 5 mots-clés visuels en anglais, adaptés à "
-                    "une recherche de vidéos sur Pixabay, qui illustrent ce script.\n\n"
-                    "Ces mots-clés doivent décrire UNIQUEMENT des personnes noires "
-                    "africaines âgées de 20 à 35 ans. Ils doivent être très "
-                    'spécifiques, par exemple : "black african man studying", '
-                    '"young african woman laptop", "african student university", '
-                    '"black man thinking desk", "young black entrepreneur".\n\n'
-                    "INTERDICTION ABSOLUE d'utiliser des mots-clés génériques ou "
-                    "ambigus qui pourraient retourner des personnes blanches, des "
-                    "enfants ou des animaux. Chaque mot-clé doit obligatoirement "
-                    'contenir le mot "black" ou "african".\n\n'
-                    "Retourne uniquement les 5 mots-clés, un par ligne, sans "
-                    "numérotation ni explication."
-                ),
-            }
-        ],
-    )
+_REGLES_MOTS_CLES = """Règles strictes de correspondance thème → mot-clé (à respecter à la lettre
+quand le thème de la section correspond) :
+- Le cerveau, la neuroscience, le fonctionnement mental → "brain neuroscience animation"
+- La procrastination → "young black man procrastinating desk"
+- Le téléphone, les notifications, les distractions → "young african man phone distracted"
+- Le stress, la pression, la charge mentale → "young black man stressed work"
+- La motivation, la réussite, l'ambition → "young african entrepreneur success"
 
-    lignes = response.content[0].text.strip().splitlines()
+Pour tout autre thème qui ne correspond à aucune de ces règles, invente un mot-clé
+tout aussi précis et visuel, en respectant impérativement ces contraintes :
+- Les personnes représentées doivent TOUJOURS être noires, africaines, âgées de 20 à 35 ans.
+- Le mot-clé doit obligatoirement contenir "black" ou "african", sauf s'il s'agit d'une
+  animation abstraite (comme le cerveau) qui ne montre aucune personne.
+- INTERDICTION ABSOLUE de mots-clés pouvant retourner des enfants, des animaux ou des
+  personnes blanches."""
+
+
+def extract_keywords_per_section(sections: list) -> list:
+    """Extrait un mot-clé vidéo Pixabay précis pour chaque section du script.
+
+    Une section correspond à un bloc du script délimité par '---'. Chaque mot-clé
+    décrit exactement ce qui est dit dans sa section (et non le script entier),
+    pour que le visuel corresponde au propos du moment. Retourne une liste de
+    mots-clés dans le même ordre que `sections`.
+    """
     mots_cles = []
-    for ligne in lignes:
-        mot_cle = re.sub(r"^[\d\.\)\-\s]+", "", ligne).strip()
-        if mot_cle:
-            mots_cles.append(mot_cle)
 
-    return mots_cles[:5]
+    for section in sections:
+        response = _client.messages.create(
+            model=MODEL,
+            max_tokens=64,
+            messages=[
+                {
+                    "role": "user",
+                    "content": (
+                        "Voici une section d'un script vidéo pour Prédicta :\n\n"
+                        f"{section}\n\n"
+                        "Donne UN SEUL mot-clé de recherche vidéo Pixabay, en anglais, "
+                        "très précis, qui illustre exactement ce qui est dit dans cette "
+                        "section (pas le script entier, juste cette section).\n\n"
+                        f"{_REGLES_MOTS_CLES}\n\n"
+                        "Retourne uniquement le mot-clé, sans numérotation, sans "
+                        "explication, sans guillemets."
+                    ),
+                }
+            ],
+        )
+        mot_cle = response.content[0].text.strip().strip('"').splitlines()[0].strip()
+        mots_cles.append(mot_cle)
+
+    return mots_cles
 
 
 def _rechercher_pixabay(mot_cle: str) -> list:
@@ -116,12 +130,17 @@ def _hit_autorise(hit: dict) -> bool:
     return not any(mot in texte for mot in _MOTS_INTERDITS)
 
 
-def download_videos(keywords: list, output_dir: str, count_per_keyword: int = 2) -> list:
-    """Télécharge des vidéos Pixabay pour chaque mot-clé et retourne leurs chemins."""
+def download_videos(keywords: list, output_dir: str) -> list:
+    """Télécharge UNE vidéo Pixabay par mot-clé (une par section du script).
+
+    Retourne les chemins dans le même ordre que `keywords`, pour garder une
+    correspondance 1:1 entre chaque section et son clip vidéo — nécessaire
+    pour qu'assemble_video() puisse aligner chaque clip sur sa section.
+    """
     os.makedirs(output_dir, exist_ok=True)
     chemins_videos = []
 
-    for mot_cle in keywords:
+    for index, mot_cle in enumerate(keywords):
         hits = _rechercher_pixabay(mot_cle)
 
         if not hits:
@@ -132,29 +151,28 @@ def download_videos(keywords: list, output_dir: str, count_per_keyword: int = 2)
             if mot_cle_simplifie and mot_cle_simplifie != mot_cle:
                 hits = _rechercher_pixabay(mot_cle_simplifie)
 
-        telecharges = 0
-        for hit in hits:
-            if telecharges >= count_per_keyword:
-                break
-
-            if not _hit_autorise(hit):
-                continue
-
-            video_url = hit.get("videos", {}).get("medium", {}).get("url")
-            if not video_url:
-                continue
-
-            chemin_video = os.path.join(
-                output_dir, f"{_slugifier(mot_cle)}_{hit.get('id')}.mp4"
+        hit_retenu = next((hit for hit in hits if _hit_autorise(hit)), None)
+        if hit_retenu is None:
+            raise RuntimeError(
+                f"Aucun visuel autorisé trouvé pour le mot-clé « {mot_cle} » (section {index + 1})."
             )
-            video_response = requests.get(video_url)
-            video_response.raise_for_status()
 
-            with open(chemin_video, "wb") as f:
-                f.write(video_response.content)
+        video_url = hit_retenu.get("videos", {}).get("medium", {}).get("url")
+        if not video_url:
+            raise RuntimeError(
+                f"Aucune URL vidéo disponible pour le mot-clé « {mot_cle} » (section {index + 1})."
+            )
 
-            chemins_videos.append(chemin_video)
-            telecharges += 1
+        chemin_video = os.path.join(
+            output_dir, f"section_{index}_{_slugifier(mot_cle)}_{hit_retenu.get('id')}.mp4"
+        )
+        video_response = requests.get(video_url)
+        video_response.raise_for_status()
+
+        with open(chemin_video, "wb") as f:
+            f.write(video_response.content)
+
+        chemins_videos.append(chemin_video)
 
     return chemins_videos
 
@@ -172,18 +190,41 @@ def _executer_ffmpeg(commande: list) -> None:
         raise RuntimeError(f"Échec de la commande FFmpeg (code {resultat.returncode}).")
 
 
-def assemble_video(video_files: list, audio_file: str, output_path: str, platform: str) -> str:
+def _durees_par_section(sections: list, duree_audio: float) -> list:
+    """Répartit la durée totale de la voix off entre les sections, au prorata
+    du nombre de mots de chaque section (proxy du temps de lecture de chacune),
+    de façon à ce que chaque clip dure aussi longtemps que le texte qu'il illustre.
+    """
+    poids_sections = [max(len(section.split()), 1) for section in sections]
+    poids_total = sum(poids_sections)
+    return [duree_audio * poids / poids_total for poids in poids_sections]
+
+
+def assemble_video(
+    video_files: list, audio_file: str, output_path: str, platform: str, sections: list
+) -> str:
     """Assemble les vidéos et la voix off en une vidéo finale via FFmpeg, en 3 étapes :
 
-    1. Normalise chaque clip (résolution, SAR, framerate) dans temp_normalized/
+    1. Normalise chaque clip (résolution, SAR, framerate) dans temp_normalized/,
+       chacun découpé à la durée exacte de sa section correspondante
     2. Écrit la liste des clips normalisés dans concat_list.txt
     3. Concatène les clips normalisés avec la voix off pour produire la vidéo finale
 
     Cette approche évite les problèmes de SAR et de résolutions différentes
     qui surviennent en assemblant directement des clips hétérogènes.
+
+    `video_files` et `sections` doivent être alignés un-à-un (le clip i illustre
+    la section i) : c'est cet alignement qui permet de donner à chaque clip la
+    durée de la section qu'il illustre plutôt qu'une durée moyenne.
     """
     if not video_files:
         raise ValueError("Aucune vidéo disponible pour le montage.")
+
+    if len(video_files) != len(sections):
+        raise ValueError(
+            "Il doit y avoir exactement une vidéo par section "
+            f"({len(video_files)} vidéos pour {len(sections)} sections)."
+        )
 
     plateforme_normalisee = platform.lower()
     if plateforme_normalisee == "tiktok":
@@ -194,7 +235,7 @@ def assemble_video(video_files: list, audio_file: str, output_path: str, platfor
         largeur, hauteur = 1920, 1080  # horizontal 16:9 (YouTube)
 
     duree_audio = float(ffmpeg.probe(audio_file)["format"]["duration"])
-    duree_par_clip = duree_audio / len(video_files)
+    durees_clips = _durees_par_section(sections, duree_audio)
 
     dossier_sortie = os.path.dirname(output_path)
     if dossier_sortie:
@@ -203,18 +244,18 @@ def assemble_video(video_files: list, audio_file: str, output_path: str, platfor
     dossier_normalise = "temp_normalized"
     os.makedirs(dossier_normalise, exist_ok=True)
 
-    fondu_debut = FONDU_SECONDES
-    fondu_fin = max(duree_par_clip - FONDU_SECONDES, 0)
-    filtre_video = (
-        f"scale={largeur}:{hauteur}:force_original_aspect_ratio=decrease,"
-        f"pad={largeur}:{hauteur}:(ow-iw)/2:(oh-ih)/2,setsar=1/1,"
-        f"fade=t=in:st=0:d={fondu_debut},"
-        f"fade=t=out:st={fondu_fin}:d={FONDU_SECONDES}"
-    )
-
     # Étape 1 : normalise chaque clip (résolution, SAR, framerate identiques)
+    # à la durée exacte de sa section
     clips_normalises = []
-    for i, chemin_video in enumerate(video_files):
+    for i, (chemin_video, duree_par_clip) in enumerate(zip(video_files, durees_clips)):
+        fondu_fin = max(duree_par_clip - FONDU_SECONDES, 0)
+        filtre_video = (
+            f"scale={largeur}:{hauteur}:force_original_aspect_ratio=decrease,"
+            f"pad={largeur}:{hauteur}:(ow-iw)/2:(oh-ih)/2,setsar=1/1,"
+            f"fade=t=in:st=0:d={FONDU_SECONDES},"
+            f"fade=t=out:st={fondu_fin}:d={FONDU_SECONDES}"
+        )
+
         chemin_normalise = os.path.join(dossier_normalise, f"clip_{i}.mp4")
         _executer_ffmpeg([
             "ffmpeg",
