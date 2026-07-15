@@ -23,12 +23,6 @@ import urllib3
 urllib3.disable_warnings()
 
 try:
-    import ffmpeg
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "ffmpeg-python"])
-    import ffmpeg
-
-try:
     from dotenv import load_dotenv
 except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "python-dotenv"])
@@ -190,40 +184,30 @@ def _executer_ffmpeg(commande: list) -> None:
         raise RuntimeError(f"Échec de la commande FFmpeg (code {resultat.returncode}).")
 
 
-def _durees_par_section(sections: list, duree_audio: float) -> list:
-    """Répartit la durée totale de la voix off entre les sections, au prorata
-    du nombre de mots de chaque section (proxy du temps de lecture de chacune),
-    de façon à ce que chaque clip dure aussi longtemps que le texte qu'il illustre.
-    """
-    poids_sections = [max(len(section.split()), 1) for section in sections]
-    poids_total = sum(poids_sections)
-    return [duree_audio * poids / poids_total for poids in poids_sections]
-
-
 def assemble_video(
-    video_files: list, audio_file: str, output_path: str, platform: str, sections: list
+    video_files: list, audio_file: str, output_path: str, platform: str, durees_sections: list
 ) -> str:
     """Assemble les vidéos et la voix off en une vidéo finale via FFmpeg, en 3 étapes :
 
     1. Normalise chaque clip (résolution, SAR, framerate) dans temp_normalized/,
-       chacun découpé à la durée exacte de sa section correspondante
+       chacun découpé à la durée audio exacte de sa section correspondante
     2. Écrit la liste des clips normalisés dans concat_list.txt
     3. Concatène les clips normalisés avec la voix off pour produire la vidéo finale
 
     Cette approche évite les problèmes de SAR et de résolutions différentes
     qui surviennent en assemblant directement des clips hétérogènes.
 
-    `video_files` et `sections` doivent être alignés un-à-un (le clip i illustre
-    la section i) : c'est cet alignement qui permet de donner à chaque clip la
-    durée de la section qu'il illustre plutôt qu'une durée moyenne.
+    `video_files` et `durees_sections` doivent être alignés un-à-un (le clip i
+    illustre la section dont la durée audio réelle est durees_sections[i]) —
+    voir voice_generator.generate_voice_per_section(), qui renvoie ces durées.
     """
     if not video_files:
         raise ValueError("Aucune vidéo disponible pour le montage.")
 
-    if len(video_files) != len(sections):
+    if len(video_files) != len(durees_sections):
         raise ValueError(
             "Il doit y avoir exactement une vidéo par section "
-            f"({len(video_files)} vidéos pour {len(sections)} sections)."
+            f"({len(video_files)} vidéos pour {len(durees_sections)} sections)."
         )
 
     plateforme_normalisee = platform.lower()
@@ -233,9 +217,6 @@ def assemble_video(
         largeur, hauteur = 1080, 1080  # carré 1:1
     else:
         largeur, hauteur = 1920, 1080  # horizontal 16:9 (YouTube)
-
-    duree_audio = float(ffmpeg.probe(audio_file)["format"]["duration"])
-    durees_clips = _durees_par_section(sections, duree_audio)
 
     dossier_sortie = os.path.dirname(output_path)
     if dossier_sortie:
@@ -247,7 +228,7 @@ def assemble_video(
     # Étape 1 : normalise chaque clip (résolution, SAR, framerate identiques)
     # à la durée exacte de sa section
     clips_normalises = []
-    for i, (chemin_video, duree_par_clip) in enumerate(zip(video_files, durees_clips)):
+    for i, (chemin_video, duree_par_clip) in enumerate(zip(video_files, durees_sections)):
         fondu_fin = max(duree_par_clip - FONDU_SECONDES, 0)
         filtre_video = (
             f"scale={largeur}:{hauteur}:force_original_aspect_ratio=decrease,"

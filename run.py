@@ -22,7 +22,7 @@ from idea_engine import (
     generate_script,
     generate_subject,
 )
-from voice_generator import generate_voice
+from voice_generator import generate_voice_per_section
 from video_generator import (
     assemble_video,
     download_videos,
@@ -149,14 +149,14 @@ def main() -> None:
     print(f"Script sauvegardé dans scripts/{nom_fichier}")
     print("============================================")
 
-    print("Génération de la voix en cours...")
-    nom_fichier_audio = f"{label_plateforme}_{horodatage}.mp3"
-    chemin_audio = generate_voice(script, nom_fichier_audio)
-    print(f"Audio sauvegardé dans audio/{nom_fichier_audio}")
-    print("============================================")
-
     print("Découpage du script en sections...")
     sections = decouper_script_en_sections(script)
+
+    print("Génération de la voix en cours...")
+    nom_fichier_audio = f"{label_plateforme}_{horodatage}.mp3"
+    chemin_audio, durees_sections = generate_voice_per_section(sections, nom_fichier_audio)
+    print(f"Audio sauvegardé dans audio/{nom_fichier_audio}")
+    print("============================================")
 
     print("Recherche de visuels africains en cours...")
     mots_cles = extract_keywords_per_section(sections)
@@ -169,7 +169,7 @@ def main() -> None:
         chemin_audio,
         os.path.join("videos", nom_fichier_video),
         label_plateforme,
-        sections,
+        durees_sections,
     )
 
     print(f"Vidéo finale sauvegardée dans videos/{nom_fichier_video}")

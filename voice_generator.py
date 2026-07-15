@@ -88,36 +88,66 @@ async def _synthetiser_phrase(phrase: str, chemin: str) -> None:
     await communicate.save(chemin)
 
 
-async def _synthetiser_toutes(phrases: list, dossier_temp: str) -> list:
-    chemins = [os.path.join(dossier_temp, f"phrase_{i}.mp3") for i in range(len(phrases))]
+async def _synthetiser_plusieurs(phrases: list, chemins: list) -> None:
     await asyncio.gather(
         *(_synthetiser_phrase(phrase, chemin) for phrase, chemin in zip(phrases, chemins))
     )
-    return chemins
 
 
-def generate_voice(script_text: str, output_filename: str) -> str:
-    """Génère un fichier audio MP3 à partir d'un script texte via Edge TTS.
+def _synthetiser_section(phrases: list, dossier_temp: str, prefixe: str) -> AudioSegment:
+    """Synthétise les phrases d'une section et les recolle en un seul
+    AudioSegment, séparées par la pause fixe PAUSE_MS."""
+    if not phrases:
+        return AudioSegment.empty()
 
-    Chaque phrase est synthétisée séparément puis recollée avec une petite
-    pause fixe (PAUSE_MS) entre chacune, pour un contrôle précis du silence
-    entre phrases — plutôt que de dépendre des pauses variables d'Edge TTS.
+    chemins = [os.path.join(dossier_temp, f"{prefixe}_phrase_{i}.mp3") for i in range(len(phrases))]
+    asyncio.run(_synthetiser_plusieurs(phrases, chemins))
+
+    pause = AudioSegment.silent(duration=PAUSE_MS)
+    audio_section = AudioSegment.empty()
+    for i, chemin_phrase in enumerate(chemins):
+        audio_section += AudioSegment.from_file(chemin_phrase, format="mp3")
+        if i < len(chemins) - 1:
+            audio_section += pause
+
+    return audio_section
+
+
+def generate_voice_per_section(sections: list, output_filename: str) -> tuple:
+    """Génère un unique fichier audio MP3 à partir des sections du script,
+    en synthétisant chaque section séparément via Edge TTS.
+
+    Synthétiser section par section (plutôt que le script entier d'un bloc)
+    permet de connaître la durée audio réelle de chaque section : le clip
+    vidéo qui l'illustre peut alors durer exactement ce temps-là, au lieu
+    d'une estimation proportionnelle au nombre de mots.
+
+    Retourne (chemin_audio, durees_sections) : le chemin du MP3 final, et la
+    liste des durées (en secondes) de chaque section dans cet audio, dans le
+    même ordre que `sections`. La pause entre deux sections est comptée dans
+    la durée de la section qui la précède, de sorte que la somme des durées
+    retournées soit exactement égale à la durée totale de l'audio.
     """
     os.makedirs("audio", exist_ok=True)
-
-    phrases = _nettoyer_script(script_text)
     chemin_audio = os.path.join("audio", output_filename)
+    pause = AudioSegment.silent(duration=PAUSE_MS)
 
     with tempfile.TemporaryDirectory() as dossier_temp:
-        chemins_phrases = asyncio.run(_synthetiser_toutes(phrases, dossier_temp))
+        audio_sections = [
+            _synthetiser_section(_nettoyer_script(section), dossier_temp, f"section_{index}")
+            for index, section in enumerate(sections)
+        ]
 
         audio_final = AudioSegment.empty()
-        pause = AudioSegment.silent(duration=PAUSE_MS)
-        for i, chemin_phrase in enumerate(chemins_phrases):
-            audio_final += AudioSegment.from_file(chemin_phrase, format="mp3")
-            if i < len(chemins_phrases) - 1:
+        durees_sections = []
+        for i, audio_section in enumerate(audio_sections):
+            audio_final += audio_section
+            duree_section = len(audio_section) / 1000.0
+            if i < len(audio_sections) - 1:
                 audio_final += pause
+                duree_section += PAUSE_MS / 1000.0
+            durees_sections.append(duree_section)
 
         audio_final.export(chemin_audio, format="mp3")
 
-    return chemin_audio
+    return chemin_audio, durees_sections
