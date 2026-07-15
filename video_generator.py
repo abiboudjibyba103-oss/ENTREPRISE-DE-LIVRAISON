@@ -70,12 +70,15 @@ def extract_keywords(script_text: str) -> list:
                     f"{script_text}\n\n"
                     "Extrais exactement 5 mots-clés visuels en anglais, adaptés à "
                     "une recherche de vidéos sur Pixabay, qui illustrent ce script.\n\n"
-                    "Ces mots-clés doivent TOUJOURS représenter des réalités "
-                    "africaines et des personnes noires — par exemple : "
-                    '"african student studying", "black man thinking", '
-                    '"african entrepreneur laptop", "black woman focus", '
-                    '"african office work", "black person procrastinating", '
-                    '"african youth motivation".\n\n'
+                    "Ces mots-clés doivent décrire UNIQUEMENT des personnes noires "
+                    "africaines âgées de 20 à 35 ans. Ils doivent être très "
+                    'spécifiques, par exemple : "black african man studying", '
+                    '"young african woman laptop", "african student university", '
+                    '"black man thinking desk", "young black entrepreneur".\n\n'
+                    "INTERDICTION ABSOLUE d'utiliser des mots-clés génériques ou "
+                    "ambigus qui pourraient retourner des personnes blanches, des "
+                    "enfants ou des animaux. Chaque mot-clé doit obligatoirement "
+                    'contenir le mot "black" ou "african".\n\n'
                     "Retourne uniquement les 5 mots-clés, un par ligne, sans "
                     "numérotation ni explication."
                 ),
@@ -104,6 +107,15 @@ def _slugifier(texte: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", texte.lower()).strip("_")
 
 
+_MOTS_INTERDITS = ("animal", "pet", "dog", "cat", "child", "kid", "baby", "white")
+
+
+def _hit_autorise(hit: dict) -> bool:
+    """Rejette les vidéos dont les tags/titre contiennent un mot interdit."""
+    texte = f"{hit.get('tags', '')} {hit.get('title', '')}".lower()
+    return not any(mot in texte for mot in _MOTS_INTERDITS)
+
+
 def download_videos(keywords: list, output_dir: str, count_per_keyword: int = 2) -> list:
     """Télécharge des vidéos Pixabay pour chaque mot-clé et retourne leurs chemins."""
     os.makedirs(output_dir, exist_ok=True)
@@ -124,6 +136,9 @@ def download_videos(keywords: list, output_dir: str, count_per_keyword: int = 2)
         for hit in hits:
             if telecharges >= count_per_keyword:
                 break
+
+            if not _hit_autorise(hit):
+                continue
 
             video_url = hit.get("videos", {}).get("medium", {}).get("url")
             if not video_url:
@@ -170,10 +185,13 @@ def assemble_video(video_files: list, audio_file: str, output_path: str, platfor
     if not video_files:
         raise ValueError("Aucune vidéo disponible pour le montage.")
 
-    if platform.lower() in ("tiktok", "instagram"):
-        largeur, hauteur = 1080, 1920
+    plateforme_normalisee = platform.lower()
+    if plateforme_normalisee == "tiktok":
+        largeur, hauteur = 1080, 1920  # vertical 9:16
+    elif plateforme_normalisee in ("instagram", "facebook"):
+        largeur, hauteur = 1080, 1080  # carré 1:1
     else:
-        largeur, hauteur = 1920, 1080
+        largeur, hauteur = 1920, 1080  # horizontal 16:9 (YouTube)
 
     duree_audio = float(ffmpeg.probe(audio_file)["format"]["duration"])
     duree_par_clip = duree_audio / len(video_files)
@@ -206,7 +224,8 @@ def assemble_video(video_files: list, audio_file: str, output_path: str, platfor
             "-t", str(duree_par_clip),
             "-r", "30",
             "-c:v", "libx264",
-            "-preset", "fast",
+            "-preset", "slow",
+            "-crf", "18",
             chemin_normalise,
             "-y",
         ])
@@ -218,18 +237,21 @@ def assemble_video(video_files: list, audio_file: str, output_path: str, platfor
         for chemin_clip in clips_normalises:
             f.write(f"file '{chemin_clip}'\n")
 
-    # Étape 3 : concatène les clips normalisés avec la voix off
+    # Étape 3 : concatène les clips normalisés avec la voix off (mapping explicite
+    # pour garantir que la piste audio soit bien incluse dans la sortie finale)
     _executer_ffmpeg([
         "ffmpeg",
         "-f", "concat",
         "-safe", "0",
         "-i", chemin_liste,
         "-i", audio_file,
+        "-map", "0:v:0",
+        "-map", "1:a:0",
         "-c:v", "libx264",
         "-c:a", "aac",
         "-shortest",
-        output_path,
         "-y",
+        output_path,
     ])
 
     return output_path
