@@ -29,6 +29,7 @@ from video_generator import (
     extract_keywords_per_section,
     ffmpeg_disponible,
 )
+from subtitle_generator import generate_subtitles
 
 PLATEFORMES = {
     "1": ("YouTube", YOUTUBE),
@@ -164,15 +165,18 @@ def main() -> None:
 
     print("Montage de la vidéo en cours...")
     nom_fichier_video = f"{label_plateforme}_{horodatage}.mp4"
+    chemin_video = os.path.join("videos", nom_fichier_video)
     assemble_video(
         chemins_videos,
         chemin_audio,
-        os.path.join("videos", nom_fichier_video),
+        chemin_video,
         label_plateforme,
         durees_sections,
     )
 
-    print(f"Vidéo finale sauvegardée dans videos/{nom_fichier_video}")
+    print("Ajout des sous-titres en cours...")
+    generate_subtitles(script, chemin_audio, chemin_video, chemin_video, label_plateforme)
+    print(f"Vidéo finale avec sous-titres sauvegardée dans videos/{nom_fichier_video}")
     print("============================================")
 
 
