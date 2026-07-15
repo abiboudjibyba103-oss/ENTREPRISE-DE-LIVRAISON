@@ -1,5 +1,6 @@
 """Générateur de vidéo pour Prédicta : visuels Pixabay + voix off assemblés via FFmpeg."""
 
+import json
 import os
 import re
 import subprocess
@@ -68,40 +69,56 @@ tout aussi précis et visuel, en respectant impérativement ces contraintes :
   personnes blanches."""
 
 
+_CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*|\s*```$")
+
+
 def extract_keywords_per_section(sections: list) -> list:
     """Extrait un mot-clé vidéo Pixabay précis pour chaque section du script.
 
     Une section correspond à un bloc du script délimité par '---'. Chaque mot-clé
     décrit exactement ce qui est dit dans sa section (et non le script entier),
-    pour que le visuel corresponde au propos du moment. Retourne une liste de
-    mots-clés dans le même ordre que `sections`.
+    pour que le visuel corresponde au propos du moment. Un seul appel à Claude
+    traite toutes les sections d'un coup (au lieu d'un appel par section) pour
+    réduire la latence totale. Retourne une liste de mots-clés dans le même
+    ordre que `sections`.
     """
-    mots_cles = []
+    sections_numerotees = "\n\n".join(
+        f"Section {i + 1} :\n{section}" for i, section in enumerate(sections)
+    )
 
-    for section in sections:
-        response = _client.messages.create(
-            model=MODEL,
-            max_tokens=64,
-            messages=[
-                {
-                    "role": "user",
-                    "content": (
-                        "Voici une section d'un script vidéo pour Prédicta :\n\n"
-                        f"{section}\n\n"
-                        "Donne UN SEUL mot-clé de recherche vidéo Pixabay, en anglais, "
-                        "très précis, qui illustre exactement ce qui est dit dans cette "
-                        "section (pas le script entier, juste cette section).\n\n"
-                        f"{_REGLES_MOTS_CLES}\n\n"
-                        "Retourne uniquement le mot-clé, sans numérotation, sans "
-                        "explication, sans guillemets."
-                    ),
-                }
-            ],
+    response = _client.messages.create(
+        model=MODEL,
+        max_tokens=max(256, 64 * len(sections)),
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    f"Voici les {len(sections)} sections d'un script vidéo pour Prédicta, "
+                    "chacune numérotée :\n\n"
+                    f"{sections_numerotees}\n\n"
+                    "Pour CHAQUE section, donne un mot-clé de recherche vidéo Pixabay, en "
+                    "anglais, très précis, qui illustre exactement ce qui est dit dans "
+                    "cette section précise (pas le script entier).\n\n"
+                    f"{_REGLES_MOTS_CLES}\n\n"
+                    "Retourne UNIQUEMENT un objet JSON de cette forme, sans texte avant ni "
+                    "après, sans balises de code markdown :\n"
+                    '{"mots_cles": ["mot-clé section 1", "mot-clé section 2", ...]}\n\n'
+                    f"Le tableau doit contenir exactement {len(sections)} mots-clés, dans "
+                    "l'ordre des sections."
+                ),
+            }
+        ],
+    )
+
+    texte_reponse = _CODE_FENCE_RE.sub("", response.content[0].text.strip())
+    mots_cles = json.loads(texte_reponse)["mots_cles"]
+
+    if len(mots_cles) != len(sections):
+        raise RuntimeError(
+            f"Claude a renvoyé {len(mots_cles)} mots-clés pour {len(sections)} sections."
         )
-        mot_cle = response.content[0].text.strip().strip('"').splitlines()[0].strip()
-        mots_cles.append(mot_cle)
 
-    return mots_cles
+    return [mot_cle.strip() for mot_cle in mots_cles]
 
 
 def _rechercher_pixabay(mot_cle: str) -> list:
@@ -151,7 +168,7 @@ def download_videos(keywords: list, output_dir: str) -> list:
                 f"Aucun visuel autorisé trouvé pour le mot-clé « {mot_cle} » (section {index + 1})."
             )
 
-        video_url = hit_retenu.get("videos", {}).get("medium", {}).get("url")
+        video_url = hit_retenu.get("videos", {}).get("small", {}).get("url")
         if not video_url:
             raise RuntimeError(
                 f"Aucune URL vidéo disponible pour le mot-clé « {mot_cle} » (section {index + 1})."
@@ -246,8 +263,8 @@ def assemble_video(
             "-t", str(duree_par_clip),
             "-r", "30",
             "-c:v", "libx264",
-            "-preset", "slow",
-            "-crf", "18",
+            "-preset", "ultrafast",
+            "-crf", "23",
             chemin_normalise,
             "-y",
         ])
