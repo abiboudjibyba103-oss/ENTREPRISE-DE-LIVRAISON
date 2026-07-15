@@ -53,21 +53,30 @@ def ffmpeg_disponible() -> bool:
         return False
 
 
-_REGLES_MOTS_CLES = """Règles strictes de correspondance thème → mot-clé (à respecter à la lettre
-quand le thème de la section correspond) :
-- Le cerveau, la neuroscience, le fonctionnement mental → "brain neuroscience animation"
-- La procrastination → "young black man procrastinating desk"
-- Le téléphone, les notifications, les distractions → "young african man phone distracted"
-- Le stress, la pression, la charge mentale → "young black man stressed work"
-- La motivation, la réussite, l'ambition → "young african entrepreneur success"
-
-Pour tout autre thème qui ne correspond à aucune de ces règles, invente un mot-clé
-tout aussi précis et visuel, en respectant impérativement ces contraintes :
-- Les personnes représentées doivent TOUJOURS être noires, africaines, âgées de 20 à 35 ans.
-- Le mot-clé doit obligatoirement contenir "black" ou "african", sauf s'il s'agit d'une
+_REGLES_MOTS_CLES = """Règles strictes et permanentes de ciblage des mots-clés (s'appliquent à
+CHAQUE section, pour cette réponse comme pour toutes les suivantes) :
+- Sur l'ensemble des mots-clés de cette réponse, 85% doivent cibler explicitement des hommes
+  noirs africains de 20 à 35 ans, avec des termes comme "young black african man",
+  "black male student", "african young man desk".
+- Maximum 15% des mots-clés peuvent cibler des femmes noires africaines (même tranche d'âge).
+- ZÉRO personne blanche : si un mot-clé risque de retourner des personnes blanches, reformule-le
+  pour qu'il cible sans ambiguïté des personnes noires africaines.
+- Chaque mot-clé doit obligatoirement contenir "african" ou "black man", sauf s'il s'agit d'une
   animation abstraite (comme le cerveau) qui ne montre aucune personne.
-- INTERDICTION ABSOLUE de mots-clés pouvant retourner des enfants, des animaux ou des
-  personnes blanches."""
+- Bons exemples de mots-clés : "young black african man thinking", "african male student laptop",
+  "black man stressed work desk".
+
+Règles de correspondance thème → mot-clé (à respecter à la lettre quand le thème de la
+section correspond), en gardant toujours le ciblage ci-dessus :
+- Le cerveau, la neuroscience, le fonctionnement mental → "brain neuroscience animation"
+- La procrastination → "young black african man procrastinating desk"
+- Le téléphone, les notifications, les distractions → "young black african man phone distracted"
+- Le stress, la pression, la charge mentale → "black man stressed work desk"
+- La motivation, la réussite, l'ambition → "young black african man entrepreneur success"
+
+Pour tout autre thème qui ne correspond à aucune de ces règles, invente un mot-clé tout aussi
+précis et visuel, en respectant impérativement les règles de ciblage ci-dessus.
+INTERDICTION ABSOLUE de mots-clés pouvant retourner des enfants ou des animaux."""
 
 
 _CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*|\s*```$")

@@ -74,6 +74,10 @@ def _nettoyer_script(script_text: str) -> list:
         lignes_utiles.append(ligne_propre)
 
     texte = " ".join(lignes_utiles)
+    # les retours à la ligne créent des pauses trop longues à la lecture : on les
+    # aplatit en un espace simple, sans toucher aux points qui marquent les
+    # pauses courtes naturelles entre phrases
+    texte = texte.replace("\n\n", " ").replace("\n", " ")
     texte = _GRAS_RE.sub(r"\1", texte)
     texte = _ITALIQUE_RE.sub(r"\1", texte)
     texte = _PREDICTA_MAJ_RE.sub("Prédicta", texte)
