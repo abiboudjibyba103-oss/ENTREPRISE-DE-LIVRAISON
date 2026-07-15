@@ -156,7 +156,9 @@ def main() -> None:
 
     print("Génération de la voix en cours...")
     nom_fichier_audio = f"{label_plateforme}_{horodatage}.mp3"
-    chemin_audio, durees_sections = generate_voice_per_section(sections, nom_fichier_audio)
+    chemin_audio, durees_sections, mots_avec_timing = generate_voice_per_section(
+        sections, nom_fichier_audio
+    )
     print(f"Audio sauvegardé dans audio/{nom_fichier_audio}")
     print("============================================")
 
@@ -184,7 +186,7 @@ def main() -> None:
         shutil.rmtree(dossier_temp_normalise, ignore_errors=True)
 
     print("Ajout des sous-titres en cours...")
-    generate_subtitles(script, chemin_audio, chemin_video, chemin_video, label_plateforme)
+    generate_subtitles(mots_avec_timing, chemin_video, chemin_video, label_plateforme)
     print(f"Vidéo finale avec sous-titres sauvegardée dans videos/{nom_fichier_video}")
     print("============================================")
 

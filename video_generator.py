@@ -55,16 +55,16 @@ def ffmpeg_disponible() -> bool:
 
 _REGLES_MOTS_CLES = """Règles strictes et permanentes de ciblage des mots-clés (s'appliquent à
 CHAQUE section, pour cette réponse comme pour toutes les suivantes) :
-- Sur l'ensemble des mots-clés de cette réponse, 85% doivent cibler explicitement des hommes
-  noirs africains de 20 à 35 ans, avec des termes comme "young black african man",
-  "black male student", "african young man desk".
-- Maximum 15% des mots-clés peuvent cibler des femmes noires africaines (même tranche d'âge).
+- 100% des mots-clés doivent cibler explicitement des hommes noirs africains de 20 à 35 ans,
+  avec des termes comme "young black african man", "black male student", "african young man desk".
+- INTERDICTION ABSOLUE des mots "woman", "female", "girl" ou "lady" : aucun mot-clé ne doit
+  cibler une femme.
 - ZÉRO personne blanche : si un mot-clé risque de retourner des personnes blanches, reformule-le
   pour qu'il cible sans ambiguïté des personnes noires africaines.
-- Chaque mot-clé doit obligatoirement contenir "african" ou "black man", sauf s'il s'agit d'une
-  animation abstraite (comme le cerveau) qui ne montre aucune personne.
-- Bons exemples de mots-clés : "young black african man thinking", "african male student laptop",
-  "black man stressed work desk".
+- Chaque mot-clé doit obligatoirement contenir "man" ou "male", sauf s'il s'agit d'une animation
+  abstraite (comme le cerveau) qui ne montre aucune personne.
+- Bons exemples de mots-clés : "young black african man stressed", "african male student laptop",
+  "black man thinking desk".
 
 Règles de correspondance thème → mot-clé (à respecter à la lettre quand le thème de la
 section correspond), en gardant toujours le ciblage ci-dessus :
@@ -142,7 +142,10 @@ def _slugifier(texte: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", texte.lower()).strip("_")
 
 
-_MOTS_INTERDITS = ("animal", "pet", "dog", "cat", "child", "kid", "baby", "white")
+_MOTS_INTERDITS = (
+    "animal", "pet", "dog", "cat", "child", "kid", "baby", "white",
+    "woman", "female", "girl", "lady",
+)
 
 
 def _hit_autorise(hit: dict) -> bool:

@@ -87,34 +87,74 @@ def _nettoyer_script(script_text: str) -> list:
     return [phrase.strip() for phrase in _PHRASE_SEPARATEUR_RE.split(texte) if phrase.strip()]
 
 
-async def _synthetiser_phrase(phrase: str, chemin: str) -> None:
+async def _synthetiser_phrase_avec_mots(phrase: str, chemin: str) -> list:
+    """Synthétise une phrase, écrit son audio dans `chemin` et retourne les
+    limites de mots (texte, début, durée en secondes) rapportées par Edge TTS
+    en direct pendant la synthèse — relatives au début de cette phrase."""
     communicate = edge_tts.Communicate(phrase, VOICE)
-    await communicate.save(chemin)
+    limites = []
+
+    with open(chemin, "wb") as f:
+        async for morceau in communicate.stream():
+            if morceau["type"] == "audio":
+                f.write(morceau["data"])
+            elif morceau["type"] == "WordBoundary":
+                limites.append(
+                    {
+                        "text": morceau["text"],
+                        "debut": morceau["offset"] / 10_000_000,
+                        "duree": morceau["duration"] / 10_000_000,
+                    }
+                )
+
+    return limites
 
 
-async def _synthetiser_plusieurs(phrases: list, chemins: list) -> None:
-    await asyncio.gather(
-        *(_synthetiser_phrase(phrase, chemin) for phrase, chemin in zip(phrases, chemins))
+async def _synthetiser_plusieurs_avec_mots(phrases: list, chemins: list) -> list:
+    return await asyncio.gather(
+        *(
+            _synthetiser_phrase_avec_mots(phrase, chemin)
+            for phrase, chemin in zip(phrases, chemins)
+        )
     )
 
 
-def _synthetiser_section(phrases: list, dossier_temp: str, prefixe: str) -> AudioSegment:
-    """Synthétise les phrases d'une section et les recolle en un seul
-    AudioSegment, séparées par la pause fixe PAUSE_MS."""
+def _synthetiser_section(phrases: list, dossier_temp: str, prefixe: str) -> tuple:
+    """Synthétise les phrases d'une section, les recolle en un seul
+    AudioSegment (séparées par la pause fixe PAUSE_MS) et retourne aussi la
+    liste des mots prononcés avec leur timing réel (texte, début, durée en
+    secondes), relatif au début de cette section — utilisée pour synchroniser
+    les sous-titres mot à mot sur la voix off effectivement générée."""
     if not phrases:
-        return AudioSegment.empty()
+        return AudioSegment.empty(), []
 
     chemins = [os.path.join(dossier_temp, f"{prefixe}_phrase_{i}.mp3") for i in range(len(phrases))]
-    asyncio.run(_synthetiser_plusieurs(phrases, chemins))
+    limites_par_phrase = asyncio.run(_synthetiser_plusieurs_avec_mots(phrases, chemins))
 
     pause = AudioSegment.silent(duration=PAUSE_MS)
     audio_section = AudioSegment.empty()
-    for i, chemin_phrase in enumerate(chemins):
-        audio_section += AudioSegment.from_file(chemin_phrase, format="mp3")
+    mots_section = []
+    curseur = 0.0
+    for i, (chemin_phrase, limites) in enumerate(zip(chemins, limites_par_phrase)):
+        segment_phrase = AudioSegment.from_file(chemin_phrase, format="mp3")
+
+        for limite in limites:
+            mots_section.append(
+                {
+                    "text": limite["text"],
+                    "debut": curseur + limite["debut"],
+                    "duree": limite["duree"],
+                }
+            )
+
+        audio_section += segment_phrase
+        curseur += len(segment_phrase) / 1000.0
+
         if i < len(chemins) - 1:
             audio_section += pause
+            curseur += PAUSE_MS / 1000.0
 
-    return audio_section
+    return audio_section, mots_section
 
 
 def generate_voice_per_section(sections: list, output_filename: str) -> tuple:
@@ -126,32 +166,53 @@ def generate_voice_per_section(sections: list, output_filename: str) -> tuple:
     vidéo qui l'illustre peut alors durer exactement ce temps-là, au lieu
     d'une estimation proportionnelle au nombre de mots.
 
-    Retourne (chemin_audio, durees_sections) : le chemin du MP3 final, et la
-    liste des durées (en secondes) de chaque section dans cet audio, dans le
-    même ordre que `sections`. La pause entre deux sections est comptée dans
-    la durée de la section qui la précède, de sorte que la somme des durées
-    retournées soit exactement égale à la durée totale de l'audio.
+    Retourne (chemin_audio, durees_sections, mots_avec_timing) :
+    - le chemin du MP3 final ;
+    - la liste des durées (en secondes) de chaque section dans cet audio,
+      dans le même ordre que `sections`. La pause entre deux sections est
+      comptée dans la durée de la section qui la précède, de sorte que la
+      somme des durées retournées soit exactement égale à la durée totale
+      de l'audio ;
+    - la liste, dans l'ordre, de chaque mot réellement prononcé avec son
+      timing exact (texte, début, durée en secondes) dans l'audio final —
+      capturé en direct via les événements WordBoundary d'Edge TTS, pas
+      estimé — pour synchroniser les sous-titres mot à mot.
     """
     os.makedirs("audio", exist_ok=True)
     chemin_audio = os.path.join("audio", output_filename)
     pause = AudioSegment.silent(duration=PAUSE_MS)
 
     with tempfile.TemporaryDirectory() as dossier_temp:
-        audio_sections = [
+        resultats_sections = [
             _synthetiser_section(_nettoyer_script(section), dossier_temp, f"section_{index}")
             for index, section in enumerate(sections)
         ]
 
         audio_final = AudioSegment.empty()
         durees_sections = []
-        for i, audio_section in enumerate(audio_sections):
+        mots_avec_timing = []
+        curseur_global = 0.0
+        for i, (audio_section, mots_section) in enumerate(resultats_sections):
+            for mot in mots_section:
+                mots_avec_timing.append(
+                    {
+                        "text": mot["text"],
+                        "debut": curseur_global + mot["debut"],
+                        "duree": mot["duree"],
+                    }
+                )
+
             audio_final += audio_section
             duree_section = len(audio_section) / 1000.0
-            if i < len(audio_sections) - 1:
+            curseur_global += duree_section
+
+            if i < len(resultats_sections) - 1:
                 audio_final += pause
                 duree_section += PAUSE_MS / 1000.0
+                curseur_global += PAUSE_MS / 1000.0
+
             durees_sections.append(duree_section)
 
         audio_final.export(chemin_audio, format="mp3")
 
-    return chemin_audio, durees_sections
+    return chemin_audio, durees_sections, mots_avec_timing
