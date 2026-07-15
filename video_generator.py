@@ -1,5 +1,6 @@
 """Générateur de vidéo pour Prédicta : visuels Pixabay + voix off assemblés via FFmpeg."""
 
+import concurrent.futures
 import json
 import os
 import re
@@ -141,49 +142,60 @@ def _hit_autorise(hit: dict) -> bool:
     return not any(mot in texte for mot in _MOTS_INTERDITS)
 
 
-def download_videos(keywords: list, output_dir: str) -> list:
-    """Télécharge UNE vidéo Pixabay par mot-clé (une par section du script).
+def _telecharger_video_section(index: int, mot_cle: str, output_dir: str) -> str:
+    """Recherche et télécharge la vidéo Pixabay retenue pour une section."""
+    hits = _rechercher_pixabay(mot_cle)
 
-    Retourne les chemins dans le même ordre que `keywords`, pour garder une
-    correspondance 1:1 entre chaque section et son clip vidéo — nécessaire
-    pour qu'assemble_video() puisse aligner chaque clip sur sa section.
+    if not hits:
+        mot_cle_simplifie = re.sub(
+            r"\b(african|black)\b", "", mot_cle, flags=re.IGNORECASE
+        ).strip()
+        mot_cle_simplifie = re.sub(r"\s+", " ", mot_cle_simplifie)
+        if mot_cle_simplifie and mot_cle_simplifie != mot_cle:
+            hits = _rechercher_pixabay(mot_cle_simplifie)
+
+    hit_retenu = next((hit for hit in hits if _hit_autorise(hit)), None)
+    if hit_retenu is None:
+        raise RuntimeError(
+            f"Aucun visuel autorisé trouvé pour le mot-clé « {mot_cle} » (section {index + 1})."
+        )
+
+    video_url = hit_retenu.get("videos", {}).get("small", {}).get("url")
+    if not video_url:
+        raise RuntimeError(
+            f"Aucune URL vidéo disponible pour le mot-clé « {mot_cle} » (section {index + 1})."
+        )
+
+    chemin_video = os.path.join(
+        output_dir, f"section_{index}_{_slugifier(mot_cle)}_{hit_retenu.get('id')}.mp4"
+    )
+    video_response = requests.get(video_url)
+    video_response.raise_for_status()
+
+    with open(chemin_video, "wb") as f:
+        f.write(video_response.content)
+
+    return chemin_video
+
+
+def download_videos(keywords: list, output_dir: str, max_workers: int = 4) -> list:
+    """Télécharge UNE vidéo Pixabay par mot-clé (une par section du script), en
+    parallélisant les téléchargements (jusqu'à `max_workers` à la fois).
+
+    Retourne les chemins dans le même ordre que `keywords` — ThreadPoolExecutor.map
+    préserve cet ordre même si les téléchargements se terminent dans le désordre —
+    pour garder une correspondance 1:1 entre chaque section et son clip vidéo,
+    nécessaire pour qu'assemble_video() puisse aligner chaque clip sur sa section.
     """
     os.makedirs(output_dir, exist_ok=True)
-    chemins_videos = []
 
-    for index, mot_cle in enumerate(keywords):
-        hits = _rechercher_pixabay(mot_cle)
-
-        if not hits:
-            mot_cle_simplifie = re.sub(
-                r"\b(african|black)\b", "", mot_cle, flags=re.IGNORECASE
-            ).strip()
-            mot_cle_simplifie = re.sub(r"\s+", " ", mot_cle_simplifie)
-            if mot_cle_simplifie and mot_cle_simplifie != mot_cle:
-                hits = _rechercher_pixabay(mot_cle_simplifie)
-
-        hit_retenu = next((hit for hit in hits if _hit_autorise(hit)), None)
-        if hit_retenu is None:
-            raise RuntimeError(
-                f"Aucun visuel autorisé trouvé pour le mot-clé « {mot_cle} » (section {index + 1})."
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        chemins_videos = list(
+            executor.map(
+                lambda item: _telecharger_video_section(item[0], item[1], output_dir),
+                enumerate(keywords),
             )
-
-        video_url = hit_retenu.get("videos", {}).get("small", {}).get("url")
-        if not video_url:
-            raise RuntimeError(
-                f"Aucune URL vidéo disponible pour le mot-clé « {mot_cle} » (section {index + 1})."
-            )
-
-        chemin_video = os.path.join(
-            output_dir, f"section_{index}_{_slugifier(mot_cle)}_{hit_retenu.get('id')}.mp4"
         )
-        video_response = requests.get(video_url)
-        video_response.raise_for_status()
-
-        with open(chemin_video, "wb") as f:
-            f.write(video_response.content)
-
-        chemins_videos.append(chemin_video)
 
     return chemins_videos
 
