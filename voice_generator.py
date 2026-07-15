@@ -91,7 +91,7 @@ async def _synthetiser_phrase_avec_mots(phrase: str, chemin: str) -> list:
     """Synthétise une phrase, écrit son audio dans `chemin` et retourne les
     limites de mots (texte, début, durée en secondes) rapportées par Edge TTS
     en direct pendant la synthèse — relatives au début de cette phrase."""
-    communicate = edge_tts.Communicate(phrase, VOICE)
+    communicate = edge_tts.Communicate(phrase, VOICE, rate="+25%")
     limites = []
 
     with open(chemin, "wb") as f:
