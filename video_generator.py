@@ -223,11 +223,16 @@ def _executer_ffmpeg(commande: list) -> None:
 
 
 def assemble_video(
-    video_files: list, audio_file: str, output_path: str, platform: str, durees_sections: list
+    video_files: list,
+    audio_file: str,
+    output_path: str,
+    platform: str,
+    durees_sections: list,
+    dossier_normalise: str,
 ) -> str:
     """Assemble les vidéos et la voix off en une vidéo finale via FFmpeg, en 3 étapes :
 
-    1. Normalise chaque clip (résolution, SAR, framerate) dans temp_normalized/,
+    1. Normalise chaque clip (résolution, SAR, framerate) dans `dossier_normalise`,
        chacun découpé à la durée audio exacte de sa section correspondante
     2. Écrit la liste des clips normalisés dans concat_list.txt
     3. Concatène les clips normalisés avec la voix off pour produire la vidéo finale
@@ -238,6 +243,11 @@ def assemble_video(
     `video_files` et `durees_sections` doivent être alignés un-à-un (le clip i
     illustre la section dont la durée audio réelle est durees_sections[i]) —
     voir voice_generator.generate_voice_per_section(), qui renvoie ces durées.
+
+    `dossier_normalise` est un dossier temporaire propre à cette génération
+    (nommé par l'appelant, par exemple avec un timestamp) : cette fonction ne
+    le supprime pas elle-même, c'est à l'appelant de le nettoyer une fois la
+    génération terminée.
     """
     if not video_files:
         raise ValueError("Aucune vidéo disponible pour le montage.")
@@ -260,7 +270,6 @@ def assemble_video(
     if dossier_sortie:
         os.makedirs(dossier_sortie, exist_ok=True)
 
-    dossier_normalise = "temp_normalized"
     os.makedirs(dossier_normalise, exist_ok=True)
 
     # Étape 1 : normalise chaque clip (résolution, SAR, framerate identiques)

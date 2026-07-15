@@ -2,6 +2,7 @@
 
 import os
 import re
+import shutil
 import sys
 from datetime import datetime
 
@@ -159,20 +160,28 @@ def main() -> None:
     print(f"Audio sauvegardé dans audio/{nom_fichier_audio}")
     print("============================================")
 
-    print("Recherche de visuels africains en cours...")
-    mots_cles = extract_keywords_per_section(sections)
-    chemins_videos = download_videos(mots_cles, "temp_videos")
-
-    print("Montage de la vidéo en cours...")
+    dossier_temp_videos = f"temp_videos_{horodatage}"
+    dossier_temp_normalise = f"temp_normalized_{horodatage}"
     nom_fichier_video = f"{label_plateforme}_{horodatage}.mp4"
     chemin_video = os.path.join("videos", nom_fichier_video)
-    assemble_video(
-        chemins_videos,
-        chemin_audio,
-        chemin_video,
-        label_plateforme,
-        durees_sections,
-    )
+
+    try:
+        print("Recherche de visuels africains en cours...")
+        mots_cles = extract_keywords_per_section(sections)
+        chemins_videos = download_videos(mots_cles, dossier_temp_videos)
+
+        print("Montage de la vidéo en cours...")
+        assemble_video(
+            chemins_videos,
+            chemin_audio,
+            chemin_video,
+            label_plateforme,
+            durees_sections,
+            dossier_temp_normalise,
+        )
+    finally:
+        shutil.rmtree(dossier_temp_videos, ignore_errors=True)
+        shutil.rmtree(dossier_temp_normalise, ignore_errors=True)
 
     print("Ajout des sous-titres en cours...")
     generate_subtitles(script, chemin_audio, chemin_video, chemin_video, label_plateforme)
