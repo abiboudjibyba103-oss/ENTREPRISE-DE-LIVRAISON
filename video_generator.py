@@ -70,15 +70,16 @@ def extract_keywords(script_text: str) -> list:
                     f"{script_text}\n\n"
                     "Extrais exactement 5 mots-clés visuels en anglais, adaptés à "
                     "une recherche de vidéos sur Pixabay, qui illustrent ce script.\n\n"
-                    "Ces mots-clés doivent décrire UNIQUEMENT des personnes noires "
-                    "africaines âgées de 20 à 35 ans. Ils doivent être très "
-                    'spécifiques, par exemple : "black african man studying", '
-                    '"young african woman laptop", "african student university", '
-                    '"black man thinking desk", "young black entrepreneur".\n\n'
+                    "Ces mots-clés doivent décrire UNIQUEMENT des hommes noirs "
+                    "africains âgés de 20 à 35 ans. Ils doivent être très "
+                    'spécifiques, par exemple : "young black african man stressed", '
+                    '"african male student laptop", "black man thinking desk", '
+                    '"african man studying", "young black entrepreneur man".\n\n'
                     "INTERDICTION ABSOLUE d'utiliser des mots-clés génériques ou "
                     "ambigus qui pourraient retourner des personnes blanches, des "
-                    "enfants ou des animaux. Chaque mot-clé doit obligatoirement "
-                    'contenir le mot "black" ou "african".\n\n'
+                    "femmes, des enfants ou des animaux. Chaque mot-clé doit "
+                    'obligatoirement contenir le mot "man" ou "male", et jamais '
+                    '"woman" ou "female".\n\n'
                     "Retourne uniquement les 5 mots-clés, un par ligne, sans "
                     "numérotation ni explication."
                 ),
@@ -107,7 +108,10 @@ def _slugifier(texte: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", texte.lower()).strip("_")
 
 
-_MOTS_INTERDITS = ("animal", "pet", "dog", "cat", "child", "kid", "baby", "white")
+_MOTS_INTERDITS = (
+    "animal", "pet", "dog", "cat", "child", "kid", "baby", "white",
+    "woman", "female", "girl", "lady",
+)
 
 
 def _hit_autorise(hit: dict) -> bool:
@@ -255,3 +259,105 @@ def assemble_video(video_files: list, audio_file: str, output_path: str, platfor
     ])
 
     return output_path
+
+
+# --- Sous-titres ---
+
+_MOTS_PAR_GROUPE = 4
+_DUREE_MAX_SOUS_TITRE = 2.0  # secondes — aucun sous-titre ne reste plus longtemps
+_PONCTUATION_RE = re.compile(r"[^\wÀ-ÿ'’-]")
+
+
+def _grouper_mots(mots: list) -> list:
+    """Regroupe les mots par 3-4, sans dépasser la durée d'affichage maximale."""
+    groupes = []
+    groupe_courant = []
+    debut_groupe = None
+
+    for mot in mots:
+        texte = _PONCTUATION_RE.sub("", mot["text"]).strip()
+        if not texte:
+            continue
+
+        if not groupe_courant:
+            debut_groupe = mot["debut"]
+
+        groupe_courant.append(texte)
+        duree_ecoulee = mot["fin"] - debut_groupe
+
+        if len(groupe_courant) >= _MOTS_PAR_GROUPE or duree_ecoulee >= _DUREE_MAX_SOUS_TITRE:
+            groupes.append({"texte": " ".join(groupe_courant), "debut": debut_groupe, "fin": mot["fin"]})
+            groupe_courant = []
+
+    if groupe_courant:
+        groupes.append({"texte": " ".join(groupe_courant), "debut": debut_groupe, "fin": mots[-1]["fin"]})
+
+    return groupes
+
+
+def _formater_temps_ass(secondes: float) -> str:
+    heures = int(secondes // 3600)
+    minutes = int((secondes % 3600) // 60)
+    secs = secondes % 60
+    centiemes = int(round((secs - int(secs)) * 100))
+    return f"{heures}:{minutes:02d}:{int(secs):02d}.{centiemes:02d}"
+
+
+def generer_fichier_sous_titres(mots: list, platform: str, chemin_sortie: str) -> str:
+    """Génère un fichier .ass de sous-titres stylés selon les règles Prédicta.
+
+    Police Arial Bold, contour noir épais, texte jaune vif, bas de l'écran
+    centré, 3-4 mots par groupe max 2 secondes à l'écran, sans ponctuation,
+    en majuscules pour TikTok/Instagram et en minuscules pour YouTube.
+    """
+    plateforme_normalisee = platform.lower()
+    taille = 14 if plateforme_normalisee == "youtube" else 18
+    majuscules = plateforme_normalisee != "youtube"
+
+    groupes = _grouper_mots(mots)
+
+    lignes = [
+        "[Script Info]\n",
+        "ScriptType: v4.00+\n",
+        "\n",
+        "[V4+ Styles]\n",
+        "Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, Bold, Outline, Alignment, MarginV\n",
+        f"Style: Predicta,Arial,{taille},&H0000FFFF,&H00000000,-1,3,2,40\n",
+        "\n",
+        "[Events]\n",
+        "Format: Layer, Start, End, Style, Text\n",
+    ]
+
+    for groupe in groupes:
+        texte = groupe["texte"].upper() if majuscules else groupe["texte"].lower()
+        debut = _formater_temps_ass(groupe["debut"])
+        fin = _formater_temps_ass(groupe["fin"])
+        lignes.append(f"Dialogue: 0,{debut},{fin},Predicta,{texte}\n")
+
+    with open(chemin_sortie, "w", encoding="utf-8") as f:
+        f.writelines(lignes)
+
+    return chemin_sortie
+
+
+def add_subtitles(video_path: str, mots: list, platform: str) -> str:
+    """Brûle les sous-titres stylés dans la vidéo assemblée, à partir du timing des mots."""
+    if not mots:
+        return video_path
+
+    chemin_ass = os.path.splitext(video_path)[0] + ".ass"
+    generer_fichier_sous_titres(mots, platform, chemin_ass)
+
+    chemin_temp = os.path.splitext(video_path)[0] + "_sous_titres.mp4"
+    _executer_ffmpeg([
+        "ffmpeg",
+        "-i", video_path,
+        "-vf", f"ass={chemin_ass}",
+        "-c:v", "libx264",
+        "-c:a", "copy",
+        "-y",
+        chemin_temp,
+    ])
+
+    os.replace(chemin_temp, video_path)
+    return video_path

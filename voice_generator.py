@@ -83,25 +83,49 @@ def _nettoyer_script(script_text: str) -> list:
     return [phrase.strip() for phrase in _PHRASE_SEPARATEUR_RE.split(texte) if phrase.strip()]
 
 
-async def _synthetiser_phrase(phrase: str, chemin: str) -> None:
+async def _synthetiser_phrase(phrase: str, chemin: str) -> list:
+    """Synthétise une phrase et retourne le timing (en secondes) de chaque mot."""
     communicate = edge_tts.Communicate(phrase, VOICE)
-    await communicate.save(chemin)
+    mots = []
+
+    with open(chemin, "wb") as f:
+        async for morceau in communicate.stream():
+            if morceau["type"] == "audio":
+                f.write(morceau["data"])
+            elif morceau["type"] == "WordBoundary":
+                mots.append(
+                    {
+                        "text": morceau["text"],
+                        "debut": morceau["offset"] / 10_000_000,
+                        "fin": (morceau["offset"] + morceau["duration"]) / 10_000_000,
+                    }
+                )
+
+    return mots
 
 
 async def _synthetiser_toutes(phrases: list, dossier_temp: str) -> list:
-    chemins = [os.path.join(dossier_temp, f"phrase_{i}.mp3") for i in range(len(phrases))]
-    await asyncio.gather(
-        *(_synthetiser_phrase(phrase, chemin) for phrase, chemin in zip(phrases, chemins))
-    )
-    return chemins
+    resultats = [None] * len(phrases)
+
+    async def _traiter(i: int, phrase: str) -> None:
+        chemin = os.path.join(dossier_temp, f"phrase_{i}.mp3")
+        mots = await _synthetiser_phrase(phrase, chemin)
+        resultats[i] = (chemin, mots)
+
+    await asyncio.gather(*(_traiter(i, phrase) for i, phrase in enumerate(phrases)))
+    return resultats
 
 
-def generate_voice(script_text: str, output_filename: str) -> str:
+def generate_voice(script_text: str, output_filename: str) -> tuple:
     """Génère un fichier audio MP3 à partir d'un script texte via Edge TTS.
 
     Chaque phrase est synthétisée séparément puis recollée avec une petite
     pause fixe (PAUSE_MS) entre chacune, pour un contrôle précis du silence
     entre phrases — plutôt que de dépendre des pauses variables d'Edge TTS.
+
+    Retourne (chemin_audio, mots) où `mots` est la liste de tous les mots du
+    script avec leur timing exact (en secondes) dans l'audio final assemblé
+    — utilisé pour synchroniser les sous-titres.
     """
     os.makedirs("audio", exist_ok=True)
 
@@ -109,15 +133,32 @@ def generate_voice(script_text: str, output_filename: str) -> str:
     chemin_audio = os.path.join("audio", output_filename)
 
     with tempfile.TemporaryDirectory() as dossier_temp:
-        chemins_phrases = asyncio.run(_synthetiser_toutes(phrases, dossier_temp))
+        resultats = asyncio.run(_synthetiser_toutes(phrases, dossier_temp))
 
         audio_final = AudioSegment.empty()
         pause = AudioSegment.silent(duration=PAUSE_MS)
-        for i, chemin_phrase in enumerate(chemins_phrases):
-            audio_final += AudioSegment.from_file(chemin_phrase, format="mp3")
-            if i < len(chemins_phrases) - 1:
+        mots_globaux = []
+        decalage_s = 0.0
+
+        for i, (chemin_phrase, mots) in enumerate(resultats):
+            segment = AudioSegment.from_file(chemin_phrase, format="mp3")
+
+            for mot in mots:
+                mots_globaux.append(
+                    {
+                        "text": mot["text"],
+                        "debut": mot["debut"] + decalage_s,
+                        "fin": mot["fin"] + decalage_s,
+                    }
+                )
+
+            audio_final += segment
+            decalage_s += segment.duration_seconds
+
+            if i < len(resultats) - 1:
                 audio_final += pause
+                decalage_s += PAUSE_MS / 1000
 
         audio_final.export(chemin_audio, format="mp3")
 
-    return chemin_audio
+    return chemin_audio, mots_globaux

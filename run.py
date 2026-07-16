@@ -22,7 +22,13 @@ from idea_engine import (
     generate_subject,
 )
 from voice_generator import generate_voice
-from video_generator import assemble_video, download_videos, extract_keywords, ffmpeg_disponible
+from video_generator import (
+    add_subtitles,
+    assemble_video,
+    download_videos,
+    extract_keywords,
+    ffmpeg_disponible,
+)
 
 PLATEFORMES = {
     "1": ("YouTube", YOUTUBE),
@@ -134,7 +140,7 @@ def main() -> None:
 
     print("Génération de la voix en cours...")
     nom_fichier_audio = f"{label_plateforme}_{horodatage}.mp3"
-    chemin_audio = generate_voice(script, nom_fichier_audio)
+    chemin_audio, mots_timing = generate_voice(script, nom_fichier_audio)
     print(f"Audio sauvegardé dans audio/{nom_fichier_audio}")
     print("============================================")
 
@@ -144,12 +150,9 @@ def main() -> None:
 
     print("Montage de la vidéo en cours...")
     nom_fichier_video = f"{label_plateforme}_{horodatage}.mp4"
-    assemble_video(
-        chemins_videos,
-        chemin_audio,
-        os.path.join("videos", nom_fichier_video),
-        label_plateforme,
-    )
+    chemin_video_final = os.path.join("videos", nom_fichier_video)
+    assemble_video(chemins_videos, chemin_audio, chemin_video_final, label_plateforme)
+    add_subtitles(chemin_video_final, mots_timing, label_plateforme)
 
     print(f"Vidéo finale sauvegardée dans videos/{nom_fichier_video}")
     print("============================================")
