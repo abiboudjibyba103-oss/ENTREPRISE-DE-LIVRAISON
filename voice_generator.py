@@ -28,7 +28,7 @@ except ImportError:
 AudioSegment.converter = imageio_ffmpeg.get_ffmpeg_exe()
 
 VOICE = "fr-FR-HenriNeural"  # voix masculine française, naturelle et gratuite
-PAUSE_MS = 50  # petite pause entre chaque phrase, juste pour marquer la fin
+PAUSE_MS = 0  # aucune pause artificielle entre les phrases : les points suffisent
 
 _HEADER_RE = re.compile(r"^#{1,6}\s*")
 _SEPARATEUR_RE = re.compile(r"^[-=_*]{3,}$")

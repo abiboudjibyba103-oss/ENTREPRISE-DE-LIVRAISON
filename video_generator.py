@@ -53,30 +53,34 @@ def ffmpeg_disponible() -> bool:
         return False
 
 
-_REGLES_MOTS_CLES = """Règles strictes et permanentes de ciblage des mots-clés (s'appliquent à
-CHAQUE section, pour cette réponse comme pour toutes les suivantes) :
-- 100% des mots-clés doivent cibler explicitement des hommes noirs africains de 20 à 35 ans,
-  avec des termes comme "young black african man", "black male student", "african young man desk".
+_REGLES_MOTS_CLES = """Règle absolue et permanente, SANS AUCUNE EXCEPTION (s'applique à CHAQUE
+section, pour cette réponse comme pour toutes les suivantes) :
+- Chaque mot-clé, SANS AUCUNE EXCEPTION, doit contenir le mot "man" (par exemple
+  "young black african man", "black man student laptop", "african man thinking desk"). Avant de
+  retourner un mot-clé, vérifie qu'il contient bien "man" ; si ce n'est pas le cas, reformule-le
+  pour l'inclure — y compris pour les sujets abstraits comme le cerveau.
+- 100% des mots-clés doivent cibler explicitement des hommes noirs africains de 20 à 35 ans.
 - INTERDICTION ABSOLUE des mots "woman", "female", "girl" ou "lady" : aucun mot-clé ne doit
   cibler une femme.
 - ZÉRO personne blanche : si un mot-clé risque de retourner des personnes blanches, reformule-le
   pour qu'il cible sans ambiguïté des personnes noires africaines.
-- Chaque mot-clé doit obligatoirement contenir "man" ou "male", sauf s'il s'agit d'une animation
-  abstraite (comme le cerveau) qui ne montre aucune personne.
-- Bons exemples de mots-clés : "young black african man stressed", "african male student laptop",
-  "black man thinking desk".
+- Bons exemples de mots-clés : "young black african man stressed", "black man student laptop",
+  "african man thinking desk".
 
 Règles de correspondance thème → mot-clé (à respecter à la lettre quand le thème de la
 section correspond), en gardant toujours le ciblage ci-dessus :
-- Le cerveau, la neuroscience, le fonctionnement mental → "brain neuroscience animation"
+- Le cerveau, la neuroscience, le fonctionnement mental → "black man brain thinking animation"
 - La procrastination → "young black african man procrastinating desk"
 - Le téléphone, les notifications, les distractions → "young black african man phone distracted"
 - Le stress, la pression, la charge mentale → "black man stressed work desk"
 - La motivation, la réussite, l'ambition → "young black african man entrepreneur success"
 
 Pour tout autre thème qui ne correspond à aucune de ces règles, invente un mot-clé tout aussi
-précis et visuel, en respectant impérativement les règles de ciblage ci-dessus.
+précis et visuel, en respectant impérativement les règles de ciblage ci-dessus — le mot "man"
+est obligatoire dans tous les cas, sans aucune exception.
 INTERDICTION ABSOLUE de mots-clés pouvant retourner des enfants ou des animaux."""
+
+_MOT_MAN_RE = re.compile(r"\bman\b", re.IGNORECASE)
 
 
 _CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*|\s*```$")
@@ -128,7 +132,14 @@ def extract_keywords_per_section(sections: list) -> list:
             f"Claude a renvoyé {len(mots_cles)} mots-clés pour {len(sections)} sections."
         )
 
-    return [mot_cle.strip() for mot_cle in mots_cles]
+    mots_cles = [mot_cle.strip() for mot_cle in mots_cles]
+
+    # garde-fou : "man" est obligatoire dans CHAQUE mot-clé, sans aucune exception,
+    # même si Claude n'a pas respecté la consigne du prompt
+    return [
+        mot_cle if _MOT_MAN_RE.search(mot_cle) else f"{mot_cle} man".strip()
+        for mot_cle in mots_cles
+    ]
 
 
 def _rechercher_pixabay(mot_cle: str) -> list:
