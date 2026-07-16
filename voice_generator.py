@@ -30,7 +30,7 @@ except ImportError:
 AudioSegment.converter = imageio_ffmpeg.get_ffmpeg_exe()
 
 VOICE = "fr-FR-HenriNeural"  # voix masculine française, naturelle et gratuite
-PAUSE_MS = 150  # petite pause entre chaque phrase, juste pour marquer la fin
+PAUSE_MS = 100  # petite pause entre chaque phrase, juste pour marquer la fin
 
 _HEADER_RE = re.compile(r"^#{1,6}\s*")
 _SEPARATEUR_RE = re.compile(r"^[-=_*]{3,}$")
@@ -106,14 +106,38 @@ async def _synthetiser_phrase(phrase: str, chemin: str) -> list:
     return mots
 
 
+def _estimer_timing_mots(phrase: str, duree_segment: float) -> list:
+    """Répartit uniformément la durée du segment entre les mots de la phrase.
+
+    Certaines voix Edge TTS ne renvoient aucun événement WordBoundary — dans
+    ce cas on estime un timing approximatif plutôt que de perdre les
+    sous-titres pour toute la phrase.
+    """
+    mots_texte = phrase.split()
+    if not mots_texte:
+        return []
+
+    duree_par_mot = duree_segment / len(mots_texte)
+    mots = []
+    t = 0.0
+    for mot in mots_texte:
+        mots.append({"text": mot, "debut": t, "fin": t + duree_par_mot})
+        t += duree_par_mot
+
+    return mots
+
+
 def _rogner_silence(segment: AudioSegment) -> tuple:
     """Retire le silence en début/fin de segment (Edge TTS en ajoute un peu à chaque phrase).
 
     Retourne (segment_rogné, décalage_début_en_secondes) — le décalage sert à
     corriger le timing des mots, qui était calculé par rapport à l'audio non rogné.
     """
-    debut_silence = detect_leading_silence(segment)
-    fin_silence = detect_leading_silence(segment.reverse())
+    # Seuil plus permissif que le défaut (-50dBFS) : le "silence" réel en fin
+    # de phrase Edge TTS n'est pas parfaitement muet (bruit de fond léger),
+    # donc un seuil trop strict ne détectait presque rien à rogner.
+    debut_silence = detect_leading_silence(segment, silence_threshold=-35.0)
+    fin_silence = detect_leading_silence(segment.reverse(), silence_threshold=-35.0)
     fin = max(len(segment) - fin_silence, debut_silence)
     return segment[debut_silence:fin], debut_silence / 1000.0
 
@@ -124,7 +148,7 @@ async def _synthetiser_toutes(phrases: list, dossier_temp: str) -> list:
     async def _traiter(i: int, phrase: str) -> None:
         chemin = os.path.join(dossier_temp, f"phrase_{i}.mp3")
         mots = await _synthetiser_phrase(phrase, chemin)
-        resultats[i] = (chemin, mots)
+        resultats[i] = (chemin, phrase, mots)
 
     await asyncio.gather(*(_traiter(i, phrase) for i, phrase in enumerate(phrases)))
     return resultats
@@ -153,10 +177,18 @@ def generate_voice(script_text: str, output_filename: str) -> tuple:
         pause = AudioSegment.silent(duration=PAUSE_MS)
         mots_globaux = []
         decalage_s = 0.0
+        phrases_sans_timing_reel = 0
 
-        for i, (chemin_phrase, mots) in enumerate(resultats):
+        for i, (chemin_phrase, phrase_texte, mots) in enumerate(resultats):
             segment = AudioSegment.from_file(chemin_phrase, format="mp3")
             segment, decalage_debut = _rogner_silence(segment)
+
+            if not mots:
+                # Cette voix n'a renvoyé aucun WordBoundary pour cette phrase :
+                # on estime le timing plutôt que de perdre les sous-titres.
+                mots = _estimer_timing_mots(phrase_texte, segment.duration_seconds)
+                decalage_debut = 0.0  # déjà relatif au segment rogné
+                phrases_sans_timing_reel += 1
 
             for mot in mots:
                 mots_globaux.append(
@@ -176,6 +208,13 @@ def generate_voice(script_text: str, output_filename: str) -> tuple:
 
         audio_final.export(chemin_audio, format="mp3")
 
-    print(f"Timing capté pour {len(mots_globaux)} mot(s) (pour les sous-titres).")
+    if phrases_sans_timing_reel:
+        print(
+            f"Timing capté pour {len(mots_globaux)} mot(s) — dont "
+            f"{phrases_sans_timing_reel} phrase(s) avec timing estimé "
+            "(cette voix Edge TTS n'a pas renvoyé de WordBoundary)."
+        )
+    else:
+        print(f"Timing capté pour {len(mots_globaux)} mot(s) (pour les sous-titres).")
 
     return chemin_audio, mots_globaux
