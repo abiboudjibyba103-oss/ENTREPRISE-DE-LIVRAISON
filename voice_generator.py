@@ -15,9 +15,11 @@ except ImportError:
 
 try:
     from pydub import AudioSegment
+    from pydub.silence import detect_leading_silence
 except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "pydub"])
     from pydub import AudioSegment
+    from pydub.silence import detect_leading_silence
 
 try:
     import imageio_ffmpeg
@@ -28,7 +30,7 @@ except ImportError:
 AudioSegment.converter = imageio_ffmpeg.get_ffmpeg_exe()
 
 VOICE = "fr-FR-HenriNeural"  # voix masculine française, naturelle et gratuite
-PAUSE_MS = 300  # petite pause entre chaque phrase, juste pour marquer la fin
+PAUSE_MS = 150  # petite pause entre chaque phrase, juste pour marquer la fin
 
 _HEADER_RE = re.compile(r"^#{1,6}\s*")
 _SEPARATEUR_RE = re.compile(r"^[-=_*]{3,}$")
@@ -104,6 +106,18 @@ async def _synthetiser_phrase(phrase: str, chemin: str) -> list:
     return mots
 
 
+def _rogner_silence(segment: AudioSegment) -> tuple:
+    """Retire le silence en début/fin de segment (Edge TTS en ajoute un peu à chaque phrase).
+
+    Retourne (segment_rogné, décalage_début_en_secondes) — le décalage sert à
+    corriger le timing des mots, qui était calculé par rapport à l'audio non rogné.
+    """
+    debut_silence = detect_leading_silence(segment)
+    fin_silence = detect_leading_silence(segment.reverse())
+    fin = max(len(segment) - fin_silence, debut_silence)
+    return segment[debut_silence:fin], debut_silence / 1000.0
+
+
 async def _synthetiser_toutes(phrases: list, dossier_temp: str) -> list:
     resultats = [None] * len(phrases)
 
@@ -142,13 +156,14 @@ def generate_voice(script_text: str, output_filename: str) -> tuple:
 
         for i, (chemin_phrase, mots) in enumerate(resultats):
             segment = AudioSegment.from_file(chemin_phrase, format="mp3")
+            segment, decalage_debut = _rogner_silence(segment)
 
             for mot in mots:
                 mots_globaux.append(
                     {
                         "text": mot["text"],
-                        "debut": mot["debut"] + decalage_s,
-                        "fin": mot["fin"] + decalage_s,
+                        "debut": max(mot["debut"] - decalage_debut, 0) + decalage_s,
+                        "fin": max(mot["fin"] - decalage_debut, 0) + decalage_s,
                     }
                 )
 
@@ -160,5 +175,7 @@ def generate_voice(script_text: str, output_filename: str) -> tuple:
                 decalage_s += PAUSE_MS / 1000
 
         audio_final.export(chemin_audio, format="mp3")
+
+    print(f"Timing capté pour {len(mots_globaux)} mot(s) (pour les sous-titres).")
 
     return chemin_audio, mots_globaux

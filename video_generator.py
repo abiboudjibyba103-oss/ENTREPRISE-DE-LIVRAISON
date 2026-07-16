@@ -112,12 +112,22 @@ _MOTS_INTERDITS = (
     "animal", "pet", "dog", "cat", "child", "kid", "baby", "white",
     "woman", "female", "girl", "lady",
 )
+_MOTS_REQUIS = ("black", "african")
 
 
 def _hit_autorise(hit: dict) -> bool:
-    """Rejette les vidéos dont les tags/titre contiennent un mot interdit."""
+    """N'accepte que les vidéos explicitement taguées black/african, sans mot interdit.
+
+    Un simple mot-clé de recherche ne garantit pas que Pixabay retourne des
+    vidéos correspondant réellement à des hommes noirs africains — beaucoup de
+    résultats n'ont aucune indication d'origine ethnique dans leurs tags. On
+    exige donc explicitement "black" ou "african" dans les tags/titre, en plus
+    d'exclure les mots interdits.
+    """
     texte = f"{hit.get('tags', '')} {hit.get('title', '')}".lower()
-    return not any(mot in texte for mot in _MOTS_INTERDITS)
+    if any(mot in texte for mot in _MOTS_INTERDITS):
+        return False
+    return any(mot in texte for mot in _MOTS_REQUIS)
 
 
 def download_videos(keywords: list, output_dir: str, count_per_keyword: int = 2) -> list:
@@ -176,6 +186,15 @@ def _executer_ffmpeg(commande: list) -> None:
         raise RuntimeError(f"Échec de la commande FFmpeg (code {resultat.returncode}).")
 
 
+def _dimensions_plateforme(platform: str) -> tuple:
+    plateforme_normalisee = platform.lower()
+    if plateforme_normalisee == "tiktok":
+        return 1080, 1920  # vertical 9:16
+    if plateforme_normalisee in ("instagram", "facebook"):
+        return 1080, 1080  # carré 1:1
+    return 1920, 1080  # horizontal 16:9 (YouTube)
+
+
 def assemble_video(video_files: list, audio_file: str, output_path: str, platform: str) -> str:
     """Assemble les vidéos et la voix off en une vidéo finale via FFmpeg, en 3 étapes :
 
@@ -189,13 +208,7 @@ def assemble_video(video_files: list, audio_file: str, output_path: str, platfor
     if not video_files:
         raise ValueError("Aucune vidéo disponible pour le montage.")
 
-    plateforme_normalisee = platform.lower()
-    if plateforme_normalisee == "tiktok":
-        largeur, hauteur = 1080, 1920  # vertical 9:16
-    elif plateforme_normalisee in ("instagram", "facebook"):
-        largeur, hauteur = 1080, 1080  # carré 1:1
-    else:
-        largeur, hauteur = 1920, 1080  # horizontal 16:9 (YouTube)
+    largeur, hauteur = _dimensions_plateforme(platform)
 
     duree_audio = float(ffmpeg.probe(audio_file)["format"]["duration"])
     duree_par_clip = duree_audio / len(video_files)
@@ -313,12 +326,15 @@ def generer_fichier_sous_titres(mots: list, platform: str, chemin_sortie: str) -
     plateforme_normalisee = platform.lower()
     taille = 14 if plateforme_normalisee == "youtube" else 18
     majuscules = plateforme_normalisee != "youtube"
+    largeur, hauteur = _dimensions_plateforme(platform)
 
     groupes = _grouper_mots(mots)
 
     lignes = [
         "[Script Info]\n",
         "ScriptType: v4.00+\n",
+        f"PlayResX: {largeur}\n",
+        f"PlayResY: {hauteur}\n",
         "\n",
         "[V4+ Styles]\n",
         "Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, Bold, Outline, Alignment, MarginV\n",
@@ -340,19 +356,34 @@ def generer_fichier_sous_titres(mots: list, platform: str, chemin_sortie: str) -
     return chemin_sortie
 
 
+def _chemin_pour_filtre_ffmpeg(chemin: str) -> str:
+    """Échappe un chemin de fichier pour l'utiliser dans un filtre FFmpeg (ass=, subtitles=).
+
+    Les ':' et '\\' cassent le parseur de filtres FFmpeg (fréquent sur Windows) —
+    on convertit en chemin absolu, slashs uniquement, et on échappe les ':'.
+    """
+    chemin_abs = os.path.abspath(chemin).replace("\\", "/")
+    return chemin_abs.replace(":", "\\:")
+
+
 def add_subtitles(video_path: str, mots: list, platform: str) -> str:
     """Brûle les sous-titres stylés dans la vidéo assemblée, à partir du timing des mots."""
     if not mots:
+        print(
+            "Aucun timing de mot reçu — les sous-titres sont ignorés "
+            "(vérifie que generate_voice() a bien capturé les WordBoundary d'Edge TTS)."
+        )
         return video_path
 
     chemin_ass = os.path.splitext(video_path)[0] + ".ass"
     generer_fichier_sous_titres(mots, platform, chemin_ass)
+    print(f"Fichier de sous-titres généré : {chemin_ass} ({len(mots)} mots)")
 
     chemin_temp = os.path.splitext(video_path)[0] + "_sous_titres.mp4"
     _executer_ffmpeg([
         "ffmpeg",
         "-i", video_path,
-        "-vf", f"ass={chemin_ass}",
+        "-vf", f"ass={_chemin_pour_filtre_ffmpeg(chemin_ass)}",
         "-c:v", "libx264",
         "-c:a", "copy",
         "-y",
