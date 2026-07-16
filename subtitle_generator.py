@@ -128,11 +128,18 @@ def _executer_ffmpeg(commande: list) -> None:
 
     resultat = subprocess.run(commande, capture_output=True, text=True)
 
+    if resultat.stdout:
+        print(resultat.stdout)
+
     if resultat.stderr:
         print(resultat.stderr)
 
     if resultat.returncode != 0:
-        raise RuntimeError(f"Échec de la commande FFmpeg (code {resultat.returncode}).")
+        raise RuntimeError(
+            f"Échec de la commande FFmpeg (code {resultat.returncode}).\n"
+            f"stdout:\n{resultat.stdout}\n"
+            f"stderr:\n{resultat.stderr}"
+        )
 
 
 def generate_subtitles(

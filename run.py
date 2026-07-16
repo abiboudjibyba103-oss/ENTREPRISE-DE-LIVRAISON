@@ -185,9 +185,13 @@ def main() -> None:
         shutil.rmtree(dossier_temp_videos, ignore_errors=True)
         shutil.rmtree(dossier_temp_normalise, ignore_errors=True)
 
-    print("Ajout des sous-titres en cours...")
-    generate_subtitles(mots_avec_timing, chemin_video, chemin_video, label_plateforme)
-    print(f"Vidéo finale avec sous-titres sauvegardée dans videos/{nom_fichier_video}")
+    try:
+        print("Ajout des sous-titres en cours...")
+        generate_subtitles(mots_avec_timing, chemin_video, chemin_video, label_plateforme)
+        print(f"Vidéo finale avec sous-titres sauvegardée dans videos/{nom_fichier_video}")
+    except Exception as e:
+        print(f"ERREUR sous-titres : {e}")
+        print(f"Vidéo sans sous-titres sauvegardée dans videos/{nom_fichier_video}")
     print("============================================")
 
 
