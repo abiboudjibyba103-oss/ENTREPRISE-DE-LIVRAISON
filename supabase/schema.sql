@@ -16,6 +16,7 @@ create table if not exists public.profiles (
   phase                    text not null default 'Phase 1 — Découverte',
   referral_code            text unique,
   referred_by              uuid references public.profiles(id) on delete set null,
+  evening_lesson_hour      smallint not null default 17 check (evening_lesson_hour between 0 and 23),
   created_at               timestamptz not null default now(),
   updated_at               timestamptz not null default now()
 );
@@ -24,6 +25,8 @@ create table if not exists public.profiles (
 -- backfill a unique code for every existing profile.
 alter table public.profiles add column if not exists referral_code text unique;
 alter table public.profiles add column if not exists referred_by uuid references public.profiles(id) on delete set null;
+alter table public.profiles add column if not exists evening_lesson_hour smallint not null default 17
+  check (evening_lesson_hour between 0 and 23);
 
 update public.profiles
   set referral_code = upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8))
@@ -138,8 +141,12 @@ create table if not exists public.sessions (
   focus_score   smallint check (focus_score between 0 and 100),
   status        text not null default 'completed' check (status in ('completed', 'interrupted', 'in_progress')),
   notes         text,
+  interruption_reason text,
   created_at    timestamptz not null default now()
 );
+
+-- Migration for pre-existing databases.
+alter table public.sessions add column if not exists interruption_reason text;
 
 alter table public.sessions enable row level security;
 

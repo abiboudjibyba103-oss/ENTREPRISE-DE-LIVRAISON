@@ -36,8 +36,8 @@ never sent to the browser.
 
 ## 3. Authentication
 
-The landing page (`predicta-landing.html`) and dashboard
-(`predicta-dashboard.html`) use `js/supabase-client.js`:
+The landing page (`index.html`) and dashboard
+(`dashboard.html`) use `js/supabase-client.js`:
 
 - `predictaSignInWithEmail(email)` — sends a magic-link (passwordless) email
   via `supabase.auth.signInWithOtp`, and records the email in `waitlist`.
@@ -110,8 +110,39 @@ supabase secrets set GROQ_API_KEY=...
 Get a Groq API key at https://console.groq.com (free tier available).
 
 Frontend usage: `predictaCoachChat(message, history)` in
-`js/supabase-client.js`, called from `predicta-dashboard.html` (chat UI in
-the "Message du Coach" card).
+`js/supabase-client.js`. Each reply is logged to the `predictions` table,
+which is what the dashboard's "Prédictions" page reads.
+
+## 8. Daily lesson (`daily-lesson` edge function)
+
+`supabase/functions/daily-lesson/index.ts` generates the "enseignement du
+soir" shown on the dashboard's Prédictions page: one AI-written teaching
+per user per day, grounded in that day's real sessions, cached in
+`daily_lessons`. Deploy it the same way as `coach-chat` (reuses the same
+`GROQ_API_KEY` secret). Frontend usage: `predictaDailyLesson()` and
+`predictaGetDailyLessonForDate()` in `js/supabase-client.js`.
+
+## 9. Account deletion (`delete-account` edge function)
+
+`supabase/functions/delete-account/index.ts` deletes the caller's
+`auth.users` row (service role only — the browser never has admin
+rights), which cascades to every table that references it
+(`profiles`, `sessions`, `brain_metrics`, `predictions`, `daily_lessons`,
+`lesson_progress`). Deploy with:
+
+```
+supabase functions deploy delete-account
+```
+
+Frontend usage: `predictaDeleteAccount()` in `js/supabase-client.js`,
+called from the dashboard's Réglages page.
+
+## 10. `migration_dashboard.sql`
+
+Run `supabase/migration_dashboard.sql` in the SQL editor if your database
+was created before the mobile dashboard was added — it adds
+`sessions.interruption_reason` and `profiles.evening_lesson_hour`
+(both are already part of a fresh `schema.sql` run).
 
 ## 7. Dependency audit
 

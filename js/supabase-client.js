@@ -94,7 +94,7 @@ async function predictaSignUpWithPassword(email, password, displayName, referral
     password,
     options: {
       data: signUpData,
-      emailRedirectTo: `${window.location.origin}/predicta-dashboard.html`,
+      emailRedirectTo: `${window.location.origin}/dashboard.html`,
     },
   });
 
@@ -190,7 +190,7 @@ async function predictaUpdateProfile(patch) {
   const session = await predictaGetSession();
   if (!session) throw new Error('Not authenticated');
 
-  const allowed = ['display_name', 'default_session_minutes', 'notifications_enabled'];
+  const allowed = ['display_name', 'default_session_minutes', 'notifications_enabled', 'evening_lesson_hour'];
   const safePatch = {};
   for (const key of allowed) {
     if (key in patch) safePatch[key] = patch[key];
@@ -274,7 +274,7 @@ async function predictaGetRecentSessions(limit = 30) {
 
   const { data, error } = await supabaseClient
     .from('sessions')
-    .select('id, duration_min, focus_score, status, started_at, ended_at, notes')
+    .select('id, duration_min, focus_score, status, started_at, ended_at, notes, interruption_reason')
     .eq('user_id', session.user.id)
     .order('started_at', { ascending: false })
     .limit(limit);
@@ -377,4 +377,162 @@ async function predictaCoachChat(message, history) {
   }
   if (data?.error) throw new Error(data.error);
   return { reply: data.reply, limitReached: !!data.limitReached };
+}
+
+/**
+ * Returns the current user's sessions started today (local calendar day),
+ * most recent first. Used by the dashboard home page to decide which
+ * state to show (new day vs. already worked today).
+ */
+async function predictaGetTodaySessions() {
+  const session = await predictaGetSession();
+  if (!session) return [];
+
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const { data, error } = await supabaseClient
+    .from('sessions')
+    .select('id, duration_min, focus_score, status, started_at, ended_at, notes, interruption_reason')
+    .eq('user_id', session.user.id)
+    .gte('started_at', startOfDay.toISOString())
+    .order('started_at', { ascending: false });
+
+  if (error) {
+    console.error('[predicta] getTodaySessions error', error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+/**
+ * Records a session the user finished on purpose ("Terminer").
+ * `startedAt` must be an ISO timestamp captured when the timer began
+ * (kept in localStorage across reloads so elapsed time stays accurate).
+ */
+async function predictaCompleteSession({ taskName, startedAt, durationMin }) {
+  const session = await predictaGetSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const duration = Math.max(1, Math.min(240, Math.round(Number(durationMin) || 0)));
+
+  const { data, error } = await supabaseClient
+    .from('sessions')
+    .insert({
+      user_id: session.user.id,
+      started_at: startedAt,
+      ended_at: new Date().toISOString(),
+      duration_min: duration,
+      status: 'completed',
+      notes: String(taskName || '').slice(0, 500),
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Records a session the user cut short ("Interrompre"), together with
+ * why it stopped (one of the 3 preset reasons, or free text).
+ */
+async function predictaInterruptSession({ taskName, startedAt, durationMin, interruptionReason }) {
+  const session = await predictaGetSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const duration = Math.max(1, Math.min(240, Math.round(Number(durationMin) || 0)));
+
+  const { data, error } = await supabaseClient
+    .from('sessions')
+    .insert({
+      user_id: session.user.id,
+      started_at: startedAt,
+      ended_at: new Date().toISOString(),
+      duration_min: duration,
+      status: 'interrupted',
+      notes: String(taskName || '').slice(0, 500),
+      interruption_reason: String(interruptionReason || '').slice(0, 500),
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Loads the current user's predictions (AI coach replies logged by the
+ * `coach-chat` edge function), most recent first.
+ */
+async function predictaGetPredictions(limit = 20) {
+  const session = await predictaGetSession();
+  if (!session) return [];
+
+  const { data, error } = await supabaseClient
+    .from('predictions')
+    .select('id, prediction_text, confidence, created_at')
+    .eq('user_id', session.user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('[predicta] getPredictions error', error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+/**
+ * Looks up whether a daily lesson already exists for the given date
+ * (YYYY-MM-DD) without triggering generation. Used to avoid calling the
+ * `daily-lesson` edge function (and burning a Groq request) when the
+ * evening teaching was already generated earlier today.
+ */
+async function predictaGetDailyLessonForDate(dateStr) {
+  const session = await predictaGetSession();
+  if (!session) return null;
+
+  const { data, error } = await supabaseClient
+    .from('daily_lessons')
+    .select('lesson_text, lesson_date, created_at')
+    .eq('user_id', session.user.id)
+    .eq('lesson_date', dateStr)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[predicta] getDailyLessonForDate error', error.message);
+    return null;
+  }
+  return data;
+}
+
+/**
+ * Permanently deletes the current user's account (Supabase edge function
+ * `delete-account`, service role). Cascades to every table owned by the
+ * user. Caller is responsible for signing out / redirecting afterwards.
+ */
+async function predictaDeleteAccount() {
+  const session = await predictaGetSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const invoke = () => supabaseClient.functions.invoke('delete-account', { body: {} });
+
+  let { data, error } = await invoke();
+
+  if (error?.context?.status === 401) {
+    const { data: refreshed, error: refreshError } = await supabaseClient.auth.refreshSession();
+    if (!refreshError && refreshed?.session) {
+      ({ data, error } = await invoke());
+    }
+  }
+
+  if (error) {
+    if (error.context?.status === 401) {
+      throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
+    }
+    throw error;
+  }
+  if (data?.error) throw new Error(data.error);
+  return true;
 }

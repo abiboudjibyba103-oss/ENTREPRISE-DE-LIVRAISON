@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Prédicta — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=DM+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :root {
+    --violet: #6C5CE7;
+    --violet-dark: #5548C8;
+    --violet-light: rgba(108,92,231,0.1);
+    --orange: #EA580C;
+    --orange-light: rgba(234,88,12,0.1);
+    --bg: #FAFAFE;
+    --card: #FFFFFF;
+    --text: #1C1917;
+    --text-sec: #78716C;
+    --border: #F0EBE3;
+    --success: #16A34A;
+    --danger: #DC2626;
+    --danger-light: rgba(220,38,38,0.08);
+    --radius: 18px;
+    --shadow: 0 2px 20px rgba(108,92,231,0.08), 0 1px 4px rgba(28,25,23,0.04);
+  }
+
+  h1, h2, h3 { font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text); }
+
+  /* ===== AUTH GATE ===== */
+  #authGate {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: var(--bg); z-index: 2000;
+  }
+  .spinner {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 3px solid var(--violet-light); border-top-color: var(--violet);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== APP SHELL ===== */
+  #app { display: none; flex-direction: column; min-height: 100dvh; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 200;
+    background: rgba(250,250,254,0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px; display: flex; align-items: center; justify-content: center;
+  }
+  .topbar-logo { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 17px; color: var(--violet); letter-spacing: -0.02em; }
+
+  main { flex: 1; padding-bottom: 104px; }
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .page-inner { max-width: 480px; margin: 0 auto; padding: 24px 20px 8px; }
+
+  .page-title { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 20px; }
+  .section-label {
+    font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-sec);
+    margin: 24px 0 10px;
+  }
+  .section-label:first-child { margin-top: 0; }
+  .muted-text { color: var(--text-sec); font-size: 14px; line-height: 1.6; }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 22px; margin-bottom: 16px; box-shadow: var(--shadow);
+  }
+
+  /* ===== FORM CONTROLS ===== */
+  .field-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-sec); margin-bottom: 8px; }
+  .text-input, .select-input {
+    width: 100%; padding: 13px 14px; border: 1.5px solid var(--border); border-radius: 12px;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--text); background: #fff;
+    margin-bottom: 14px; transition: border-color 0.2s;
+  }
+  .text-input:focus, .select-input:focus { outline: none; border-color: var(--violet); }
+
+  /* ===== BUTTONS ===== */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 14px 20px; border-radius: 13px; font-weight: 600; font-size: 15px;
+    cursor: pointer; border: none; font-family: 'DM Sans', sans-serif;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  }
+  .btn-block { width: 100%; }
+  .btn-primary { background: var(--violet); color: #fff; box-shadow: 0 4px 16px rgba(108,92,231,0.3); }
+  .btn-primary:hover { background: var(--violet-dark); }
+  .btn-primary:active { transform: translateY(1px); }
+  .btn-danger { background: var(--danger); color: #fff; margin-top: 20px; }
+  .btn-danger:hover { background: #b91c1c; }
+  .btn-danger-ghost {
+    background: transparent; color: var(--danger); box-shadow: none;
+    font-size: 13px; padding: 10px; margin-top: 10px;
+  }
+  .btn-ghost-danger {
+    background: transparent; color: var(--danger); border: 1.5px solid var(--danger-light);
+  }
+  .btn-ghost-danger:hover { background: var(--danger-light); }
+
+  /* ===== HOME ===== */
+  .home-greeting { margin-bottom: 20px; }
+  .eyebrow {
+    font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-sec);
+    text-transform: capitalize; margin-bottom: 6px;
+  }
+  .home-greeting h1 { font-size: 26px; }
+  .home-today-count { font-size: 13px; color: var(--text-sec); text-align: center; margin-top: 12px; }
+
+  .session-task-label { font-size: 15px; font-weight: 600; text-align: center; color: var(--text-sec); margin-bottom: 6px; }
+  .timer-display {
+    font-family: 'Space Mono', monospace; font-size: 54px; font-weight: 700; color: var(--violet);
+    text-align: center; margin: 20px 0 28px; letter-spacing: -0.02em;
+  }
+  .session-actions { display: flex; flex-direction: column; gap: 10px; }
+
+  .state3-title { font-weight: 600; font-size: 15px; margin-bottom: 16px; line-height: 1.5; }
+  .reason-btn {
+    display: block; width: 100%; text-align: left; padding: 14px 16px;
+    border: 1.5px solid var(--border); border-radius: 13px; background: #fff;
+    margin-bottom: 10px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px; line-height: 1.5; color: var(--text); transition: all 0.15s;
+  }
+  .reason-btn.selected { border-color: var(--violet); background: var(--violet-light); color: var(--violet-dark); font-weight: 600; }
+  .state3b-text { text-align: center; font-weight: 600; font-size: 15px; padding: 8px 0; }
+
+  /* ===== PREDICTIONS ===== */
+  .empty-card { text-align: center; padding: 32px 22px; }
+  .empty-title { font-weight: 600; font-size: 15px; line-height: 1.6; margin-bottom: 10px; }
+  .empty-sub { color: var(--text-sec); font-size: 13px; }
+
+  .prediction-card-hero {
+    background: linear-gradient(135deg, var(--violet), #8B7CF6); color: #fff;
+    border-radius: var(--radius); padding: 24px; margin-bottom: 16px; box-shadow: var(--shadow);
+  }
+  .prediction-eyebrow {
+    font-family: 'Space Mono', monospace; font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.1em; opacity: 0.85; margin-bottom: 10px;
+  }
+  .prediction-text { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 16px; line-height: 1.55; margin-bottom: 10px; }
+  .prediction-date { font-size: 12px; opacity: 0.75; }
+
+  .patterns-list { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 20px; box-shadow: var(--shadow); }
+  .pattern-item { padding: 14px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; line-height: 1.55; }
+  .pattern-item:last-child { border-bottom: none; }
+  .pattern-date { display: block; font-size: 11px; color: var(--text-sec); margin-top: 4px; }
+
+  .lesson-card p { font-size: 14.5px; line-height: 1.7; }
+
+  /* ===== BRAIN ===== */
+  .locked-card { text-align: center; padding: 30px 22px; }
+  .locked-message { font-weight: 600; font-size: 15px; line-height: 1.6; margin-bottom: 18px; }
+  .progress-track { height: 8px; background: var(--border); border-radius: 100px; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--violet), var(--orange)); border-radius: 100px; transition: width 0.4s ease; }
+  .progress-label { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text-sec); margin-top: 8px; }
+  .blurred-preview {
+    margin-top: 22px; padding-top: 18px; border-top: 1px dashed var(--border);
+    filter: blur(3px); opacity: 0.55; pointer-events: none; text-align: left;
+  }
+  .preview-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13px; }
+
+  .brain-value { font-size: 15px; font-weight: 600; }
+  .profile-badge {
+    display: inline-block; padding: 8px 18px; border-radius: 100px;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 14px;
+  }
+  .profile-badge.sharp { background: var(--violet-light); color: var(--violet); }
+  .profile-badge.neutral { background: var(--orange-light); color: var(--orange); }
+  .profile-badge.loaded { background: var(--danger-light); color: var(--danger); }
+
+  .trigger-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .trigger-item:last-child { border-bottom: none; }
+  .trigger-count { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--violet); font-weight: 700; flex-shrink: 0; margin-left: 12px; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+  .stat-box { display: flex; flex-direction: column; gap: 4px; }
+  .stat-value { font-family: 'Space Mono', monospace; font-size: 19px; font-weight: 700; color: var(--violet); }
+  .stat-label { font-size: 10.5px; color: var(--text-sec); }
+
+  /* ===== SETTINGS ===== */
+  .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-label { color: var(--text-sec); }
+  .settings-value { font-weight: 600; }
+
+  /* ===== BOTTOM NAV ===== */
+  .bottom-nav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 500;
+    background: rgba(255,255,255,0.96); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    display: flex; padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -4px 24px rgba(28,25,23,0.05);
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 10px 4px 9px; background: none; border: none; cursor: pointer;
+    color: var(--text-sec); font-family: 'DM Sans', sans-serif; font-size: 10.5px; font-weight: 500;
+    position: relative; transition: color 0.15s;
+  }
+  .nav-btn.active { color: var(--violet); font-weight: 700; }
+  .nav-icon { font-size: 20px; line-height: 1; }
+  .nav-lock { position: absolute; top: 4px; right: 22%; font-size: 10px; }
+
+  /* ===== TOAST ===== */
+  .toast {
+    position: fixed; left: 50%; bottom: 92px; transform: translate(-50%, 12px);
+    background: var(--text); color: #fff; padding: 12px 20px; border-radius: 100px;
+    font-size: 13px; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    opacity: 0; pointer-events: none; transition: all 0.25s ease; z-index: 1500; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .toast.error { background: var(--danger); }
+  .toast.success { background: var(--success); }
+</style>
+</head>
+<body>
+
+<div id="authGate"><div class="spinner"></div></div>
+
+<div id="app">
+  <div class="topbar"><span class="topbar-logo">Prédicta</span></div>
+
+  <main>
+    <!-- ===== ACCUEIL ===== -->
+    <section id="page-home" class="page active">
+      <div class="page-inner">
+        <div class="home-greeting">
+          <p class="eyebrow" id="homeDate"></p>
+          <h1 id="homeGreeting">Salut 👋</h1>
+        </div>
+
+        <!-- État 1 : nouveau / aucune session aujourd'hui -->
+        <div id="homeState1" class="card">
+          <label class="field-label" for="taskInput">Sur quoi tu travailles ?</label>
+          <input id="taskInput" class="text-input" type="text" maxlength="120" placeholder="Ex : Rapport client, révisions..." />
+          <button class="btn btn-primary btn-block" onclick="startSession()">Lancer une session</button>
+          <p class="home-today-count" id="homeTodayCount"></p>
+        </div>
+
+        <!-- État 2 : session en cours -->
+        <div id="homeState2" class="card" style="display:none;">
+          <p class="session-task-label" id="sessionTaskLabel"></p>
+          <div class="timer-display" id="timerDisplay">00:00</div>
+          <div class="session-actions">
+            <button class="btn btn-primary btn-block" onclick="finishSession()">Terminer</button>
+            <button class="btn btn-ghost-danger btn-block" onclick="interruptSession()">Interrompre</button>
+          </div>
+        </div>
+
+        <!-- État 3 : session interrompue, choix de la raison -->
+        <div id="homeState3" class="card" style="display:none;">
+          <p class="state3-title">Ta session s'est arrêtée. Qu'est-ce qui s'est passé ?</p>
+          <div id="reasonOptions">
+            <button type="button" class="reason-btn" data-reason="Une pensée ou une tâche extérieure a capté mon attention">Une pensée ou une tâche extérieure a capté mon attention</button>
+            <button type="button" class="reason-btn" data-reason="Je n'arrivais plus à rester concentré sur ce que je faisais">Je n'arrivais plus à rester concentré sur ce que je faisais</button>
+            <button type="button" class="reason-btn" data-reason="__other__">Autre chose →</button>
+          </div>
+          <input id="reasonOtherInput" class="text-input" type="text" maxlength="200" placeholder="Précise en quelques mots..." style="display:none;" />
+          <button class="btn btn-primary btn-block" onclick="confirmInterruption()">Confirmer</button>
+        </div>
+
+        <!-- État 3b : confirmation -->
+        <div id="homeState3b" class="card" style="display:none;">
+          <p class="state3b-text">Prédicta a enregistré. Continue ta journée.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PRÉDICTIONS ===== -->
+    <section id="page-predictions" class="page">
+      <div class="page-inner">
+        <h1 class="page-title">Prédictions</h1>
+
+        <div id="predictionsEmpty" class="card empty-card" style="display:none;">
+          <p class="empty-title">Prédicta a besoin d'observer quelques sessions avant de pouvoir analyser tes comportements.</p>
+          <p class="empty-sub">Lance ta première session depuis l'accueil.</p>
+        </div>
+
+        <div id="predictionsContent" style="display:none;">
+          <div class="prediction-card-hero" id="predictionHeroCard"></div>
+
+          <p class="section-label">Patterns détectés</p>
+          <div id="predictionsPatternsList" class="patterns-list"></div>
+
+          <p class="section-label">Enseignement du soir</p>
+          <div class="card lesson-card" id="lessonCard"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== MON CERVEAU ===== -->
+    <section id="page-brain" class="page">
+      <div class="page-inner">
+        <h1 class="page-title">Mon cerveau</h1>
+
+        <div id="brainLocked" class="card locked-card" style="display:none;">
+          <p class="locked-message">Ton profil cognitif sera disponible après 7 jours d'utilisation.</p>
+          <div class="progress-track"><div class="progress-fill" id="brainProgressFill"></div></div>
+          <p class="progress-label" id="brainProgressLabel">Jour 1 / 7</p>
+          <div class="blurred-preview" aria-hidden="true">
+            <div class="preview-row"><span>Profil cognitif</span><span>Affûté</span></div>
+            <div class="preview-row"><span>Meilleur créneau</span><span>Matin (5h-12h)</span></div>
+            <div class="preview-row"><span>Sessions</span><span>—</span></div>
+          </div>
+        </div>
+
+        <div id="brainUnlocked" style="display:none;">
+          <p class="section-label">Profil cognitif</p>
+          <div class="card" id="brainCognitiveProfile"></div>
+
+          <p class="section-label">Meilleur créneau de la semaine</p>
+          <div class="card"><p class="brain-value" id="brainBestSlot"></p></div>
+
+          <p class="section-label">Déclencheurs principaux</p>
+          <div class="card" id="brainTriggers"></div>
+
+          <p class="section-label">Statistiques</p>
+          <div class="card stats-grid">
+            <div class="stat-box"><span class="stat-value" id="statSessionsCount">0</span><span class="stat-label">Sessions</span></div>
+            <div class="stat-box"><span class="stat-value" id="statAvgDuration">0 min</span><span class="stat-label">Durée moy.</span></div>
+            <div class="stat-box"><span class="stat-value" id="statCompletionRate">0%</span><span class="stat-label">Complétion</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== RÉGLAGES ===== -->
+    <section id="page-settings" class="page">
+      <div class="page-inner">
+        <h1 class="page-title">Réglages</h1>
+
+        <div class="card">
+          <div class="settings-row"><span class="settings-label">Prénom</span><span class="settings-value" id="settingsName">—</span></div>
+          <div class="settings-row"><span class="settings-label">Email</span><span class="settings-value" id="settingsEmail">—</span></div>
+        </div>
+
+        <div class="card">
+          <label class="field-label" for="lessonHourSelect">Heure de l'enseignement du soir</label>
+          <select id="lessonHourSelect" class="select-input"></select>
+          <button class="btn btn-primary btn-block" onclick="saveLessonHour()">Enregistrer</button>
+        </div>
+
+        <button class="btn btn-danger btn-block" onclick="handleLogout()">Se déconnecter</button>
+        <div style="text-align:center;">
+          <button class="btn btn-danger-ghost" onclick="handleDeleteAccount()">Supprimer mon compte</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-page="home" onclick="showPage('home')">
+      <span class="nav-icon">🏠</span><span class="nav-label">Accueil</span>
+    </button>
+    <button class="nav-btn" data-page="predictions" onclick="showPage('predictions')">
+      <span class="nav-icon">🔮</span><span class="nav-label">Prédictions</span>
+    </button>
+    <button class="nav-btn" data-page="brain" onclick="showPage('brain')">
+      <span class="nav-icon">🧠</span><span class="nav-lock" id="navBrainLock" style="display:none;">🔒</span><span class="nav-label">Mon cerveau</span>
+    </button>
+    <button class="nav-btn" data-page="settings" onclick="showPage('settings')">
+      <span class="nav-icon">⚙️</span><span class="nav-label">Réglages</span>
+    </button>
+  </nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/js/supabase-client.js"></script>
+<script>
+  const ACTIVE_KEY = 'predicta_active_session';
+  const PENDING_KEY = 'predicta_pending_interruption';
+
+  let currentUser = null;
+  let currentProfile = null;
+  let todaySessionsCache = [];
+  let timerIntervalId = null;
+  let selectedReason = null;
+  let predictionsLoaded = false;
+  let brainLoaded = false;
+  let settingsLoaded = false;
+
+  // ===== Utilities =====
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = String(str ?? '');
+    return div.innerHTML;
+  }
+  function formatDate(iso) {
+    try {
+      return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  }
+  let toastTimer = null;
+  function showToast(msg, type) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `toast show ${type || 'success'}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = 'toast'; }, 3000);
+  }
+  function dayNumberSince(dateStr) {
+    const created = new Date(dateStr).getTime();
+    return Math.max(1, Math.floor((Date.now() - created) / 86400000) + 1);
+  }
+
+  // ===== Navigation =====
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach((p) => p.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.page === name));
+
+    if (name === 'predictions' && !predictionsLoaded) loadPredictions();
+    if (name === 'brain' && !brainLoaded) loadBrain();
+    if (name === 'settings' && !settingsLoaded) loadSettings();
+  }
+
+  function updateBrainTabLock() {
+    const locked = dayNumberSince(currentProfile.created_at) < 7;
+    document.getElementById('navBrainLock').style.display = locked ? 'inline' : 'none';
+  }
+
+  // ===== ACCUEIL =====
+  function getActiveSession() {
+    try { return JSON.parse(localStorage.getItem(ACTIVE_KEY)); } catch { return null; }
+  }
+  function getPendingInterruption() {
+    try { return JSON.parse(localStorage.getItem(PENDING_KEY)); } catch { return null; }
+  }
+
+  function renderHome() {
+    document.getElementById('homeDate').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    const firstName = (currentProfile?.display_name || '').trim().split(' ')[0];
+    document.getElementById('homeGreeting').textContent = firstName ? `Salut ${firstName} 👋` : 'Salut 👋';
+
+    document.getElementById('homeState1').style.display = 'none';
+    document.getElementById('homeState2').style.display = 'none';
+    document.getElementById('homeState3').style.display = 'none';
+    document.getElementById('homeState3b').style.display = 'none';
+    stopTimerLoop();
+
+    const active = getActiveSession();
+    const pending = getPendingInterruption();
+
+    if (active) {
+      document.getElementById('homeState2').style.display = 'block';
+      document.getElementById('sessionTaskLabel').textContent = active.taskName || 'Session de focus';
+      startTimerLoop(active.startedAt);
+    } else if (pending) {
+      document.getElementById('homeState3').style.display = 'block';
+      resetReasonPicker();
+    } else {
+      document.getElementById('homeState1').style.display = 'block';
+      const count = todaySessionsCache.length;
+      document.getElementById('homeTodayCount').textContent = count > 0
+        ? `${count} session${count > 1 ? 's' : ''} aujourd'hui.`
+        : '';
+    }
+  }
+
+  function startSession() {
+    const taskName = document.getElementById('taskInput').value.trim();
+    localStorage.setItem(ACTIVE_KEY, JSON.stringify({ taskName, startedAt: new Date().toISOString() }));
+    document.getElementById('taskInput').value = '';
+    renderHome();
+    showToast('Session lancée. Prédicta observe.', 'success');
+  }
+
+  function startTimerLoop(startedAtIso) {
+    const startedAt = new Date(startedAtIso).getTime();
+    function tick() {
+      const elapsedSec = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+      const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+      const ss = String(elapsedSec % 60).padStart(2, '0');
+      const el = document.getElementById('timerDisplay');
+      if (el) el.textContent = `${mm}:${ss}`;
+    }
+    tick();
+    timerIntervalId = setInterval(tick, 1000);
+  }
+  function stopTimerLoop() {
+    if (timerIntervalId) { clearInterval(timerIntervalId); timerIntervalId = null; }
+  }
+
+  async function finishSession() {
+    const active = getActiveSession();
+    if (!active) return;
+    stopTimerLoop();
+    const durationMin = Math.max(1, Math.round((Date.now() - new Date(active.startedAt).getTime()) / 60000));
+    try {
+      await predictaCompleteSession({ taskName: active.taskName, startedAt: active.startedAt, durationMin });
+      localStorage.removeItem(ACTIVE_KEY);
+      showToast('Session enregistrée. Bien joué.', 'success');
+      todaySessionsCache = await predictaGetTodaySessions();
+      predictionsLoaded = false;
+      brainLoaded = false;
+      renderHome();
+    } catch (err) {
+      console.error('[predicta] finishSession error', err.message);
+      showToast("Erreur lors de l'enregistrement.", 'error');
+    }
+  }
+
+  function interruptSession() {
+    const active = getActiveSession();
+    if (!active) return;
+    stopTimerLoop();
+    const durationMin = Math.max(1, Math.round((Date.now() - new Date(active.startedAt).getTime()) / 60000));
+    localStorage.setItem(PENDING_KEY, JSON.stringify({ taskName: active.taskName, startedAt: active.startedAt, durationMin }));
+    localStorage.removeItem(ACTIVE_KEY);
+    renderHome();
+  }
+
+  function resetReasonPicker() {
+    selectedReason = null;
+    document.querySelectorAll('.reason-btn').forEach((b) => b.classList.remove('selected'));
+    document.getElementById('reasonOtherInput').style.display = 'none';
+    document.getElementById('reasonOtherInput').value = '';
+  }
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.reason-btn');
+    if (!btn) return;
+    document.querySelectorAll('.reason-btn').forEach((b) => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const otherInput = document.getElementById('reasonOtherInput');
+    if (btn.dataset.reason === '__other__') {
+      otherInput.style.display = 'block';
+      otherInput.focus();
+      selectedReason = '__other__';
+    } else {
+      otherInput.style.display = 'none';
+      selectedReason = btn.dataset.reason;
+    }
+  });
+
+  async function confirmInterruption() {
+    const pending = getPendingInterruption();
+    if (!pending) return;
+
+    let reason = selectedReason;
+    if (!reason) { showToast('Choisis une option.', 'error'); return; }
+    if (reason === '__other__') {
+      reason = document.getElementById('reasonOtherInput').value.trim();
+      if (!reason) { showToast('Précise ce qui s\'est passé.', 'error'); return; }
+    }
+
+    try {
+      await predictaInterruptSession({
+        taskName: pending.taskName,
+        startedAt: pending.startedAt,
+        durationMin: pending.durationMin,
+        interruptionReason: reason,
+      });
+      localStorage.removeItem(PENDING_KEY);
+      todaySessionsCache = await predictaGetTodaySessions();
+      predictionsLoaded = false;
+      brainLoaded = false;
+      document.getElementById('homeState3').style.display = 'none';
+      document.getElementById('homeState3b').style.display = 'block';
+      setTimeout(renderHome, 2500);
+    } catch (err) {
+      console.error('[predicta] confirmInterruption error', err.message);
+      showToast("Erreur lors de l'enregistrement.", 'error');
+    }
+  }
+
+  // ===== PRÉDICTIONS =====
+  async function loadPredictions() {
+    predictionsLoaded = true;
+    const predictions = await predictaGetPredictions(20);
+    const empty = document.getElementById('predictionsEmpty');
+    const content = document.getElementById('predictionsContent');
+
+    if (predictions.length === 0) {
+      empty.style.display = 'block';
+      content.style.display = 'none';
+    } else {
+      empty.style.display = 'none';
+      content.style.display = 'block';
+
+      const [latest, ...rest] = predictions;
+      document.getElementById('predictionHeroCard').innerHTML = `
+        <p class="prediction-eyebrow">Prédiction du jour</p>
+        <p class="prediction-text">${escapeHtml(latest.prediction_text)}</p>
+        <p class="prediction-date">${formatDate(latest.created_at)}</p>
+      `;
+
+      const list = document.getElementById('predictionsPatternsList');
+      list.innerHTML = rest.length === 0
+        ? `<p class="muted-text" style="padding:14px 0;">Pas encore d'autre pattern détecté.</p>`
+        : rest.map((p) => `
+            <div class="pattern-item">
+              <p>${escapeHtml(p.prediction_text)}</p>
+              <span class="pattern-date">${formatDate(p.created_at)}</span>
+            </div>
+          `).join('');
+    }
+
+    await renderEveningLesson();
+  }
+
+  async function renderEveningLesson() {
+    const lessonCard = document.getElementById('lessonCard');
+    const now = new Date();
+    const threshold = currentProfile?.evening_lesson_hour ?? 17;
+    const hasSessionToday = todaySessionsCache.length > 0;
+    const todayStr = now.toISOString().slice(0, 10);
+    const thresholdLabel = `${String(threshold).padStart(2, '0')}h`;
+
+    if (now.getHours() < threshold) {
+      lessonCard.innerHTML = hasSessionToday
+        ? `<p>Prédicta analysera ta journée ce soir à ${thresholdLabel}.</p>`
+        : `<p>Lance une session — Prédicta analysera ta journée ce soir à ${thresholdLabel}.</p>`;
+      return;
+    }
+
+    const cached = await predictaGetDailyLessonForDate(todayStr);
+    if (cached?.lesson_text) {
+      const lessonCreatedAt = new Date(cached.created_at).getTime();
+      const newerSession = todaySessionsCache.some((s) => new Date(s.started_at).getTime() > lessonCreatedAt);
+      lessonCard.innerHTML = newerSession
+        ? `<p>Prédicta a enregistré. L'analyse de demain en tiendra compte.</p>`
+        : `<p>${escapeHtml(cached.lesson_text)}</p>`;
+      return;
+    }
+
+    if (!hasSessionToday) {
+      lessonCard.innerHTML = `<p>Lance une session — Prédicta analysera ta journée ce soir à ${thresholdLabel}.</p>`;
+      return;
+    }
+
+    lessonCard.innerHTML = `<p class="muted-text">Prédicta analyse ta journée...</p>`;
+    try {
+      const { lessonText } = await predictaDailyLesson();
+      lessonCard.innerHTML = lessonText
+        ? `<p>${escapeHtml(lessonText)}</p>`
+        : `<p class="muted-text">Enseignement momentanément indisponible.</p>`;
+    } catch (err) {
+      console.error('[predicta] renderEveningLesson error', err.message);
+      lessonCard.innerHTML = `<p class="muted-text">Enseignement momentanément indisponible, réessaie plus tard.</p>`;
+    }
+  }
+
+  // ===== MON CERVEAU =====
+  async function loadBrain() {
+    brainLoaded = true;
+    const dayJ = dayNumberSince(currentProfile.created_at);
+    const lockedEl = document.getElementById('brainLocked');
+    const unlockedEl = document.getElementById('brainUnlocked');
+
+    if (dayJ < 7) {
+      lockedEl.style.display = 'block';
+      unlockedEl.style.display = 'none';
+      document.getElementById('brainProgressLabel').textContent = `Jour ${dayJ} / 7`;
+      document.getElementById('brainProgressFill').style.width = `${Math.min(100, (dayJ / 7) * 100)}%`;
+      return;
+    }
+
+    lockedEl.style.display = 'none';
+    unlockedEl.style.display = 'block';
+
+    const [metrics, sessions] = await Promise.all([
+      predictaGetLatestBrainMetrics(),
+      predictaGetRecentSessions(500),
+    ]);
+
+    renderCognitiveProfile(metrics);
+    renderBestSlot(sessions);
+    renderTriggers(sessions);
+    renderBrainStats(sessions);
+  }
+
+  function renderCognitiveProfile(metrics) {
+    const el = document.getElementById('brainCognitiveProfile');
+    if (!metrics) {
+      el.innerHTML = `<p class="muted-text">Pas encore assez de données pour ton profil cognitif.</p>`;
+      return;
+    }
+    const avg = (metrics.concentration + metrics.memoire + metrics.regulation + metrics.regularite + metrics.recuperation) / 5;
+    let label = 'Neutre', cls = 'neutral';
+    if (avg >= 70) { label = 'Affûté'; cls = 'sharp'; }
+    else if (avg < 40) { label = 'Chargé'; cls = 'loaded'; }
+    el.innerHTML = `<span class="profile-badge ${cls}">${label}</span>`;
+  }
+
+  function renderBestSlot(sessions) {
+    const el = document.getElementById('brainBestSlot');
+    const completed = sessions.filter((s) => s.status === 'completed' && s.started_at);
+    if (completed.length === 0) {
+      el.textContent = 'Pas encore assez de sessions.';
+      return;
+    }
+    const buckets = { 'Matin (5h-12h)': [], 'Après-midi (12h-18h)': [], 'Soir (18h-23h)': [], 'Nuit (23h-5h)': [] };
+    completed.forEach((s) => {
+      const h = new Date(s.started_at).getHours();
+      let key = 'Nuit (23h-5h)';
+      if (h >= 5 && h < 12) key = 'Matin (5h-12h)';
+      else if (h >= 12 && h < 18) key = 'Après-midi (12h-18h)';
+      else if (h >= 18 && h < 23) key = 'Soir (18h-23h)';
+      buckets[key].push(s.focus_score ?? s.duration_min);
+    });
+    let best = null, bestAvg = -1;
+    for (const [key, vals] of Object.entries(buckets)) {
+      if (vals.length === 0) continue;
+      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+      if (avg > bestAvg) { bestAvg = avg; best = key; }
+    }
+    el.textContent = best || 'Pas encore assez de sessions.';
+  }
+
+  function renderTriggers(sessions) {
+    const el = document.getElementById('brainTriggers');
+    const reasons = sessions.filter((s) => s.status === 'interrupted' && s.interruption_reason).map((s) => s.interruption_reason);
+    if (reasons.length === 0) {
+      el.innerHTML = `<p class="muted-text">Aucune interruption enregistrée pour l'instant.</p>`;
+      return;
+    }
+    const counts = {};
+    reasons.forEach((r) => { counts[r] = (counts[r] || 0) + 1; });
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    el.innerHTML = sorted.map(([reason, count]) => `
+      <div class="trigger-item">
+        <span>${escapeHtml(reason)}</span>
+        <span class="trigger-count">${count}×</span>
+      </div>
+    `).join('');
+  }
+
+  function renderBrainStats(sessions) {
+    const total = sessions.length;
+    const completed = sessions.filter((s) => s.status === 'completed').length;
+    const avgDur = total ? Math.round(sessions.reduce((s, x) => s + x.duration_min, 0) / total) : 0;
+    const completionRate = total ? Math.round((completed / total) * 100) : 0;
+
+    document.getElementById('statSessionsCount').textContent = String(total);
+    document.getElementById('statAvgDuration').textContent = `${avgDur} min`;
+    document.getElementById('statCompletionRate').textContent = `${completionRate}%`;
+  }
+
+  // ===== RÉGLAGES =====
+  function loadSettings() {
+    settingsLoaded = true;
+    document.getElementById('settingsName').textContent = currentProfile?.display_name || '—';
+    document.getElementById('settingsEmail').textContent = currentProfile?.email || currentUser?.email || '—';
+
+    const select = document.getElementById('lessonHourSelect');
+    select.innerHTML = Array.from({ length: 24 }, (_, h) => `<option value="${h}">${String(h).padStart(2, '0')}h</option>`).join('');
+    select.value = String(currentProfile?.evening_lesson_hour ?? 17);
+  }
+
+  async function saveLessonHour() {
+    const hour = Number(document.getElementById('lessonHourSelect').value);
+    try {
+      currentProfile = await predictaUpdateProfile({ evening_lesson_hour: hour });
+      showToast('Heure enregistrée.', 'success');
+    } catch (err) {
+      console.error('[predicta] saveLessonHour error', err.message);
+      showToast('Erreur lors de la sauvegarde.', 'error');
+    }
+  }
+
+  async function handleLogout() {
+    await predictaSignOut('/index.html');
+  }
+
+  async function handleDeleteAccount() {
+    if (!confirm('Supprimer définitivement ton compte et toutes tes données ? Cette action est irréversible.')) return;
+    if (!confirm('Es-tu vraiment sûr(e) ? Il n\'y a pas de retour en arrière possible.')) return;
+    try {
+      await predictaDeleteAccount();
+      localStorage.removeItem(ACTIVE_KEY);
+      localStorage.removeItem(PENDING_KEY);
+      window.location.href = '/index.html';
+    } catch (err) {
+      console.error('[predicta] deleteAccount error', err.message);
+      showToast(err.message || 'Suppression impossible pour le moment.', 'error');
+    }
+  }
+
+  // ===== INIT =====
+  async function init() {
+    const { data, error } = await supabaseClient.auth.getUser();
+    if (error || !data?.user) {
+      window.location.href = '/index.html';
+      return;
+    }
+    currentUser = data.user;
+    currentProfile = await predictaGetProfile();
+    if (!currentProfile) {
+      window.location.href = '/index.html';
+      return;
+    }
+
+    document.getElementById('authGate').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+
+    todaySessionsCache = await predictaGetTodaySessions();
+    updateBrainTabLock();
+    renderHome();
+  }
+
+  init();
+</script>
+</body>
+</html>
