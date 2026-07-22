@@ -94,7 +94,7 @@ async function predictaSignUpWithPassword(email, password, displayName, referral
     password,
     options: {
       data: signUpData,
-      emailRedirectTo: `${window.location.origin}/dashboard.html`,
+      emailRedirectTo: `${window.location.origin}/predicta-dashboard.html`,
     },
   });
 

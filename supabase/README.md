@@ -37,7 +37,7 @@ never sent to the browser.
 ## 3. Authentication
 
 The landing page (`index.html`) and dashboard
-(`dashboard.html`) use `js/supabase-client.js`:
+(`predicta-dashboard.html`) use `js/supabase-client.js`:
 
 - `predictaSignInWithEmail(email)` — sends a magic-link (passwordless) email
   via `supabase.auth.signInWithOtp`, and records the email in `waitlist`.
