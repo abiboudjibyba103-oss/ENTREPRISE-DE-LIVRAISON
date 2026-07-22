@@ -267,11 +267,6 @@
     .brain-svg-wrap {
       position: relative; z-index: 2; filter: drop-shadow(0 0 32px rgba(108,92,231,0.3));
     }
-    .hero-bg-brain {
-      position: absolute; top: 50%; right: -160px; transform: translateY(-50%);
-      width: 700px; height: 700px; opacity: 0.06; filter: blur(2px);
-      pointer-events: none; z-index: 0;
-    }
     .brain-dot {
       position: absolute; width: 8px; height: 8px;
       background: var(--violet); border-radius: 50%;
@@ -723,11 +718,6 @@
 <section id="hero">
   <div class="hero-bg-orb hero-bg-orb-1"></div>
   <div class="hero-bg-orb hero-bg-orb-2"></div>
-  <svg class="hero-bg-brain" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <path d="M110 180C110 180 60 175 45 148C30 121 32 95 40 80C48 65 55 58 55 58C55 58 50 50 52 42C54 34 62 30 70 32C78 34 80 40 80 40C80 40 85 32 94 30C103 28 110 34 110 40V180Z" fill="#6C5CE7"/>
-    <path d="M110 180C110 180 160 175 175 148C190 121 188 95 180 80C172 65 165 58 165 58C165 58 170 50 168 42C166 34 158 30 150 32C142 34 140 40 140 40C140 40 135 32 126 30C117 28 110 34 110 40V180Z" fill="#6C5CE7"/>
-    <rect x="100" y="178" width="20" height="18" rx="10" fill="#6C5CE7"/>
-  </svg>
   <div class="container">
     <div class="hero-inner">
       <div class="hero-content">
@@ -779,56 +769,20 @@
 
           <!-- Brain SVG -->
           <div class="brain-svg-wrap">
-            <svg width="280" height="280" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="brainGradLeft" x1="20" y1="20" x2="110" y2="190" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stop-color="#EDE9FE"/>
-                  <stop offset="45%" stop-color="#A78BFA"/>
-                  <stop offset="100%" stop-color="#6C5CE7"/>
-                </linearGradient>
-                <linearGradient id="brainGradRight" x1="200" y1="20" x2="110" y2="190" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stop-color="#DDD6FE"/>
-                  <stop offset="45%" stop-color="#8B93F8"/>
-                  <stop offset="100%" stop-color="#5548C8"/>
-                </linearGradient>
-                <radialGradient id="brainGloss" cx="38%" cy="18%" r="55%">
-                  <stop offset="0%" stop-color="#ffffff" stop-opacity="0.65"/>
-                  <stop offset="45%" stop-color="#ffffff" stop-opacity="0.15"/>
-                  <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-                </radialGradient>
-                <radialGradient id="brainShadow" cx="50%" cy="90%" r="60%">
-                  <stop offset="0%" stop-color="#2D1B69" stop-opacity="0.25"/>
-                  <stop offset="100%" stop-color="#2D1B69" stop-opacity="0"/>
-                </radialGradient>
-              </defs>
-
+            <svg width="220" height="220" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
               <!-- Left hemisphere -->
-              <path d="M110 180C110 180 60 175 45 148C30 121 32 95 40 80C48 65 55 58 55 58C55 58 50 50 52 42C54 34 62 30 70 32C78 34 80 40 80 40C80 40 85 32 94 30C103 28 110 34 110 40V180Z" fill="url(#brainGradLeft)"/>
-              <path d="M110 180C110 180 160 175 175 148C190 121 188 95 180 80C172 65 165 58 165 58C165 58 170 50 168 42C166 34 158 30 150 32C142 34 140 40 140 40C140 40 135 32 126 30C117 28 110 34 110 40V180Z" fill="url(#brainGradRight)"/>
+              <path d="M110 180C110 180 60 175 45 148C30 121 32 95 40 80C48 65 55 58 55 58C55 58 50 50 52 42C54 34 62 30 70 32C78 34 80 40 80 40C80 40 85 32 94 30C103 28 110 34 110 40V180Z" fill="#EDE9FE"/>
+              <path d="M110 180C110 180 160 175 175 148C190 121 188 95 180 80C172 65 165 58 165 58C165 58 170 50 168 42C166 34 158 30 150 32C142 34 140 40 140 40C140 40 135 32 126 30C117 28 110 34 110 40V180Z" fill="#DDD6FE"/>
 
-              <!-- Bottom depth shading -->
-              <path d="M110 180C110 180 60 175 45 148C30 121 32 95 40 80C48 65 55 58 55 58C55 58 50 50 52 42C54 34 62 30 70 32C78 34 80 40 80 40C80 40 85 32 94 30C103 28 110 34 110 40V180Z" fill="url(#brainShadow)"/>
-              <path d="M110 180C110 180 160 175 175 148C190 121 188 95 180 80C172 65 165 58 165 58C165 58 170 50 168 42C166 34 158 30 150 32C142 34 140 40 140 40C140 40 135 32 126 30C117 28 110 34 110 40V180Z" fill="url(#brainShadow)"/>
+              <!-- Brain details left -->
+              <path d="M70 85 Q65 95 68 105 Q72 115 78 110 Q85 105 82 95 Q79 85 70 85Z" fill="#C4B5FD" opacity="0.6"/>
+              <path d="M85 120 Q78 130 82 140 Q88 150 96 145 Q102 138 98 128 Q93 120 85 120Z" fill="#C4B5FD" opacity="0.4"/>
+              <path d="M60 115 Q55 125 60 133 Q66 140 72 136 Q78 130 74 120 Q70 112 60 115Z" fill="#A78BFA" opacity="0.35"/>
 
-              <!-- Brain details left (gyri) -->
-              <path d="M70 85 Q65 95 68 105 Q72 115 78 110 Q85 105 82 95 Q79 85 70 85Z" fill="#4C3899" opacity="0.35"/>
-              <path d="M85 120 Q78 130 82 140 Q88 150 96 145 Q102 138 98 128 Q93 120 85 120Z" fill="#4C3899" opacity="0.3"/>
-              <path d="M60 115 Q55 125 60 133 Q66 140 72 136 Q78 130 74 120 Q70 112 60 115Z" fill="#3D2E80" opacity="0.3"/>
-              <path d="M50 95 Q55 100 58 108" stroke="#4C3899" stroke-width="1.4" stroke-linecap="round" fill="none" opacity="0.4"/>
-              <path d="M62 60 Q58 68 60 76" stroke="#4C3899" stroke-width="1.4" stroke-linecap="round" fill="none" opacity="0.35"/>
-              <path d="M45 150 Q52 155 60 152" stroke="#4C3899" stroke-width="1.4" stroke-linecap="round" fill="none" opacity="0.3"/>
-
-              <!-- Brain details right (gyri) -->
-              <path d="M150 85 Q155 95 152 105 Q148 115 142 110 Q135 105 138 95 Q141 85 150 85Z" fill="#3D2E80" opacity="0.35"/>
-              <path d="M135 120 Q142 130 138 140 Q132 150 124 145 Q118 138 122 128 Q127 120 135 120Z" fill="#3D2E80" opacity="0.3"/>
-              <path d="M160 115 Q165 125 160 133 Q154 140 148 136 Q142 130 146 120 Q150 112 160 115Z" fill="#2D1B69" opacity="0.3"/>
-              <path d="M170 95 Q165 100 162 108" stroke="#3D2E80" stroke-width="1.4" stroke-linecap="round" fill="none" opacity="0.4"/>
-              <path d="M158 60 Q162 68 160 76" stroke="#3D2E80" stroke-width="1.4" stroke-linecap="round" fill="none" opacity="0.35"/>
-              <path d="M175 150 Q168 155 160 152" stroke="#3D2E80" stroke-width="1.4" stroke-linecap="round" fill="none" opacity="0.3"/>
-
-              <!-- Glossy highlight -->
-              <ellipse cx="90" cy="55" rx="48" ry="32" fill="url(#brainGloss)" transform="rotate(-18 90 55)"/>
-              <ellipse cx="145" cy="52" rx="30" ry="20" fill="url(#brainGloss)" transform="rotate(15 145 52)" opacity="0.7"/>
+              <!-- Brain details right -->
+              <path d="M150 85 Q155 95 152 105 Q148 115 142 110 Q135 105 138 95 Q141 85 150 85Z" fill="#C4B5FD" opacity="0.6"/>
+              <path d="M135 120 Q142 130 138 140 Q132 150 124 145 Q118 138 122 128 Q127 120 135 120Z" fill="#C4B5FD" opacity="0.4"/>
+              <path d="M160 115 Q165 125 160 133 Q154 140 148 136 Q142 130 146 120 Q150 112 160 115Z" fill="#A78BFA" opacity="0.35"/>
 
               <!-- Center line -->
               <line x1="110" y1="42" x2="110" y2="178" stroke="#A78BFA" stroke-width="1" stroke-dasharray="3 4" opacity="0.6"/>
