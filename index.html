@@ -110,10 +110,10 @@
       box-shadow: 0 4px 24px rgba(28,25,23,0.06);
     }
     .nav-inner {
-      display: flex; align-items: center; justify-content: space-between; gap: 32px;
+      display: flex; align-items: center; justify-content: space-between; gap: 56px;
     }
     .nav-logo {
-      display: flex; align-items: center; gap: 10px;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
       text-decoration: none; flex-shrink: 0;
     }
     .nav-logo-text {
@@ -122,11 +122,12 @@
       letter-spacing: -0.02em;
     }
     .nav-links {
-      display: flex; align-items: center; gap: 32px; list-style: none;
+      display: flex; align-items: center; justify-content: center; gap: 32px; list-style: none;
+      flex: 1;
     }
     .nav-links a {
-      text-decoration: none; color: var(--text-sec); font-weight: 500;
-      font-size: 15px; transition: color 0.2s;
+      text-decoration: none; color: var(--text-sec); font-weight: 600;
+      font-size: 15px; letter-spacing: 0.01em; transition: color 0.2s;
     }
     .nav-links a:hover { color: var(--violet); }
     .nav-actions { display: flex; align-items: center; gap: 12px; }
@@ -162,6 +163,7 @@
     #hero {
       min-height: 100vh; display: flex; align-items: center;
       padding: 120px 0 80px; position: relative; overflow: hidden;
+      background: linear-gradient(135deg, #FAFAFE 0%, #F5F3FF 50%, #FFF7F5 100%);
     }
     .hero-bg-orb {
       position: absolute; border-radius: 50%; filter: blur(80px);
@@ -189,22 +191,22 @@
       display: inline-flex; align-items: center; gap: 8px;
       background: linear-gradient(135deg, var(--violet-light), #FEF3C7);
       border: 1px solid rgba(108,92,231,0.2);
-      padding: 8px 16px; border-radius: 100px; margin-bottom: 28px;
+      padding: 8px 16px; border-radius: 100px; margin-bottom: 36px;
       font-weight: 600; font-size: 13px; color: var(--violet);
     }
     .hero-badge .sparkle { font-size: 16px; animation: spin-slow 4s linear infinite; display: inline-block; }
     @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     .hero-h1 {
-      font-size: clamp(32px, 4.5vw, 54px);
+      font-size: clamp(28px, 3.5vw, 46px);
       font-family: 'Plus Jakarta Sans', sans-serif;
       font-weight: 800; line-height: 1.12;
-      letter-spacing: -0.03em; margin-bottom: 20px;
+      letter-spacing: -0.03em; margin-bottom: 28px;
     }
     .hero-h1 .accent { color: var(--violet); }
     .hero-h1 .accent-orange { color: var(--orange); }
     .hero-subtitle {
-      font-size: 16px; color: var(--text-sec);
-      line-height: 1.65; margin-bottom: 36px; max-width: 440px;
+      font-size: 15px; color: var(--text-sec);
+      line-height: 1.7; margin-bottom: 40px; max-width: 420px;
     }
     .hero-subtitle strong { color: var(--text); font-weight: 600; }
     .hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; }
@@ -715,13 +717,13 @@
       <div class="hero-content">
         <div class="hero-badge" id="hero-badge" style="opacity:0;transform:translateY(16px)">
           <span class="sparkle">✦</span>
-          Ton attention t'appartient encore.
+          Analyse comportementale · Prédiction cognitive
         </div>
         <h1 class="hero-h1" id="hero-h1">
-          Prédicta analyse tes comportements<br>
-          pour prédire quand tu risques de<br>
-          procrastiner, d'abandonner<br>
-          <span class="accent">ou de perdre ton attention.</span>
+          Prédicta prédit quand<br>
+          tu vas procrastiner,<br>
+          abandonner ou décrocher —<br>
+          <span class="accent">avant que ça n'arrive.</span>
         </h1>
         <p class="hero-subtitle" id="hero-subtitle" style="opacity:0;transform:translateY(16px)">
           Procrastination, abandon, perte de focus —<br>
