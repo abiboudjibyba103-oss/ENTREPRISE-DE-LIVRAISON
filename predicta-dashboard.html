@@ -102,6 +102,7 @@
   .btn-primary { background: var(--violet); color: #fff; box-shadow: 0 4px 16px rgba(108,92,231,0.3); }
   .btn-primary:hover { background: var(--violet-dark); }
   .btn-primary:active { transform: translateY(1px); }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; pointer-events: none; }
   .btn-danger { background: var(--danger); color: #fff; margin-top: 20px; }
   .btn-danger:hover { background: #b91c1c; }
   .btn-danger-ghost {
@@ -272,7 +273,7 @@
           <p class="home-subtitle">Qu'est-ce que tu veux accomplir aujourd'hui ?</p>
           <label class="field-label" for="taskInput">Sur quoi tu travailles ?</label>
           <input id="taskInput" class="text-input" type="text" maxlength="120" placeholder="Ex : Rapport client, révisions..." />
-          <button class="btn btn-primary btn-block" onclick="startSession()">Lancer une session</button>
+          <button id="startSessionBtn" class="btn btn-primary btn-block" onclick="startSession()">Lancer une session</button>
           <p class="home-today-count" id="homeTodayCount"></p>
         </div>
 
@@ -281,8 +282,8 @@
           <p class="session-task-label" id="sessionTaskLabel"></p>
           <div class="timer-display" id="timerDisplay">00:00</div>
           <div class="session-actions">
-            <button class="btn btn-primary btn-block" onclick="finishSession()">Terminer la session</button>
-            <button class="btn btn-ghost-danger btn-block" onclick="interruptSession()">Interrompre</button>
+            <button id="finishSessionBtn" class="btn btn-primary btn-block" onclick="finishSession()">Terminer la session</button>
+            <button id="interruptSessionBtn" class="btn btn-ghost-danger btn-block" onclick="interruptSession()">Interrompre</button>
           </div>
         </div>
 
@@ -295,7 +296,7 @@
             <button type="button" class="reason-btn" data-reason="__other__">Autre chose →</button>
           </div>
           <input id="reasonOtherInput" class="text-input" type="text" maxlength="200" placeholder="Précise en quelques mots..." style="display:none;" />
-          <button class="btn btn-primary btn-block" onclick="confirmInterruption()">Confirmer</button>
+          <button id="confirmInterruptionBtn" class="btn btn-primary btn-block" onclick="confirmInterruption()">Confirmer</button>
         </div>
 
         <!-- État 3 (suite) : confirmation d'interruption -->
@@ -449,6 +450,11 @@
   let interruptDurationMin = null;
   let lastCompletedDurationMin = null;
   let timerIntervalId = null;
+  // Guards against duplicate INSERTs/UPDATEs from rapid repeated clicks
+  // (e.g. a user tapping "Lancer une session" several times while an
+  // earlier request is still in flight) — this is what previously
+  // created many duplicate 'in_progress' rows for the same day.
+  let sessionActionInFlight = false;
   let selectedReason = null;
 
   let predictionsLoaded = false;
@@ -563,6 +569,14 @@
   }
 
   async function startSession() {
+    if (sessionActionInFlight) return;
+    if (activeSession) {
+      // Defensive: a session is already running, never start a second one.
+      homeState = 'running';
+      renderHome();
+      return;
+    }
+
     const taskInput = document.getElementById('taskInput');
     const taskName = taskInput.value.trim();
     clearHomeError();
@@ -570,6 +584,10 @@
       showToast('Dis à Prédicta sur quoi tu travailles.', 'error');
       return;
     }
+
+    sessionActionInFlight = true;
+    const btn = document.getElementById('startSessionBtn');
+    if (btn) btn.disabled = true;
     try {
       activeSession = await predictaStartSession(taskName);
       taskInput.value = '';
@@ -578,6 +596,9 @@
       showToast('Session lancée. Prédicta observe.', 'success');
     } catch (err) {
       showHomeError(err);
+    } finally {
+      sessionActionInFlight = false;
+      if (btn) btn.disabled = false;
     }
   }
 
@@ -598,12 +619,17 @@
   }
 
   async function finishSession() {
-    if (!activeSession) return;
+    if (sessionActionInFlight || !activeSession) return;
     stopTimerLoop();
     clearHomeError();
     const durationMin = computeElapsedMinutes(activeSession.started_at);
+    const sessionId = activeSession.id;
+
+    sessionActionInFlight = true;
+    const btn = document.getElementById('finishSessionBtn');
+    if (btn) btn.disabled = true;
     try {
-      await predictaCompleteActiveSession(activeSession.id, durationMin);
+      await predictaCompleteActiveSession(sessionId, durationMin);
       lastCompletedDurationMin = durationMin;
       activeSession = null;
       homeState = 'completed';
@@ -614,11 +640,14 @@
       setTimeout(() => { homeState = 'idle'; renderHome(); }, 3000);
     } catch (err) {
       showHomeError(err);
+    } finally {
+      sessionActionInFlight = false;
+      if (btn) btn.disabled = false;
     }
   }
 
   function interruptSession() {
-    if (!activeSession) return;
+    if (sessionActionInFlight || !activeSession) return;
     stopTimerLoop();
     interruptDurationMin = computeElapsedMinutes(activeSession.started_at);
     homeState = 'interrupting';
@@ -649,7 +678,7 @@
   });
 
   async function confirmInterruption() {
-    if (!activeSession) return;
+    if (sessionActionInFlight || !activeSession) return;
 
     let reason = selectedReason;
     if (!reason) { showToast('Choisis une option.', 'error'); return; }
@@ -659,8 +688,12 @@
     }
 
     clearHomeError();
+    const sessionId = activeSession.id;
+    sessionActionInFlight = true;
+    const btn = document.getElementById('confirmInterruptionBtn');
+    if (btn) btn.disabled = true;
     try {
-      await predictaInterruptActiveSession(activeSession.id, interruptDurationMin, reason);
+      await predictaInterruptActiveSession(sessionId, interruptDurationMin, reason);
       activeSession = null;
       homeState = 'interrupted-done';
       renderHome();
@@ -670,6 +703,9 @@
       setTimeout(() => { homeState = 'idle'; renderHome(); }, 3000);
     } catch (err) {
       showHomeError(err);
+    } finally {
+      sessionActionInFlight = false;
+      if (btn) btn.disabled = false;
     }
   }
 
