@@ -414,9 +414,14 @@ async function predictaCoachChat(message, history) {
 }
 
 /**
- * Returns the current user's sessions started today (local calendar day),
- * most recent first. Used by the dashboard home page to decide which
- * state to show (new day vs. already worked today).
+ * Returns the current user's FINISHED sessions started today (local
+ * calendar day, own user only), most recent first. Used by the
+ * dashboard home page to decide which state to show and to count
+ * "N sessions aujourd'hui". Excludes status 'in_progress' on purpose:
+ * the one currently running session is tracked separately via
+ * predictaGetActiveSession(), and any stale/orphaned in_progress row
+ * (e.g. left over from a failed start attempt) must never inflate this
+ * count.
  */
 async function predictaGetTodaySessions() {
   const session = await predictaGetSession();
@@ -429,6 +434,7 @@ async function predictaGetTodaySessions() {
     .from('sessions')
     .select('id, duration_min, focus_score, status, started_at, ended_at, notes, interruption_reason')
     .eq('user_id', session.user.id)
+    .neq('status', 'in_progress')
     .gte('started_at', startOfDay.toISOString())
     .order('started_at', { ascending: false });
 

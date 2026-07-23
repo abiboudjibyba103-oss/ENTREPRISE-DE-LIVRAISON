@@ -121,6 +121,11 @@
   }
   .home-greeting h1 { font-size: 26px; }
   .home-subtitle { font-size: 14px; color: var(--text-sec); margin-bottom: 18px; }
+  .error-banner {
+    background: var(--danger-light); border: 1.5px solid var(--danger); border-radius: 13px;
+    padding: 12px 14px; margin-bottom: 16px; color: var(--danger); font-size: 12.5px;
+    line-height: 1.6; word-break: break-word; font-family: 'DM Sans', sans-serif;
+  }
   .home-today-count { font-size: 13px; color: var(--text-sec); text-align: center; margin-top: 12px; }
 
   .session-task-label { font-size: 15px; font-weight: 600; text-align: center; color: var(--text-sec); margin-bottom: 6px; }
@@ -178,9 +183,16 @@
     font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all 0.15s;
   }
   .chart-toggle-btn.active { background: var(--violet); border-color: var(--violet); color: #fff; }
-  .chart-stats-row { display: flex; justify-content: space-around; margin-bottom: 18px; text-align: center; }
-  .chart-stat { display: flex; flex-direction: column; gap: 3px; }
-  .chart-svg-wrap { width: 100%; }
+
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -2px; }
+  .history-table { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 12.5px; }
+  .history-table th {
+    text-align: left; font-family: 'Space Mono', monospace; font-size: 9.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-sec);
+    padding: 8px 8px; border-bottom: 1.5px solid var(--border); white-space: nowrap;
+  }
+  .history-table td { padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .history-table tr:last-child td { border-bottom: none; }
 
   /* ===== BRAIN ===== */
   .brain-value { font-size: 15px; font-weight: 600; }
@@ -253,6 +265,8 @@
           <h1 id="homeGreeting">Salut 👋</h1>
         </div>
 
+        <div id="homeErrorBanner" class="error-banner" style="display:none;"></div>
+
         <!-- État 1 : aucune session aujourd'hui -->
         <div id="homeState1" class="card">
           <p class="home-subtitle">Qu'est-ce que tu veux accomplir aujourd'hui ?</p>
@@ -323,22 +337,6 @@
         </div>
         <div id="predSection2Unlocked" style="display:none;"></div>
 
-        <p class="section-label">Historique</p>
-        <div id="predSection3Locked" class="card locked-section" style="display:none;">
-          <span class="lock-icon">🔒</span><span class="muted-text">Disponible à partir du jour 7</span>
-        </div>
-        <div id="predSection3Unlocked" class="card" style="display:none;">
-          <div class="chart-toggle">
-            <button type="button" class="chart-toggle-btn active" data-range="week" onclick="renderHistoryChart('week')">Cette semaine</button>
-            <button type="button" class="chart-toggle-btn" data-range="month" onclick="renderHistoryChart('month')">Ce mois</button>
-          </div>
-          <div class="chart-stats-row">
-            <div class="chart-stat"><span class="stat-value" id="chartStatSessions">0</span><span class="stat-label">Sessions</span></div>
-            <div class="chart-stat"><span class="stat-value" id="chartStatAvg">0 min</span><span class="stat-label">Durée moy.</span></div>
-            <div class="chart-stat"><span class="stat-value" id="chartStatCompletion">0%</span><span class="stat-label">Complétion</span></div>
-          </div>
-          <div id="chartSvgWrap" class="chart-svg-wrap"></div>
-        </div>
       </div>
     </section>
 
@@ -352,9 +350,9 @@
           <div class="progress-track"><div class="progress-fill" id="brainProgressFill"></div></div>
           <p class="progress-label" id="brainProgressLabel">Jour 1 / 7</p>
           <div class="blurred-preview" aria-hidden="true">
-            <div class="preview-row"><span>Profil cognitif</span><span>Affûté</span></div>
-            <div class="preview-row"><span>Meilleur créneau</span><span>Matin (5h-12h)</span></div>
-            <div class="preview-row"><span>Sessions</span><span>—</span></div>
+            <div class="preview-row"><span>Profil cognitif</span><span>···</span></div>
+            <div class="preview-row"><span>Meilleur créneau</span><span>···</span></div>
+            <div class="preview-row"><span>Sessions</span><span>···</span></div>
           </div>
         </div>
 
@@ -374,6 +372,22 @@
             <div class="stat-box"><span class="stat-value" id="statAvgDuration">0 min</span><span class="stat-label">Durée moy.</span></div>
             <div class="stat-box"><span class="stat-value" id="statCompletionRate">0%</span><span class="stat-label">Complétion</span></div>
             <div class="stat-box"><span class="stat-value" id="statInterruptions">0</span><span class="stat-label">Interruptions</span></div>
+          </div>
+
+          <p class="section-label">Historique</p>
+          <div class="card">
+            <div class="chart-toggle">
+              <button type="button" class="chart-toggle-btn active" data-range="week" onclick="renderHistoryTable('week')">Cette semaine</button>
+              <button type="button" class="chart-toggle-btn" data-range="month" onclick="renderHistoryTable('month')">Ce mois</button>
+            </div>
+            <div class="table-scroll">
+              <table class="history-table">
+                <thead>
+                  <tr><th>Date</th><th>Tâche</th><th>Durée</th><th>État</th><th>Cause</th></tr>
+                </thead>
+                <tbody id="historyTableBody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -428,7 +442,7 @@
   let currentUser = null;
   let currentProfile = null;
   let todaySessionsCache = [];
-  let historySessions = [];
+  let brainHistorySessions = [];
 
   let activeSession = null;          // { id, notes, started_at } — the live Supabase row
   let homeState = 'idle';            // idle | running | interrupting | interrupted-done | completed
@@ -465,6 +479,23 @@
   function dayNumberSince(dateStr) {
     const created = new Date(dateStr).getTime();
     return Math.max(1, Math.floor((Date.now() - created) / 86400000) + 1);
+  }
+  // Shows the FULL Supabase error (message + details/hint/code when
+  // present) on screen, not a generic "something went wrong" — this is
+  // what actually surfaces a missing column, a failed RLS check, etc.
+  function showHomeError(err) {
+    console.error('[predicta] session error', err);
+    const el = document.getElementById('homeErrorBanner');
+    const detail = [err?.message, err?.details, err?.hint, err?.code]
+      .filter(Boolean)
+      .join(' — ');
+    el.textContent = `Erreur Supabase : ${detail || 'erreur inconnue (voir la console)'}`;
+    el.style.display = 'block';
+  }
+  function clearHomeError() {
+    const el = document.getElementById('homeErrorBanner');
+    el.style.display = 'none';
+    el.textContent = '';
   }
   function computeElapsedMinutes(startedAtIso) {
     return Math.max(1, Math.round((Date.now() - new Date(startedAtIso).getTime()) / 60000));
@@ -534,6 +565,7 @@
   async function startSession() {
     const taskInput = document.getElementById('taskInput');
     const taskName = taskInput.value.trim();
+    clearHomeError();
     if (!taskName) {
       showToast('Dis à Prédicta sur quoi tu travailles.', 'error');
       return;
@@ -545,8 +577,7 @@
       renderHome();
       showToast('Session lancée. Prédicta observe.', 'success');
     } catch (err) {
-      console.error('[predicta] startSession error', err.message);
-      showToast('Erreur au démarrage de la session.', 'error');
+      showHomeError(err);
     }
   }
 
@@ -569,6 +600,7 @@
   async function finishSession() {
     if (!activeSession) return;
     stopTimerLoop();
+    clearHomeError();
     const durationMin = computeElapsedMinutes(activeSession.started_at);
     try {
       await predictaCompleteActiveSession(activeSession.id, durationMin);
@@ -581,8 +613,7 @@
       brainLoaded = false;
       setTimeout(() => { homeState = 'idle'; renderHome(); }, 3000);
     } catch (err) {
-      console.error('[predicta] finishSession error', err.message);
-      showToast("Erreur lors de l'enregistrement.", 'error');
+      showHomeError(err);
     }
   }
 
@@ -627,6 +658,7 @@
       if (!reason) { showToast("Précise ce qui s'est passé.", 'error'); return; }
     }
 
+    clearHomeError();
     try {
       await predictaInterruptActiveSession(activeSession.id, interruptDurationMin, reason);
       activeSession = null;
@@ -637,8 +669,7 @@
       brainLoaded = false;
       setTimeout(() => { homeState = 'idle'; renderHome(); }, 3000);
     } catch (err) {
-      console.error('[predicta] confirmInterruption error', err.message);
-      showToast("Erreur lors de l'enregistrement.", 'error');
+      showHomeError(err);
     }
   }
 
@@ -691,7 +722,7 @@
     const locked = dayJ < 7;
 
     document.getElementById('predictionsLockedIntro').style.display = locked ? 'block' : 'none';
-    ['predSection1', 'predSection2', 'predSection3'].forEach((id) => {
+    ['predSection1', 'predSection2'].forEach((id) => {
       document.getElementById(id + 'Locked').style.display = locked ? 'flex' : 'none';
       document.getElementById(id + 'Unlocked').style.display = locked ? 'none' : 'block';
     });
@@ -718,9 +749,6 @@
     document.getElementById('predSection2Unlocked').innerHTML = patterns.length
       ? patterns.map((p) => `<div class="card pattern-card">${escapeHtml(p)}</div>`).join('')
       : `<div class="card"><p class="muted-text">Pas encore assez de données pour dégager des patterns.</p></div>`;
-
-    historySessions = finished;
-    renderHistoryChart('week');
   }
 
   function computePatterns(sessions) {
@@ -773,86 +801,39 @@
     return patterns.slice(0, 3);
   }
 
-  function renderHistoryChart(range) {
-    document.querySelectorAll('.chart-toggle-btn').forEach((b) => b.classList.toggle('active', b.dataset.range === range));
+  // History table (Date · Tâche · Durée · État · Cause), real sessions only
+  function renderHistoryTable(range) {
+    document.querySelectorAll('#page-brain .chart-toggle-btn').forEach((b) => b.classList.toggle('active', b.dataset.range === range));
 
     const days = range === 'month' ? 30 : 7;
-    const buckets = buildDailyBuckets(historySessions, days);
+    const cutoff = Date.now() - days * 86400000;
+    const rows = brainHistorySessions
+      .filter((s) => new Date(s.started_at).getTime() >= cutoff)
+      .sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
 
-    const totalSessions = buckets.reduce((s, b) => s + b.count, 0);
-    const totalCompleted = buckets.reduce((s, b) => s + b.completed, 0);
-    const avgDur = totalSessions ? Math.round(buckets.reduce((s, b) => s + b.totalMin, 0) / totalSessions) : 0;
-    const completionRate = totalSessions ? Math.round((totalCompleted / totalSessions) * 100) : 0;
-
-    document.getElementById('chartStatSessions').textContent = String(totalSessions);
-    document.getElementById('chartStatAvg').textContent = `${avgDur} min`;
-    document.getElementById('chartStatCompletion').textContent = `${completionRate}%`;
-
-    const chartData = buckets.map((b) => ({ label: b.label, value: b.totalMin }));
-    document.getElementById('chartSvgWrap').innerHTML = buildLineChartSVG(chartData, 320, 140, days > 7);
-  }
-
-  function buildDailyBuckets(sessions, days) {
-    const dayLabels = ['Di', 'Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa'];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const buckets = [];
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      buckets.push({
-        time: d.getTime(),
-        label: days > 7 ? String(d.getDate()) : dayLabels[d.getDay()],
-        totalMin: 0,
-        count: 0,
-        completed: 0,
-      });
+    const tbody = document.getElementById('historyTableBody');
+    if (rows.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="muted-text" style="text-align:center;padding:16px 0;">Aucune session sur cette période.</td></tr>`;
+      return;
     }
 
-    sessions.forEach((s) => {
-      const sd = new Date(s.started_at);
-      sd.setHours(0, 0, 0, 0);
-      const bucket = buckets.find((b) => b.time === sd.getTime());
-      if (!bucket) return;
-      bucket.count++;
-      bucket.totalMin += s.duration_min || 0;
-      if (s.status === 'completed') bucket.completed++;
-    });
-
-    return buckets;
+    tbody.innerHTML = rows.map((s) => `
+      <tr>
+        <td>${formatDateShort(s.started_at)}</td>
+        <td>${escapeHtml(s.notes || '—')}</td>
+        <td>${s.duration_min != null ? s.duration_min + ' min' : '—'}</td>
+        <td>${s.status === 'completed' ? 'Terminée' : s.status === 'interrupted' ? 'Interrompue' : '—'}</td>
+        <td>${s.status === 'interrupted' && s.interruption_reason ? escapeHtml(s.interruption_reason) : '—'}</td>
+      </tr>
+    `).join('');
   }
 
-  function buildLineChartSVG(data, width, height, sparseLabels) {
-    const padL = 8, padR = 8, padT = 12, padB = 22;
-    const innerW = width - padL - padR;
-    const innerH = height - padT - padB;
-    const maxVal = Math.max(1, ...data.map((d) => d.value));
-    const stepX = data.length > 1 ? innerW / (data.length - 1) : 0;
-
-    const points = data.map((d, i) => ({
-      x: padL + i * stepX,
-      y: padT + innerH - (d.value / maxVal) * innerH,
-    }));
-
-    const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
-    const areaPath = `${linePath} L ${points[points.length - 1].x.toFixed(1)} ${padT + innerH} L ${points[0].x.toFixed(1)} ${padT + innerH} Z`;
-
-    const dots = points.map((p, i) => (data[i].value > 0
-      ? `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="#6C5CE7"/>`
-      : '')).join('');
-
-    const showLabel = (i) => !sparseLabels || i === 0 || i === data.length - 1 || i === Math.floor(data.length / 2);
-    const labels = points.map((p, i) => (showLabel(i)
-      ? `<text x="${p.x.toFixed(1)}" y="${height - 6}" font-size="9" fill="#78716C" text-anchor="middle" font-family="'Space Mono',monospace">${escapeHtml(data[i].label)}</text>`
-      : '')).join('');
-
-    return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" preserveAspectRatio="none">
-      <path d="${areaPath}" fill="#6C5CE7" opacity="0.12"/>
-      <path d="${linePath}" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      ${dots}
-      ${labels}
-    </svg>`;
+  function formatDateShort(iso) {
+    try {
+      return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+    } catch {
+      return '—';
+    }
   }
 
   // ===== MON CERVEAU =====
@@ -883,6 +864,9 @@
     renderBestSlot(finished);
     renderTriggers(finished);
     renderBrainStats(finished);
+
+    brainHistorySessions = finished;
+    renderHistoryTable('week');
   }
 
   function renderCognitiveProfile(metrics) {
