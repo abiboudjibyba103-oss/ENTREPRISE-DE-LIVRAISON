@@ -137,7 +137,7 @@ create table if not exists public.sessions (
   user_id       uuid not null references auth.users(id) on delete cascade,
   started_at    timestamptz not null default now(),
   ended_at      timestamptz,
-  duration_min  smallint not null check (duration_min > 0 and duration_min <= 240),
+  duration_min  smallint check (duration_min is null or (duration_min > 0 and duration_min <= 240)),
   focus_score   smallint check (focus_score between 0 and 100),
   status        text not null default 'completed' check (status in ('completed', 'interrupted', 'in_progress')),
   notes         text,
@@ -147,6 +147,14 @@ create table if not exists public.sessions (
 
 -- Migration for pre-existing databases.
 alter table public.sessions add column if not exists interruption_reason text;
+
+-- duration_min is unknown at the moment a session starts (status
+-- 'in_progress' is inserted with only started_at set) — it can no
+-- longer be NOT NULL. Re-create the check constraint to allow null.
+alter table public.sessions alter column duration_min drop not null;
+alter table public.sessions drop constraint if exists sessions_duration_min_check;
+alter table public.sessions add constraint sessions_duration_min_check
+  check (duration_min is null or (duration_min > 0 and duration_min <= 240));
 
 alter table public.sessions enable row level security;
 

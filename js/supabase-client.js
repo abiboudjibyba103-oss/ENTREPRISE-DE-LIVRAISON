@@ -440,25 +440,23 @@ async function predictaGetTodaySessions() {
 }
 
 /**
- * Records a session the user finished on purpose ("Terminer").
- * `startedAt` must be an ISO timestamp captured when the timer began
- * (kept in localStorage across reloads so elapsed time stays accurate).
+ * Starts a session: inserts a `sessions` row immediately with
+ * status 'in_progress' and started_at = now(). This is the source of
+ * truth the timer resumes from (elapsed = now - started_at), so the
+ * countdown survives a closed tab or a phone that was switched off —
+ * unlike a purely client-side timer.
  */
-async function predictaCompleteSession({ taskName, startedAt, durationMin }) {
+async function predictaStartSession(taskName) {
   const session = await predictaGetSession();
   if (!session) throw new Error('Not authenticated');
-
-  const duration = Math.max(1, Math.min(240, Math.round(Number(durationMin) || 0)));
 
   const { data, error } = await supabaseClient
     .from('sessions')
     .insert({
       user_id: session.user.id,
-      started_at: startedAt,
-      ended_at: new Date().toISOString(),
-      duration_min: duration,
-      status: 'completed',
       notes: String(taskName || '').slice(0, 500),
+      started_at: new Date().toISOString(),
+      status: 'in_progress',
     })
     .select()
     .single();
@@ -468,10 +466,35 @@ async function predictaCompleteSession({ taskName, startedAt, durationMin }) {
 }
 
 /**
- * Records a session the user cut short ("Interrompre"), together with
- * why it stopped (one of the 3 preset reasons, or free text).
+ * Returns the current user's in-progress session (if any), so the app
+ * can resume the timer from its real started_at after a reload, a
+ * closed tab, or a phone that was off.
  */
-async function predictaInterruptSession({ taskName, startedAt, durationMin, interruptionReason }) {
+async function predictaGetActiveSession() {
+  const session = await predictaGetSession();
+  if (!session) return null;
+
+  const { data, error } = await supabaseClient
+    .from('sessions')
+    .select('id, notes, started_at, status')
+    .eq('user_id', session.user.id)
+    .eq('status', 'in_progress')
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[predicta] getActiveSession error', error.message);
+    return null;
+  }
+  return data;
+}
+
+/**
+ * Finishes an in-progress session on purpose ("Terminer la session"):
+ * updates the existing row rather than inserting a new one.
+ */
+async function predictaCompleteActiveSession(sessionId, durationMin) {
   const session = await predictaGetSession();
   if (!session) throw new Error('Not authenticated');
 
@@ -479,15 +502,37 @@ async function predictaInterruptSession({ taskName, startedAt, durationMin, inte
 
   const { data, error } = await supabaseClient
     .from('sessions')
-    .insert({
-      user_id: session.user.id,
-      started_at: startedAt,
+    .update({ status: 'completed', ended_at: new Date().toISOString(), duration_min: duration })
+    .eq('id', sessionId)
+    .eq('user_id', session.user.id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Cuts an in-progress session short ("Interrompre"), together with why
+ * it stopped (one of the 3 preset reasons, or free text). Updates the
+ * existing row rather than inserting a new one.
+ */
+async function predictaInterruptActiveSession(sessionId, durationMin, interruptionReason) {
+  const session = await predictaGetSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const duration = Math.max(1, Math.min(240, Math.round(Number(durationMin) || 0)));
+
+  const { data, error } = await supabaseClient
+    .from('sessions')
+    .update({
+      status: 'interrupted',
       ended_at: new Date().toISOString(),
       duration_min: duration,
-      status: 'interrupted',
-      notes: String(taskName || '').slice(0, 500),
       interruption_reason: String(interruptionReason || '').slice(0, 500),
     })
+    .eq('id', sessionId)
+    .eq('user_id', session.user.id)
     .select()
     .single();
 

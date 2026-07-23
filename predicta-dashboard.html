@@ -120,6 +120,7 @@
     text-transform: capitalize; margin-bottom: 6px;
   }
   .home-greeting h1 { font-size: 26px; }
+  .home-subtitle { font-size: 14px; color: var(--text-sec); margin-bottom: 18px; }
   .home-today-count { font-size: 13px; color: var(--text-sec); text-align: center; margin-top: 12px; }
 
   .session-task-label { font-size: 15px; font-weight: 600; text-align: center; color: var(--text-sec); margin-bottom: 6px; }
@@ -137,12 +138,25 @@
     font-size: 13.5px; line-height: 1.5; color: var(--text); transition: all 0.15s;
   }
   .reason-btn.selected { border-color: var(--violet); background: var(--violet-light); color: var(--violet-dark); font-weight: 600; }
-  .state3b-text { text-align: center; font-weight: 600; font-size: 15px; padding: 8px 0; }
+  .state-message-text { text-align: center; font-weight: 600; font-size: 15px; padding: 8px 0; line-height: 1.6; }
+  .state4-icon { text-align: center; font-size: 34px; margin-bottom: 8px; }
+
+  .evening-lesson-card p { font-size: 14.5px; line-height: 1.7; }
 
   /* ===== PREDICTIONS ===== */
-  .empty-card { text-align: center; padding: 32px 22px; }
-  .empty-title { font-weight: 600; font-size: 15px; line-height: 1.6; margin-bottom: 10px; }
-  .empty-sub { color: var(--text-sec); font-size: 13px; }
+  .locked-card { text-align: center; padding: 30px 22px; }
+  .locked-message { font-weight: 600; font-size: 15px; line-height: 1.6; margin-bottom: 18px; }
+  .locked-section { display: flex; align-items: center; gap: 10px; }
+  .lock-icon { font-size: 16px; }
+
+  .progress-track { height: 8px; background: var(--border); border-radius: 100px; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--violet), var(--orange)); border-radius: 100px; transition: width 0.8s cubic-bezier(0.25,1,0.5,1); }
+  .progress-label { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text-sec); margin-top: 8px; }
+  .blurred-preview {
+    margin-top: 22px; padding-top: 18px; border-top: 1px dashed var(--border);
+    filter: blur(3px); opacity: 0.55; pointer-events: none; text-align: left;
+  }
+  .preview-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13px; }
 
   .prediction-card-hero {
     background: linear-gradient(135deg, var(--violet), #8B7CF6); color: #fff;
@@ -155,25 +169,20 @@
   .prediction-text { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 16px; line-height: 1.55; margin-bottom: 10px; }
   .prediction-date { font-size: 12px; opacity: 0.75; }
 
-  .patterns-list { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 20px; box-shadow: var(--shadow); }
-  .pattern-item { padding: 14px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; line-height: 1.55; }
-  .pattern-item:last-child { border-bottom: none; }
-  .pattern-date { display: block; font-size: 11px; color: var(--text-sec); margin-top: 4px; }
+  .pattern-card { font-size: 13.5px; line-height: 1.6; font-weight: 500; }
 
-  .lesson-card p { font-size: 14.5px; line-height: 1.7; }
+  .chart-toggle { display: flex; gap: 8px; margin-bottom: 18px; }
+  .chart-toggle-btn {
+    flex: 1; padding: 9px; border-radius: 10px; border: 1.5px solid var(--border);
+    background: #fff; color: var(--text-sec); font-family: 'DM Sans', sans-serif;
+    font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+  }
+  .chart-toggle-btn.active { background: var(--violet); border-color: var(--violet); color: #fff; }
+  .chart-stats-row { display: flex; justify-content: space-around; margin-bottom: 18px; text-align: center; }
+  .chart-stat { display: flex; flex-direction: column; gap: 3px; }
+  .chart-svg-wrap { width: 100%; }
 
   /* ===== BRAIN ===== */
-  .locked-card { text-align: center; padding: 30px 22px; }
-  .locked-message { font-weight: 600; font-size: 15px; line-height: 1.6; margin-bottom: 18px; }
-  .progress-track { height: 8px; background: var(--border); border-radius: 100px; overflow: hidden; }
-  .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--violet), var(--orange)); border-radius: 100px; transition: width 0.4s ease; }
-  .progress-label { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text-sec); margin-top: 8px; }
-  .blurred-preview {
-    margin-top: 22px; padding-top: 18px; border-top: 1px dashed var(--border);
-    filter: blur(3px); opacity: 0.55; pointer-events: none; text-align: left;
-  }
-  .preview-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13px; }
-
   .brain-value { font-size: 15px; font-weight: 600; }
   .profile-badge {
     display: inline-block; padding: 8px 18px; border-radius: 100px;
@@ -187,7 +196,7 @@
   .trigger-item:last-child { border-bottom: none; }
   .trigger-count { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--violet); font-weight: 700; flex-shrink: 0; margin-left: 12px; }
 
-  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+  .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; text-align: center; }
   .stat-box { display: flex; flex-direction: column; gap: 4px; }
   .stat-value { font-family: 'Space Mono', monospace; font-size: 19px; font-weight: 700; color: var(--violet); }
   .stat-label { font-size: 10.5px; color: var(--text-sec); }
@@ -196,7 +205,7 @@
   .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
   .settings-row:last-child { border-bottom: none; }
   .settings-label { color: var(--text-sec); }
-  .settings-value { font-weight: 600; }
+  .settings-value { font-weight: 600; text-align: right; }
 
   /* ===== BOTTOM NAV ===== */
   .bottom-nav {
@@ -244,8 +253,9 @@
           <h1 id="homeGreeting">Salut 👋</h1>
         </div>
 
-        <!-- État 1 : nouveau / aucune session aujourd'hui -->
+        <!-- État 1 : aucune session aujourd'hui -->
         <div id="homeState1" class="card">
+          <p class="home-subtitle">Qu'est-ce que tu veux accomplir aujourd'hui ?</p>
           <label class="field-label" for="taskInput">Sur quoi tu travailles ?</label>
           <input id="taskInput" class="text-input" type="text" maxlength="120" placeholder="Ex : Rapport client, révisions..." />
           <button class="btn btn-primary btn-block" onclick="startSession()">Lancer une session</button>
@@ -257,7 +267,7 @@
           <p class="session-task-label" id="sessionTaskLabel"></p>
           <div class="timer-display" id="timerDisplay">00:00</div>
           <div class="session-actions">
-            <button class="btn btn-primary btn-block" onclick="finishSession()">Terminer</button>
+            <button class="btn btn-primary btn-block" onclick="finishSession()">Terminer la session</button>
             <button class="btn btn-ghost-danger btn-block" onclick="interruptSession()">Interrompre</button>
           </div>
         </div>
@@ -274,10 +284,19 @@
           <button class="btn btn-primary btn-block" onclick="confirmInterruption()">Confirmer</button>
         </div>
 
-        <!-- État 3b : confirmation -->
-        <div id="homeState3b" class="card" style="display:none;">
-          <p class="state3b-text">Prédicta a enregistré. Continue ta journée.</p>
+        <!-- État 3 (suite) : confirmation d'interruption -->
+        <div id="homeStateInterruptedDone" class="card" style="display:none;">
+          <p class="state-message-text">Prédicta a enregistré. Continue ta journée.</p>
         </div>
+
+        <!-- État 4 : session terminée -->
+        <div id="homeState4" class="card" style="display:none;">
+          <div class="state4-icon">✅</div>
+          <p class="state-message-text" id="state4Message"></p>
+        </div>
+
+        <p class="section-label">Enseignement du soir</p>
+        <div class="card evening-lesson-card" id="eveningLessonCard"><p class="muted-text">Chargement...</p></div>
       </div>
     </section>
 
@@ -286,19 +305,39 @@
       <div class="page-inner">
         <h1 class="page-title">Prédictions</h1>
 
-        <div id="predictionsEmpty" class="card empty-card" style="display:none;">
-          <p class="empty-title">Prédicta a besoin d'observer quelques sessions avant de pouvoir analyser tes comportements.</p>
-          <p class="empty-sub">Lance ta première session depuis l'accueil.</p>
+        <div id="predictionsLockedIntro" class="card locked-card" style="display:none;">
+          <p class="locked-message">Prédicta a besoin d'observer quelques sessions avant de pouvoir analyser tes comportements.</p>
+          <div class="progress-track"><div class="progress-fill" id="predictionsProgressFill"></div></div>
+          <p class="progress-label" id="predictionsProgressLabel">Jour 1 / 7</p>
         </div>
 
-        <div id="predictionsContent" style="display:none;">
-          <div class="prediction-card-hero" id="predictionHeroCard"></div>
+        <p class="section-label">Prédiction du jour</p>
+        <div id="predSection1Locked" class="card locked-section" style="display:none;">
+          <span class="lock-icon">🔒</span><span class="muted-text">Disponible à partir du jour 7</span>
+        </div>
+        <div id="predSection1Unlocked" style="display:none;"></div>
 
-          <p class="section-label">Patterns détectés</p>
-          <div id="predictionsPatternsList" class="patterns-list"></div>
+        <p class="section-label">Patterns détectés</p>
+        <div id="predSection2Locked" class="card locked-section" style="display:none;">
+          <span class="lock-icon">🔒</span><span class="muted-text">Disponible à partir du jour 7</span>
+        </div>
+        <div id="predSection2Unlocked" style="display:none;"></div>
 
-          <p class="section-label">Enseignement du soir</p>
-          <div class="card lesson-card" id="lessonCard"></div>
+        <p class="section-label">Historique</p>
+        <div id="predSection3Locked" class="card locked-section" style="display:none;">
+          <span class="lock-icon">🔒</span><span class="muted-text">Disponible à partir du jour 7</span>
+        </div>
+        <div id="predSection3Unlocked" class="card" style="display:none;">
+          <div class="chart-toggle">
+            <button type="button" class="chart-toggle-btn active" data-range="week" onclick="renderHistoryChart('week')">Cette semaine</button>
+            <button type="button" class="chart-toggle-btn" data-range="month" onclick="renderHistoryChart('month')">Ce mois</button>
+          </div>
+          <div class="chart-stats-row">
+            <div class="chart-stat"><span class="stat-value" id="chartStatSessions">0</span><span class="stat-label">Sessions</span></div>
+            <div class="chart-stat"><span class="stat-value" id="chartStatAvg">0 min</span><span class="stat-label">Durée moy.</span></div>
+            <div class="chart-stat"><span class="stat-value" id="chartStatCompletion">0%</span><span class="stat-label">Complétion</span></div>
+          </div>
+          <div id="chartSvgWrap" class="chart-svg-wrap"></div>
         </div>
       </div>
     </section>
@@ -334,6 +373,7 @@
             <div class="stat-box"><span class="stat-value" id="statSessionsCount">0</span><span class="stat-label">Sessions</span></div>
             <div class="stat-box"><span class="stat-value" id="statAvgDuration">0 min</span><span class="stat-label">Durée moy.</span></div>
             <div class="stat-box"><span class="stat-value" id="statCompletionRate">0%</span><span class="stat-label">Complétion</span></div>
+            <div class="stat-box"><span class="stat-value" id="statInterruptions">0</span><span class="stat-label">Interruptions</span></div>
           </div>
         </div>
       </div>
@@ -347,6 +387,7 @@
         <div class="card">
           <div class="settings-row"><span class="settings-label">Prénom</span><span class="settings-value" id="settingsName">—</span></div>
           <div class="settings-row"><span class="settings-label">Email</span><span class="settings-value" id="settingsEmail">—</span></div>
+          <div class="settings-row"><span class="settings-label">Inscrit le</span><span class="settings-value" id="settingsSignupDate">—</span></div>
         </div>
 
         <div class="card">
@@ -384,14 +425,18 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/js/supabase-client.js"></script>
 <script>
-  const ACTIVE_KEY = 'predicta_active_session';
-  const PENDING_KEY = 'predicta_pending_interruption';
-
   let currentUser = null;
   let currentProfile = null;
   let todaySessionsCache = [];
+  let historySessions = [];
+
+  let activeSession = null;          // { id, notes, started_at } — the live Supabase row
+  let homeState = 'idle';            // idle | running | interrupting | interrupted-done | completed
+  let interruptDurationMin = null;
+  let lastCompletedDurationMin = null;
   let timerIntervalId = null;
   let selectedReason = null;
+
   let predictionsLoaded = false;
   let brainLoaded = false;
   let settingsLoaded = false;
@@ -421,8 +466,18 @@
     const created = new Date(dateStr).getTime();
     return Math.max(1, Math.floor((Date.now() - created) / 86400000) + 1);
   }
+  function computeElapsedMinutes(startedAtIso) {
+    return Math.max(1, Math.round((Date.now() - new Date(startedAtIso).getTime()) / 60000));
+  }
+  function animateProgressFill(el, targetPct) {
+    if (!el) return;
+    el.style.width = '0%';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { el.style.width = `${targetPct}%`; });
+    });
+  }
 
-  // ===== Navigation =====
+  // ===== Navigation (no page reloads — pure JS tab switching) =====
   function showPage(name) {
     document.querySelectorAll('.page').forEach((p) => p.classList.remove('active'));
     document.getElementById('page-' + name).classList.add('active');
@@ -439,13 +494,6 @@
   }
 
   // ===== ACCUEIL =====
-  function getActiveSession() {
-    try { return JSON.parse(localStorage.getItem(ACTIVE_KEY)); } catch { return null; }
-  }
-  function getPendingInterruption() {
-    try { return JSON.parse(localStorage.getItem(PENDING_KEY)); } catch { return null; }
-  }
-
   function renderHome() {
     document.getElementById('homeDate').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
     const firstName = (currentProfile?.display_name || '').trim().split(' ')[0];
@@ -454,34 +502,52 @@
     document.getElementById('homeState1').style.display = 'none';
     document.getElementById('homeState2').style.display = 'none';
     document.getElementById('homeState3').style.display = 'none';
-    document.getElementById('homeState3b').style.display = 'none';
+    document.getElementById('homeStateInterruptedDone').style.display = 'none';
+    document.getElementById('homeState4').style.display = 'none';
     stopTimerLoop();
 
-    const active = getActiveSession();
-    const pending = getPendingInterruption();
-
-    if (active) {
+    if (homeState === 'running' && activeSession) {
       document.getElementById('homeState2').style.display = 'block';
-      document.getElementById('sessionTaskLabel').textContent = active.taskName || 'Session de focus';
-      startTimerLoop(active.startedAt);
-    } else if (pending) {
+      document.getElementById('sessionTaskLabel').textContent = activeSession.notes || 'Session de focus';
+      startTimerLoop(activeSession.started_at);
+    } else if (homeState === 'interrupting') {
       document.getElementById('homeState3').style.display = 'block';
       resetReasonPicker();
+    } else if (homeState === 'interrupted-done') {
+      document.getElementById('homeStateInterruptedDone').style.display = 'block';
+    } else if (homeState === 'completed') {
+      document.getElementById('homeState4').style.display = 'block';
+      document.getElementById('state4Message').textContent =
+        `Session terminée. ${lastCompletedDurationMin} minute${lastCompletedDurationMin > 1 ? 's' : ''}. Prédicta a enregistré.`;
     } else {
+      homeState = 'idle';
       document.getElementById('homeState1').style.display = 'block';
       const count = todaySessionsCache.length;
       document.getElementById('homeTodayCount').textContent = count > 0
         ? `${count} session${count > 1 ? 's' : ''} aujourd'hui.`
         : '';
     }
+
+    renderEveningLessonCard();
   }
 
-  function startSession() {
-    const taskName = document.getElementById('taskInput').value.trim();
-    localStorage.setItem(ACTIVE_KEY, JSON.stringify({ taskName, startedAt: new Date().toISOString() }));
-    document.getElementById('taskInput').value = '';
-    renderHome();
-    showToast('Session lancée. Prédicta observe.', 'success');
+  async function startSession() {
+    const taskInput = document.getElementById('taskInput');
+    const taskName = taskInput.value.trim();
+    if (!taskName) {
+      showToast('Dis à Prédicta sur quoi tu travailles.', 'error');
+      return;
+    }
+    try {
+      activeSession = await predictaStartSession(taskName);
+      taskInput.value = '';
+      homeState = 'running';
+      renderHome();
+      showToast('Session lancée. Prédicta observe.', 'success');
+    } catch (err) {
+      console.error('[predicta] startSession error', err.message);
+      showToast('Erreur au démarrage de la session.', 'error');
+    }
   }
 
   function startTimerLoop(startedAtIso) {
@@ -501,18 +567,19 @@
   }
 
   async function finishSession() {
-    const active = getActiveSession();
-    if (!active) return;
+    if (!activeSession) return;
     stopTimerLoop();
-    const durationMin = Math.max(1, Math.round((Date.now() - new Date(active.startedAt).getTime()) / 60000));
+    const durationMin = computeElapsedMinutes(activeSession.started_at);
     try {
-      await predictaCompleteSession({ taskName: active.taskName, startedAt: active.startedAt, durationMin });
-      localStorage.removeItem(ACTIVE_KEY);
-      showToast('Session enregistrée. Bien joué.', 'success');
+      await predictaCompleteActiveSession(activeSession.id, durationMin);
+      lastCompletedDurationMin = durationMin;
+      activeSession = null;
+      homeState = 'completed';
+      renderHome();
       todaySessionsCache = await predictaGetTodaySessions();
       predictionsLoaded = false;
       brainLoaded = false;
-      renderHome();
+      setTimeout(() => { homeState = 'idle'; renderHome(); }, 3000);
     } catch (err) {
       console.error('[predicta] finishSession error', err.message);
       showToast("Erreur lors de l'enregistrement.", 'error');
@@ -520,12 +587,10 @@
   }
 
   function interruptSession() {
-    const active = getActiveSession();
-    if (!active) return;
+    if (!activeSession) return;
     stopTimerLoop();
-    const durationMin = Math.max(1, Math.round((Date.now() - new Date(active.startedAt).getTime()) / 60000));
-    localStorage.setItem(PENDING_KEY, JSON.stringify({ taskName: active.taskName, startedAt: active.startedAt, durationMin }));
-    localStorage.removeItem(ACTIVE_KEY);
+    interruptDurationMin = computeElapsedMinutes(activeSession.started_at);
+    homeState = 'interrupting';
     renderHome();
   }
 
@@ -553,111 +618,241 @@
   });
 
   async function confirmInterruption() {
-    const pending = getPendingInterruption();
-    if (!pending) return;
+    if (!activeSession) return;
 
     let reason = selectedReason;
     if (!reason) { showToast('Choisis une option.', 'error'); return; }
     if (reason === '__other__') {
       reason = document.getElementById('reasonOtherInput').value.trim();
-      if (!reason) { showToast('Précise ce qui s\'est passé.', 'error'); return; }
+      if (!reason) { showToast("Précise ce qui s'est passé.", 'error'); return; }
     }
 
     try {
-      await predictaInterruptSession({
-        taskName: pending.taskName,
-        startedAt: pending.startedAt,
-        durationMin: pending.durationMin,
-        interruptionReason: reason,
-      });
-      localStorage.removeItem(PENDING_KEY);
+      await predictaInterruptActiveSession(activeSession.id, interruptDurationMin, reason);
+      activeSession = null;
+      homeState = 'interrupted-done';
+      renderHome();
       todaySessionsCache = await predictaGetTodaySessions();
       predictionsLoaded = false;
       brainLoaded = false;
-      document.getElementById('homeState3').style.display = 'none';
-      document.getElementById('homeState3b').style.display = 'block';
-      setTimeout(renderHome, 2500);
+      setTimeout(() => { homeState = 'idle'; renderHome(); }, 3000);
     } catch (err) {
       console.error('[predicta] confirmInterruption error', err.message);
       showToast("Erreur lors de l'enregistrement.", 'error');
     }
   }
 
-  // ===== PRÉDICTIONS =====
-  async function loadPredictions() {
-    predictionsLoaded = true;
-    const predictions = await predictaGetPredictions(20);
-    const empty = document.getElementById('predictionsEmpty');
-    const content = document.getElementById('predictionsContent');
+  // ===== Enseignement du soir (persistent card on Accueil) =====
+  async function renderEveningLessonCard() {
+    const el = document.getElementById('eveningLessonCard');
+    if (!el) return;
 
-    if (predictions.length === 0) {
-      empty.style.display = 'block';
-      content.style.display = 'none';
-    } else {
-      empty.style.display = 'none';
-      content.style.display = 'block';
-
-      const [latest, ...rest] = predictions;
-      document.getElementById('predictionHeroCard').innerHTML = `
-        <p class="prediction-eyebrow">Prédiction du jour</p>
-        <p class="prediction-text">${escapeHtml(latest.prediction_text)}</p>
-        <p class="prediction-date">${formatDate(latest.created_at)}</p>
-      `;
-
-      const list = document.getElementById('predictionsPatternsList');
-      list.innerHTML = rest.length === 0
-        ? `<p class="muted-text" style="padding:14px 0;">Pas encore d'autre pattern détecté.</p>`
-        : rest.map((p) => `
-            <div class="pattern-item">
-              <p>${escapeHtml(p.prediction_text)}</p>
-              <span class="pattern-date">${formatDate(p.created_at)}</span>
-            </div>
-          `).join('');
-    }
-
-    await renderEveningLesson();
-  }
-
-  async function renderEveningLesson() {
-    const lessonCard = document.getElementById('lessonCard');
     const now = new Date();
     const threshold = currentProfile?.evening_lesson_hour ?? 17;
     const hasSessionToday = todaySessionsCache.length > 0;
-    const todayStr = now.toISOString().slice(0, 10);
     const thresholdLabel = `${String(threshold).padStart(2, '0')}h`;
 
+    if (!hasSessionToday) {
+      el.innerHTML = `<p>Lance une session aujourd'hui — Prédicta analysera ce qui s'est passé et t'expliquera ce soir à ${thresholdLabel} pourquoi ton cerveau a réagi comme ça.</p>`;
+      return;
+    }
     if (now.getHours() < threshold) {
-      lessonCard.innerHTML = hasSessionToday
-        ? `<p>Prédicta analysera ta journée ce soir à ${thresholdLabel}.</p>`
-        : `<p>Lance une session — Prédicta analysera ta journée ce soir à ${thresholdLabel}.</p>`;
+      el.innerHTML = `<p>Prédicta analysera ta journée ce soir à ${thresholdLabel}.</p>`;
       return;
     }
 
+    const todayStr = now.toISOString().slice(0, 10);
     const cached = await predictaGetDailyLessonForDate(todayStr);
     if (cached?.lesson_text) {
       const lessonCreatedAt = new Date(cached.created_at).getTime();
       const newerSession = todaySessionsCache.some((s) => new Date(s.started_at).getTime() > lessonCreatedAt);
-      lessonCard.innerHTML = newerSession
+      el.innerHTML = newerSession
         ? `<p>Prédicta a enregistré. L'analyse de demain en tiendra compte.</p>`
         : `<p>${escapeHtml(cached.lesson_text)}</p>`;
       return;
     }
 
-    if (!hasSessionToday) {
-      lessonCard.innerHTML = `<p>Lance une session — Prédicta analysera ta journée ce soir à ${thresholdLabel}.</p>`;
-      return;
-    }
-
-    lessonCard.innerHTML = `<p class="muted-text">Prédicta analyse ta journée...</p>`;
+    el.innerHTML = `<p class="muted-text">Prédicta analyse ta journée...</p>`;
     try {
       const { lessonText } = await predictaDailyLesson();
-      lessonCard.innerHTML = lessonText
+      el.innerHTML = lessonText
         ? `<p>${escapeHtml(lessonText)}</p>`
         : `<p class="muted-text">Enseignement momentanément indisponible.</p>`;
     } catch (err) {
-      console.error('[predicta] renderEveningLesson error', err.message);
-      lessonCard.innerHTML = `<p class="muted-text">Enseignement momentanément indisponible, réessaie plus tard.</p>`;
+      console.error('[predicta] renderEveningLessonCard error', err.message);
+      el.innerHTML = `<p class="muted-text">Enseignement momentanément indisponible, réessaie plus tard.</p>`;
     }
+  }
+
+  // ===== PRÉDICTIONS =====
+  async function loadPredictions() {
+    predictionsLoaded = true;
+    const dayJ = dayNumberSince(currentProfile.created_at);
+    const locked = dayJ < 7;
+
+    document.getElementById('predictionsLockedIntro').style.display = locked ? 'block' : 'none';
+    ['predSection1', 'predSection2', 'predSection3'].forEach((id) => {
+      document.getElementById(id + 'Locked').style.display = locked ? 'flex' : 'none';
+      document.getElementById(id + 'Unlocked').style.display = locked ? 'none' : 'block';
+    });
+
+    if (locked) {
+      document.getElementById('predictionsProgressLabel').textContent = `Jour ${dayJ} / 7`;
+      animateProgressFill(document.getElementById('predictionsProgressFill'), Math.min(100, (dayJ / 7) * 100));
+      return;
+    }
+
+    const predictions = await predictaGetPredictions(1);
+    document.getElementById('predSection1Unlocked').innerHTML = predictions.length
+      ? `<div class="prediction-card-hero">
+           <p class="prediction-eyebrow">Prédiction du jour</p>
+           <p class="prediction-text">${escapeHtml(predictions[0].prediction_text)}</p>
+           <p class="prediction-date">${formatDate(predictions[0].created_at)}</p>
+         </div>`
+      : `<div class="card"><p class="muted-text">Prédicta analyse encore tes patterns.</p></div>`;
+
+    const allSessions = await predictaGetRecentSessions(1000);
+    const finished = allSessions.filter((s) => s.status !== 'in_progress');
+
+    const patterns = computePatterns(finished);
+    document.getElementById('predSection2Unlocked').innerHTML = patterns.length
+      ? patterns.map((p) => `<div class="card pattern-card">${escapeHtml(p)}</div>`).join('')
+      : `<div class="card"><p class="muted-text">Pas encore assez de données pour dégager des patterns.</p></div>`;
+
+    historySessions = finished;
+    renderHistoryChart('week');
+  }
+
+  function computePatterns(sessions) {
+    const patterns = [];
+    const terminal = sessions.filter((s) => s.status === 'completed' || s.status === 'interrupted');
+    if (terminal.length < 3) return patterns;
+
+    // Worst day of the week (lowest completion rate, min 2 sessions that day)
+    const dayNames = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+    const byDay = {};
+    terminal.forEach((s) => {
+      const d = new Date(s.started_at).getDay();
+      byDay[d] = byDay[d] || { completed: 0, total: 0 };
+      byDay[d].total++;
+      if (s.status === 'completed') byDay[d].completed++;
+    });
+    let worstDay = null, worstRate = 1.1;
+    Object.entries(byDay).forEach(([d, v]) => {
+      if (v.total >= 2) {
+        const rate = v.completed / v.total;
+        if (rate < worstRate) { worstRate = rate; worstDay = Number(d); }
+      }
+    });
+    if (worstDay !== null && worstRate < 0.6) {
+      patterns.push(`Le ${dayNames[worstDay]} est ton jour le plus difficile.`);
+    }
+
+    // Long sessions dropping out more than short ones
+    const durations = terminal.map((s) => s.duration_min).filter((d) => Number.isFinite(d)).sort((a, b) => a - b);
+    if (durations.length >= 4) {
+      const median = durations[Math.floor(durations.length / 2)];
+      const long = terminal.filter((s) => s.duration_min > median);
+      const short = terminal.filter((s) => s.duration_min <= median);
+      const rate = (arr) => (arr.length ? arr.filter((s) => s.status === 'interrupted').length / arr.length : 0);
+      const longRate = rate(long), shortRate = rate(short);
+      if (long.length >= 2 && short.length >= 2 && longRate - shortRate >= 0.15) {
+        patterns.push('Tu décroches plus souvent après des tâches longues.');
+      }
+    }
+
+    // Dominant interruption trigger
+    const reasons = terminal.filter((s) => s.status === 'interrupted' && s.interruption_reason).map((s) => s.interruption_reason);
+    if (reasons.length >= 2) {
+      const counts = {};
+      reasons.forEach((r) => { counts[r] = (counts[r] || 0) + 1; });
+      const [topReason, topCount] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+      if (topCount >= 2) patterns.push(`Ton principal point de décrochage : ${topReason}`);
+    }
+
+    return patterns.slice(0, 3);
+  }
+
+  function renderHistoryChart(range) {
+    document.querySelectorAll('.chart-toggle-btn').forEach((b) => b.classList.toggle('active', b.dataset.range === range));
+
+    const days = range === 'month' ? 30 : 7;
+    const buckets = buildDailyBuckets(historySessions, days);
+
+    const totalSessions = buckets.reduce((s, b) => s + b.count, 0);
+    const totalCompleted = buckets.reduce((s, b) => s + b.completed, 0);
+    const avgDur = totalSessions ? Math.round(buckets.reduce((s, b) => s + b.totalMin, 0) / totalSessions) : 0;
+    const completionRate = totalSessions ? Math.round((totalCompleted / totalSessions) * 100) : 0;
+
+    document.getElementById('chartStatSessions').textContent = String(totalSessions);
+    document.getElementById('chartStatAvg').textContent = `${avgDur} min`;
+    document.getElementById('chartStatCompletion').textContent = `${completionRate}%`;
+
+    const chartData = buckets.map((b) => ({ label: b.label, value: b.totalMin }));
+    document.getElementById('chartSvgWrap').innerHTML = buildLineChartSVG(chartData, 320, 140, days > 7);
+  }
+
+  function buildDailyBuckets(sessions, days) {
+    const dayLabels = ['Di', 'Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa'];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const buckets = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      buckets.push({
+        time: d.getTime(),
+        label: days > 7 ? String(d.getDate()) : dayLabels[d.getDay()],
+        totalMin: 0,
+        count: 0,
+        completed: 0,
+      });
+    }
+
+    sessions.forEach((s) => {
+      const sd = new Date(s.started_at);
+      sd.setHours(0, 0, 0, 0);
+      const bucket = buckets.find((b) => b.time === sd.getTime());
+      if (!bucket) return;
+      bucket.count++;
+      bucket.totalMin += s.duration_min || 0;
+      if (s.status === 'completed') bucket.completed++;
+    });
+
+    return buckets;
+  }
+
+  function buildLineChartSVG(data, width, height, sparseLabels) {
+    const padL = 8, padR = 8, padT = 12, padB = 22;
+    const innerW = width - padL - padR;
+    const innerH = height - padT - padB;
+    const maxVal = Math.max(1, ...data.map((d) => d.value));
+    const stepX = data.length > 1 ? innerW / (data.length - 1) : 0;
+
+    const points = data.map((d, i) => ({
+      x: padL + i * stepX,
+      y: padT + innerH - (d.value / maxVal) * innerH,
+    }));
+
+    const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+    const areaPath = `${linePath} L ${points[points.length - 1].x.toFixed(1)} ${padT + innerH} L ${points[0].x.toFixed(1)} ${padT + innerH} Z`;
+
+    const dots = points.map((p, i) => (data[i].value > 0
+      ? `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="#6C5CE7"/>`
+      : '')).join('');
+
+    const showLabel = (i) => !sparseLabels || i === 0 || i === data.length - 1 || i === Math.floor(data.length / 2);
+    const labels = points.map((p, i) => (showLabel(i)
+      ? `<text x="${p.x.toFixed(1)}" y="${height - 6}" font-size="9" fill="#78716C" text-anchor="middle" font-family="'Space Mono',monospace">${escapeHtml(data[i].label)}</text>`
+      : '')).join('');
+
+    return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" preserveAspectRatio="none">
+      <path d="${areaPath}" fill="#6C5CE7" opacity="0.12"/>
+      <path d="${linePath}" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      ${dots}
+      ${labels}
+    </svg>`;
   }
 
   // ===== MON CERVEAU =====
@@ -671,7 +866,7 @@
       lockedEl.style.display = 'block';
       unlockedEl.style.display = 'none';
       document.getElementById('brainProgressLabel').textContent = `Jour ${dayJ} / 7`;
-      document.getElementById('brainProgressFill').style.width = `${Math.min(100, (dayJ / 7) * 100)}%`;
+      animateProgressFill(document.getElementById('brainProgressFill'), Math.min(100, (dayJ / 7) * 100));
       return;
     }
 
@@ -680,13 +875,14 @@
 
     const [metrics, sessions] = await Promise.all([
       predictaGetLatestBrainMetrics(),
-      predictaGetRecentSessions(500),
+      predictaGetRecentSessions(1000),
     ]);
+    const finished = sessions.filter((s) => s.status !== 'in_progress');
 
     renderCognitiveProfile(metrics);
-    renderBestSlot(sessions);
-    renderTriggers(sessions);
-    renderBrainStats(sessions);
+    renderBestSlot(finished);
+    renderTriggers(finished);
+    renderBrainStats(finished);
   }
 
   function renderCognitiveProfile(metrics) {
@@ -716,7 +912,7 @@
       if (h >= 5 && h < 12) key = 'Matin (5h-12h)';
       else if (h >= 12 && h < 18) key = 'Après-midi (12h-18h)';
       else if (h >= 18 && h < 23) key = 'Soir (18h-23h)';
-      buckets[key].push(s.focus_score ?? s.duration_min);
+      buckets[key].push(s.focus_score ?? s.duration_min ?? 0);
     });
     let best = null, bestAvg = -1;
     for (const [key, vals] of Object.entries(buckets)) {
@@ -748,12 +944,14 @@
   function renderBrainStats(sessions) {
     const total = sessions.length;
     const completed = sessions.filter((s) => s.status === 'completed').length;
-    const avgDur = total ? Math.round(sessions.reduce((s, x) => s + x.duration_min, 0) / total) : 0;
+    const interrupted = sessions.filter((s) => s.status === 'interrupted').length;
+    const avgDur = total ? Math.round(sessions.reduce((s, x) => s + (x.duration_min || 0), 0) / total) : 0;
     const completionRate = total ? Math.round((completed / total) * 100) : 0;
 
     document.getElementById('statSessionsCount').textContent = String(total);
     document.getElementById('statAvgDuration').textContent = `${avgDur} min`;
     document.getElementById('statCompletionRate').textContent = `${completionRate}%`;
+    document.getElementById('statInterruptions').textContent = String(interrupted);
   }
 
   // ===== RÉGLAGES =====
@@ -761,6 +959,9 @@
     settingsLoaded = true;
     document.getElementById('settingsName').textContent = currentProfile?.display_name || '—';
     document.getElementById('settingsEmail').textContent = currentProfile?.email || currentUser?.email || '—';
+    document.getElementById('settingsSignupDate').textContent = currentProfile?.created_at
+      ? new Date(currentProfile.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+      : '—';
 
     const select = document.getElementById('lessonHourSelect');
     select.innerHTML = Array.from({ length: 24 }, (_, h) => `<option value="${h}">${String(h).padStart(2, '0')}h</option>`).join('');
@@ -784,11 +985,9 @@
 
   async function handleDeleteAccount() {
     if (!confirm('Supprimer définitivement ton compte et toutes tes données ? Cette action est irréversible.')) return;
-    if (!confirm('Es-tu vraiment sûr(e) ? Il n\'y a pas de retour en arrière possible.')) return;
+    if (!confirm("Es-tu vraiment sûr(e) ? Il n'y a pas de retour en arrière possible.")) return;
     try {
       await predictaDeleteAccount();
-      localStorage.removeItem(ACTIVE_KEY);
-      localStorage.removeItem(PENDING_KEY);
       window.location.href = '/index.html';
     } catch (err) {
       console.error('[predicta] deleteAccount error', err.message);
@@ -813,7 +1012,16 @@
     document.getElementById('authGate').style.display = 'none';
     document.getElementById('app').style.display = 'flex';
 
-    todaySessionsCache = await predictaGetTodaySessions();
+    const [active, today] = await Promise.all([
+      predictaGetActiveSession(),
+      predictaGetTodaySessions(),
+    ]);
+    todaySessionsCache = today;
+    if (active) {
+      activeSession = active;
+      homeState = 'running';
+    }
+
     updateBrainTabLock();
     renderHome();
   }
