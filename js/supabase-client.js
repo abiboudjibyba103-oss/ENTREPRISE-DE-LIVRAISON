@@ -33,6 +33,35 @@ async function predictaGetSession() {
 }
 
 /**
+ * Returns the total number of people on the waitlist. The waitlist table
+ * itself has no public select policy (RLS), so this goes through the
+ * security-definer `get_waitlist_count` RPC, which exposes only the
+ * aggregate count, never individual rows.
+ */
+async function predictaGetWaitlistCount() {
+  const { data, error } = await supabaseClient.rpc('get_waitlist_count');
+  if (error) {
+    console.error('[predicta] getWaitlistCount error', error.message);
+    return 0;
+  }
+  return typeof data === 'number' ? data : 0;
+}
+
+/**
+ * Returns the timestamp of the earliest waitlist signup, or null if the
+ * waitlist is empty. Used to anchor the landing page's 17-day launch
+ * countdown when no explicit launch date is configured.
+ */
+async function predictaGetWaitlistFirstSignupAt() {
+  const { data, error } = await supabaseClient.rpc('get_waitlist_first_signup_at');
+  if (error) {
+    console.error('[predicta] getWaitlistFirstSignupAt error', error.message);
+    return null;
+  }
+  return data || null;
+}
+
+/**
  * Pre-launch sign-up: registers name + email + phone on the waitlist via
  * the `waitlist-join` edge function, optionally linking the signup to
  * whoever referred them. Returns { referralCode, alreadyRegistered }.
@@ -100,8 +129,13 @@ async function predictaSignUpWithPassword(email, password, displayName, referral
 
   if (error) throw error;
 
-  // Best-effort waitlist capture (insert-only, RLS protected)
-  await supabaseClient.from('waitlist').insert({ email }).select().maybeSingle();
+  // Best-effort waitlist capture (insert-only, RLS protected; a caller
+  // may only attach their own user_id, see waitlist_insert_anyone policy).
+  await supabaseClient
+    .from('waitlist')
+    .insert({ user_id: data.user?.id ?? null, email, name: signUpData.display_name })
+    .select()
+    .maybeSingle();
 
   return data;
 }

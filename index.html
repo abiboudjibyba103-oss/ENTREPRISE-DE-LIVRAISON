@@ -562,6 +562,11 @@
     .cta-note { color: rgba(255,255,255,0.5); font-size: 13px; }
     .cta-note svg { display: inline; vertical-align: middle; margin-right: 4px; }
 
+    .cta-countdown { display: flex; justify-content: center; gap: 22px; margin-bottom: 32px; }
+    .countdown-unit { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 46px; }
+    .countdown-num { font-family: 'Space Mono', monospace; font-size: 28px; font-weight: 700; color: #fff; }
+    .countdown-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.6); }
+
     /* Waitlist form (pre-launch sign-up) */
     .waitlist-form { display: flex; flex-direction: column; gap: 12px; max-width: 480px; margin: 0 auto 20px; }
     .waitlist-perks {
@@ -750,7 +755,7 @@
             <div class="trust-avatar ta-2">F</div>
             <div class="trust-avatar ta-3">M</div>
           </div>
-          <span>+200 personnes sur la liste d'attente</span>
+          <span id="hero-trust-count">Chargement de la liste d'attente...</span>
         </div>
       </div>
 
@@ -999,14 +1004,21 @@
 <section id="final-cta">
   <div class="container">
     <div class="final-cta-inner fade-up">
-      <span class="section-tag" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.2);">233 places · 17 jours · Gratuit</span>
+      <span class="section-tag" id="ctaPlacesTag" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.2);">233 places · Gratuit</span>
       <h2>Pour les personnes <span style="color:var(--violet);">sérieuses</span>.<br>Pas pour tout le monde.</h2>
       <p style="max-width:460px;margin:0 auto 32px;">Je cherche 233 personnes prêtes à changer leur façon de travailler — et à tester l'app honnêtement. Elle est toute récente, il peut y avoir des bugs. En échange : accès complet, gratuit, pendant 17 jours.</p>
+
+      <div class="cta-countdown" id="ctaCountdown" style="display:none;">
+        <div class="countdown-unit"><span class="countdown-num" id="cdDays">17</span><span class="countdown-label">jours</span></div>
+        <div class="countdown-unit"><span class="countdown-num" id="cdHours">00</span><span class="countdown-label">heures</span></div>
+        <div class="countdown-unit"><span class="countdown-num" id="cdMinutes">00</span><span class="countdown-label">min</span></div>
+        <div class="countdown-unit"><span class="countdown-num" id="cdSeconds">00</span><span class="countdown-label">sec</span></div>
+      </div>
 
       <form class="waitlist-form" id="waitlist-form" onsubmit="handleWaitlistSubmit(event)">
         <input type="text" class="cta-email-input" placeholder="Ton prénom" required id="waitlist-name" maxlength="100" />
         <input type="email" class="cta-email-input" placeholder="ton@email.com" required id="waitlist-email" maxlength="255" />
-        <input type="password" class="cta-email-input" placeholder="Choisis un mot de passe" required id="waitlist-password" minlength="6" />
+        <input type="password" class="cta-email-input" placeholder="Choisis un mot de passe" required id="waitlist-password" minlength="8" />
         <p id="waitlist-error" class="form-error" style="display:none;"></p>
         <button type="submit" class="btn btn-white btn-lg magnetic">
           Je veux une place
@@ -1216,12 +1228,7 @@
     btn.textContent = 'Création en cours...';
 
     try {
-      const { error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: { data: { display_name: name } }
-      });
-      if (error) throw error;
+      await predictaSignUpWithPassword(email, password, name);
       form.style.display = 'none';
       document.getElementById('waitlist-success').style.display = 'block';
       setTimeout(() => {
@@ -1248,6 +1255,59 @@
       }
     });
   });
+
+  /* --- Live waitlist data: headcount, places remaining, launch countdown --- */
+  const TOTAL_SPOTS = 233;
+  const COUNTDOWN_DAYS = 17;
+  let countdownIntervalId = null;
+
+  async function loadWaitlistStats() {
+    const [count, firstSignupAt] = await Promise.all([
+      predictaGetWaitlistCount(),
+      predictaGetWaitlistFirstSignupAt(),
+    ]);
+
+    const heroCountEl = document.getElementById('hero-trust-count');
+    if (heroCountEl) {
+      heroCountEl.textContent = count > 0
+        ? `+${count} personne${count > 1 ? 's' : ''} sur la liste d'attente`
+        : `Sois parmi les premiers sur la liste d'attente`;
+    }
+
+    const remaining = Math.max(0, TOTAL_SPOTS - count);
+    const placesTag = document.getElementById('ctaPlacesTag');
+    if (placesTag) {
+      placesTag.textContent = `${remaining} place${remaining > 1 ? 's' : ''} restante${remaining > 1 ? 's' : ''} · Gratuit`;
+    }
+
+    if (firstSignupAt) {
+      const deadline = new Date(firstSignupAt).getTime() + COUNTDOWN_DAYS * 24 * 60 * 60 * 1000;
+      startCountdown(deadline);
+    }
+  }
+
+  function startCountdown(deadlineMs) {
+    const el = document.getElementById('ctaCountdown');
+    if (!el) return;
+    el.style.display = 'flex';
+
+    function tick() {
+      const remainingMs = Math.max(0, deadlineMs - Date.now());
+      const days = Math.floor(remainingMs / 86400000);
+      const hours = Math.floor((remainingMs % 86400000) / 3600000);
+      const minutes = Math.floor((remainingMs % 3600000) / 60000);
+      const seconds = Math.floor((remainingMs % 60000) / 1000);
+      document.getElementById('cdDays').textContent = String(days).padStart(2, '0');
+      document.getElementById('cdHours').textContent = String(hours).padStart(2, '0');
+      document.getElementById('cdMinutes').textContent = String(minutes).padStart(2, '0');
+      document.getElementById('cdSeconds').textContent = String(seconds).padStart(2, '0');
+      if (remainingMs <= 0) clearInterval(countdownIntervalId);
+    }
+    tick();
+    countdownIntervalId = setInterval(tick, 1000);
+  }
+
+  loadWaitlistStats();
 </script>
 
 </body>

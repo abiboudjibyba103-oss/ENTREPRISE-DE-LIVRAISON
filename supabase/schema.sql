@@ -254,6 +254,7 @@ create policy "predictions_delete_own" on public.predictions
 -- ------------------------------------------------------------
 create table if not exists public.waitlist (
   id               uuid primary key default gen_random_uuid(),
+  user_id          uuid references auth.users(id) on delete set null,
   email            text not null unique,
   name             text,
   phone            text,
@@ -267,11 +268,15 @@ alter table public.waitlist add column if not exists name text;
 alter table public.waitlist add column if not exists phone text;
 alter table public.waitlist add column if not exists referral_code text unique;
 alter table public.waitlist add column if not exists referred_by_code text;
+alter table public.waitlist add column if not exists user_id uuid references auth.users(id) on delete set null;
 
 alter table public.waitlist enable row level security;
 
+-- Anyone can insert (pre-launch capture, no auth required), but a
+-- caller may only attach their OWN user_id — never someone else's.
+drop policy if exists "waitlist_insert_anyone" on public.waitlist;
 create policy "waitlist_insert_anyone" on public.waitlist
-  for insert with check (true);
+  for insert with check (user_id is null or auth.uid() = user_id);
 
 -- No select/update/delete policy => only the service_role key
 -- (used server-side only, never in the browser) can read this table.
@@ -315,6 +320,34 @@ as $$
 $$;
 
 grant execute on function public.get_waitlist_referral_count(text) to anon, authenticated;
+
+-- Lets anyone read the total waitlist headcount (for the landing page's
+-- "+N personnes sur la liste d'attente" / "N places restantes" copy)
+-- without exposing individual rows.
+create or replace function public.get_waitlist_count()
+returns integer
+language sql
+security definer set search_path = public
+stable
+as $$
+  select count(*)::integer from public.waitlist;
+$$;
+
+grant execute on function public.get_waitlist_count() to anon, authenticated;
+
+-- Lets anyone read the timestamp of the very first waitlist signup, used
+-- to anchor the landing page's 17-day launch countdown when no explicit
+-- launch date is configured elsewhere.
+create or replace function public.get_waitlist_first_signup_at()
+returns timestamptz
+language sql
+security definer set search_path = public
+stable
+as $$
+  select min(created_at) from public.waitlist;
+$$;
+
+grant execute on function public.get_waitlist_first_signup_at() to anon, authenticated;
 
 
 -- ------------------------------------------------------------
