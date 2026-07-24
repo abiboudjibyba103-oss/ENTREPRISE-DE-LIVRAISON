@@ -91,9 +91,13 @@ Deno.serve(async (req) => {
   const today = new Date().toISOString().slice(0, 10);
   const startOfDay = new Date(`${today}T00:00:00.000Z`);
 
+  // Always re-derive today's sessions from our own trusted query, scoped
+  // to the authenticated user.id — never from client-submitted data, even
+  // if the caller passes a body. This matches every other write/read in
+  // this function and avoids trusting a client-controlled session list.
   const { data: todaySessions } = await supabaseAdmin
     .from('sessions')
-    .select('duration_min, focus_score, status, started_at, notes')
+    .select('duration_min, focus_score, status, started_at, notes, interruption_reason')
     .eq('user_id', user.id)
     .gte('started_at', startOfDay.toISOString())
     .order('started_at', { ascending: true });
@@ -108,9 +112,26 @@ Deno.serve(async (req) => {
     .eq('id', user.id)
     .maybeSingle();
 
+  const totalSessions = todaySessions.length;
+  const completedSessions = todaySessions.filter((s) => s.status === 'completed').length;
+  const interruptedSessions = todaySessions.filter((s) => s.status === 'interrupted').length;
+  const interruptionReasons = todaySessions
+    .filter((s) => s.status === 'interrupted' && s.interruption_reason)
+    .map((s) => s.interruption_reason as string);
+
   const sessionLines = todaySessions
-    .map((s, i) => `Session ${i + 1}: ${s.duration_min} min, focus ${s.focus_score ?? '—'}%, statut "${s.status}"${s.notes ? `, tâche: "${s.notes}"` : ''}`)
+    .map((s, i) => {
+      const parts = [`Session ${i + 1}: ${s.duration_min ?? '?'} min`, `focus ${s.focus_score ?? '—'}%`, `statut "${s.status}"`];
+      if (s.notes) parts.push(`tâche: "${s.notes}"`);
+      if (s.status === 'interrupted' && s.interruption_reason) parts.push(`cause de l'interruption: "${s.interruption_reason}"`);
+      return parts.join(', ');
+    })
     .join('\n');
+
+  const summaryLine = `Résumé du jour: ${totalSessions} session(s) au total, ${completedSessions} terminée(s), ${interruptedSessions} interrompue(s).` +
+    (interruptionReasons.length
+      ? ` Raisons d'interruption données par l'utilisateur : ${interruptionReasons.map((r) => `"${r}"`).join(', ')}.`
+      : '');
 
   const systemPrompt = `Tu es le moteur d'enseignement de Prédicta, une app cognitive pour des utilisateurs sénégalais. Ta seule mission ici: analyser les sessions de focus RÉELLES de l'utilisateur AUJOURD'HUI, et en tirer UN SEUL enseignement scientifique court qui explique précisément SON comportement de la journée — pas une leçon générique.
 
@@ -123,10 +144,17 @@ Règles strictes:
 - Explique le mécanisme scientifique derrière CE comportement précis, en citant le chercheur.
 - Termine par une action concrète à appliquer dès la prochaine session.
 - 4 à 6 phrases maximum. Pas de titres, pas de listes, juste un texte fluide adressé directement à l'utilisateur ("tu").
-- N'invente jamais de données : utilise uniquement les sessions listées ci-dessous.
+- N'invente jamais de données : utilise uniquement les sessions et le résumé listés ci-dessous.
+
+Comment choisir l'angle scientifique selon ce qui s'est vraiment passé:
+- Si une ou plusieurs interruptions ont pour cause "une pensée ou une tâche extérieure a capté mon attention": explique le vagabondage mental (mind-wandering) et la façon dont le réseau cérébral par défaut reprend le dessus sur le réseau attentionnel (Raichle).
+- Si une session a duré environ 10 minutes ou moins avant d'être interrompue ou terminée: parle de la résistance au démarrage plutôt que d'un décrochage en cours de tâche (Sirois & Pychyl — la procrastination est une régulation émotionnelle, pas un manque de temps).
+- Si une session longue (45 minutes ou plus) a été menée jusqu'au bout (statut "completed"): explique le coût de transition cognitif et pourquoi enchaîner immédiatement sur une autre tâche est difficile (Gloria Mark, Sophie Leroy — attention résiduelle).
+- S'il y a plusieurs sessions interrompues aujourd'hui, concentre-toi sur la raison la plus fréquente parmi celles données par l'utilisateur plutôt que de toutes les citer.
 
 Prénom: ${profile?.display_name ?? 'utilisateur'}
-Sessions d'aujourd'hui:
+${summaryLine}
+Sessions d'aujourd'hui (dans l'ordre chronologique):
 ${sessionLines}`;
 
   let aiRes: Response;
