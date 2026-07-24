@@ -239,7 +239,7 @@
 <!-- =============================================
      SUPABASE
 ============================================= -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="/js/supabase-client.js"></script>
 
 <script>
@@ -296,7 +296,10 @@
       setTimeout(() => { window.location.href = '/predicta-dashboard.html'; }, 700);
     } catch (err) {
       console.error('[predicta] login error', err.message);
-      showMessage('login-error', "Email ou mot de passe incorrect.");
+      const msg = /trop de tentatives/i.test(err.message)
+        ? err.message
+        : "Email ou mot de passe incorrect.";
+      showMessage('login-error', msg);
     } finally {
       setLoading('login-submit', false);
     }

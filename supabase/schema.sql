@@ -262,12 +262,25 @@ create policy "predictions_delete_own" on public.predictions
 --    only read their own, same pattern as daily_lessons.
 -- ------------------------------------------------------------
 create table if not exists public.coach_messages (
-  id         uuid primary key default gen_random_uuid(),
-  user_id    uuid not null references auth.users(id) on delete cascade,
-  message    text,
-  reply      text,
-  created_at timestamptz not null default now()
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references auth.users(id) on delete cascade,
+  message      text,
+  reply        text,
+  -- UTC calendar day this message counts against for the 1-question/day
+  -- limit, matching coach-chat's own startOfDay computation. A unique
+  -- constraint (not just an app-level count check) is what actually
+  -- closes the race condition where two near-simultaneous requests both
+  -- pass the count check before either has inserted.
+  message_date date not null default (now() at time zone 'utc')::date,
+  created_at   timestamptz not null default now()
 );
+
+-- Migration for pre-existing databases.
+alter table public.coach_messages add column if not exists message_date date
+  not null default (now() at time zone 'utc')::date;
+
+create unique index if not exists coach_messages_one_per_user_per_day
+  on public.coach_messages (user_id, message_date);
 
 alter table public.coach_messages enable row level security;
 

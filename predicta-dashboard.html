@@ -532,7 +532,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="/js/supabase-client.js"></script>
 <script>
   let currentUser = null;
@@ -585,12 +585,12 @@
   // present) on screen, not a generic "something went wrong" — this is
   // what actually surfaces a missing column, a failed RLS check, etc.
   function showHomeError(err) {
+    // Full error (message + details/hint/code — can include column/constraint
+    // names) stays in the console for debugging. Only the human-readable
+    // message goes on screen, so end users don't see internal schema shape.
     console.error('[predicta] session error', err);
     const el = document.getElementById('homeErrorBanner');
-    const detail = [err?.message, err?.details, err?.hint, err?.code]
-      .filter(Boolean)
-      .join(' — ');
-    el.textContent = `Erreur Supabase : ${detail || 'erreur inconnue (voir la console)'}`;
+    el.textContent = `Erreur : ${err?.message || 'erreur inconnue (voir la console)'}`;
     el.style.display = 'block';
   }
   function clearHomeError() {

@@ -1,7 +1,7 @@
 /* ============================================================
    Prédicta — Supabase client (browser)
    Loaded after the Supabase UMD bundle:
-   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
    <script src="/js/supabase-client.js"></script>
 
    The anon/public key below is safe to expose in the browser:
@@ -22,6 +22,17 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 
 /**
  * Returns the current session, or null if the visitor is not signed in.
+ */
+/**
+ * Reads the LOCAL session (no server round-trip) — used throughout this
+ * file purely to grab `session.user.id` for query filtering. This is
+ * intentionally not getUser(): every query built with that id is
+ * independently re-authorized server-side by Postgres RLS against the
+ * real, signature-verified JWT on each request, so a stale/tampered
+ * local read here cannot bypass authorization — it can only cause a
+ * request to correctly fail. The one place identity actually gates
+ * access to the app (predicta-dashboard.html's init()) uses
+ * supabase.auth.getUser() instead, which does verify server-side.
  */
 async function predictaGetSession() {
   const { data, error } = await supabaseClient.auth.getSession();
@@ -100,9 +111,11 @@ async function predictaGetWaitlistReferralCount(code) {
 }
 
 /**
- * Creates a new account with email + password.
- * A `profiles` row is auto-created by the `handle_new_user` trigger,
- * using `displayName` from the user metadata.
+ * Creates a new account with email + password, via the `auth-rate-limit`
+ * edge function (server-side signUp + per-IP rate limiting + best-effort
+ * waitlist capture). A `profiles` row is auto-created by the
+ * `handle_new_user` trigger, using `displayName` from the user metadata.
+ * On success, loads the returned tokens into the client's own session.
  */
 async function predictaSignUpWithPassword(email, password, displayName, referralCode) {
   email = String(email || '').trim().toLowerCase();
@@ -112,36 +125,41 @@ async function predictaSignUpWithPassword(email, password, displayName, referral
   if (!emailRegex.test(email)) throw new Error('Adresse email invalide');
   if (password.length < 8) throw new Error('Le mot de passe doit contenir au moins 8 caractères');
 
-  const signUpData = { display_name: (displayName || email.split('@')[0]).trim().slice(0, 80) };
-  const safeReferralCode = String(referralCode || '').trim().toUpperCase().slice(0, 16);
-  if (/^[A-Z0-9]{4,16}$/.test(safeReferralCode)) {
-    signUpData.referral_code = safeReferralCode;
-  }
-
-  const { data, error } = await supabaseClient.auth.signUp({
-    email,
-    password,
-    options: {
-      data: signUpData,
+  const { data, error } = await supabaseClient.functions.invoke('auth-rate-limit', {
+    body: {
+      mode: 'signup',
+      email,
+      password,
+      displayName: (displayName || email.split('@')[0]).trim().slice(0, 80),
+      referralCode: String(referralCode || '').trim().toUpperCase().slice(0, 16),
       emailRedirectTo: `${window.location.origin}/predicta-dashboard.html`,
     },
   });
 
-  if (error) throw error;
+  if (error) {
+    const status = error.context?.status;
+    if (status === 429) {
+      throw new Error('Trop de tentatives. Réessaie dans une minute.');
+    }
+    throw error;
+  }
+  if (data?.error) throw new Error(data.error);
 
-  // Best-effort waitlist capture (insert-only, RLS protected; a caller
-  // may only attach their own user_id, see waitlist_insert_anyone policy).
-  await supabaseClient
-    .from('waitlist')
-    .insert({ user_id: data.user?.id ?? null, email, name: signUpData.display_name })
-    .select()
-    .maybeSingle();
+  if (data.session) {
+    await supabaseClient.auth.setSession({
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+    });
+  }
 
   return data;
 }
 
 /**
- * Signs in an existing user with email + password.
+ * Signs in an existing user with email + password, via the
+ * `auth-rate-limit` edge function (server-side signInWithPassword +
+ * per-IP rate limiting). On success, loads the returned tokens into the
+ * client's own session.
  */
 async function predictaSignInWithPassword(email, password) {
   email = String(email || '').trim().toLowerCase();
@@ -151,8 +169,26 @@ async function predictaSignInWithPassword(email, password) {
   if (!emailRegex.test(email)) throw new Error('Adresse email invalide');
   if (!password) throw new Error('Mot de passe requis');
 
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  if (error) throw error;
+  const { data, error } = await supabaseClient.functions.invoke('auth-rate-limit', {
+    body: { mode: 'signin', email, password },
+  });
+
+  if (error) {
+    const status = error.context?.status;
+    if (status === 429) {
+      throw new Error('Trop de tentatives. Réessaie dans une minute.');
+    }
+    throw error;
+  }
+  if (data?.error) throw new Error(data.error);
+
+  if (data.session) {
+    await supabaseClient.auth.setSession({
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+    });
+  }
+
   return data;
 }
 

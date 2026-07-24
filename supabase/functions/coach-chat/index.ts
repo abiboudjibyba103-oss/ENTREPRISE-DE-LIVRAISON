@@ -16,21 +16,45 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')!;
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
+
+// Comma-separated list of allowed frontend origins, e.g.
+// "https://predicta.example.com,https://www.predicta.example.com".
+// Not set => '*' (current behavior), so this ships without breaking
+// anything until you opt in with: supabase secrets set APP_ORIGIN=...
+const APP_ORIGINS = (Deno.env.get('APP_ORIGIN') ?? '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+function corsHeadersFor(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') ?? '';
+  const allowOrigin = APP_ORIGINS.length === 0
+    ? '*'
+    : (APP_ORIGINS.includes(origin) ? origin : APP_ORIGINS[0]);
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  };
+}
 
 const MAX_MESSAGE_LEN = 500;
 const MAX_HISTORY = 10;
 const COACH_MODEL = 'llama-3.3-70b-versatile';
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
-
 Deno.serve(async (req) => {
+  const CORS_HEADERS = corsHeadersFor(req);
+  function json(data: unknown, status = 200) {
+    return new Response(JSON.stringify(data), {
+      status,
+      headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
+    });
+  }
+
   // Browsers send a CORS preflight OPTIONS request before the real POST.
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -38,6 +62,14 @@ Deno.serve(async (req) => {
 
   if (req.method !== 'POST') {
     return json({ error: 'Method not allowed' }, 405);
+  }
+
+  // Fail fast and loudly if required secrets are missing, instead of
+  // proceeding with `undefined` and failing later with a cryptic error
+  // (the previous `!` was a TypeScript-only assertion with no runtime effect).
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !GROQ_API_KEY) {
+    console.error('[coach-chat] missing required secret(s): SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GROQ_API_KEY');
+    return json({ error: 'Le coach est momentanément indisponible (configuration serveur).' }, 500);
   }
 
   // Identify the caller from their Supabase JWT (sent automatically
@@ -179,22 +211,21 @@ ${contextLines.join('\n')}`;
   const aiData = await aiRes.json();
   const reply: string = aiData.choices?.[0]?.message?.content?.trim() || "Je n'ai pas pu générer de réponse, réessaie dans un instant.";
 
-  // Best-effort: keep a history of coach messages. Only real user
-  // questions count toward the daily limit, not the greeting.
+  // Keep a history of coach messages. Only real user questions count
+  // toward the daily limit, not the greeting. The unique
+  // (user_id, message_date) index is the real enforcement of "1/day" —
+  // if a concurrent request already won that race, this insert simply
+  // fails (already-spent Groq call, but no duplicate log entry).
   if (message) {
-    await supabaseAdmin.from('coach_messages').insert({
+    const { error: logError } = await supabaseAdmin.from('coach_messages').insert({
       user_id: user.id,
       message,
       reply: reply.slice(0, 2000),
     });
+    if (logError && logError.code !== '23505') {
+      console.error('[coach-chat] log insert error', logError);
+    }
   }
 
   return json({ reply, limitReached: !!message || limitReached });
 });
-
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
-  });
-}

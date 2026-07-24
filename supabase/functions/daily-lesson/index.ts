@@ -20,17 +20,37 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')!;
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
 
 const COACH_MODEL = 'llama-3.3-70b-versatile';
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// Written to lesson_text while a generation is in flight, so a concurrent
+// request can tell "reserved but not done yet" apart from "no row yet".
+const RESERVATION_PLACEHOLDER = '__generating__';
+
+// Comma-separated list of allowed frontend origins, e.g.
+// "https://predicta.example.com,https://www.predicta.example.com".
+// Not set => '*' (current behavior), so this ships without breaking
+// anything until you opt in with: supabase secrets set APP_ORIGIN=...
+const APP_ORIGINS = (Deno.env.get('APP_ORIGIN') ?? '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+function corsHeadersFor(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') ?? '';
+  const allowOrigin = APP_ORIGINS.length === 0
+    ? '*'
+    : (APP_ORIGINS.includes(origin) ? origin : APP_ORIGINS[0]);
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  };
+}
 
 // Condensed cognitive-science knowledge base. The model picks
 // whichever fact actually explains the user's behaviour today —
@@ -66,12 +86,28 @@ const SCIENCE_BASE = `
 `.trim();
 
 Deno.serve(async (req) => {
+  const CORS_HEADERS = corsHeadersFor(req);
+  function json(data: unknown, status = 200) {
+    return new Response(JSON.stringify(data), {
+      status,
+      headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
+    });
+  }
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
   if (req.method !== 'POST') {
     return json({ error: 'Method not allowed' }, 405);
+  }
+
+  // Fail fast and loudly if required secrets are missing, instead of
+  // proceeding with `undefined` and failing later with a cryptic error
+  // (the previous `!` was a TypeScript-only assertion with no runtime effect).
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !GROQ_API_KEY) {
+    console.error('[daily-lesson] missing required secret(s): SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GROQ_API_KEY');
+    return json({ error: 'Enseignement momentanément indisponible (configuration serveur).' }, 500);
   }
 
   const authHeader = req.headers.get('Authorization') ?? '';
@@ -104,6 +140,46 @@ Deno.serve(async (req) => {
 
   if (!todaySessions || todaySessions.length === 0) {
     return json({ lessonText: null, hasSessionToday: false });
+  }
+
+  // Cache hit: a lesson already exists for today — return it without
+  // spending another Groq call. Without this, any authenticated caller
+  // could hit this endpoint directly (bypassing the dashboard's own
+  // client-side cache check) and burn unlimited Groq calls.
+  const { data: cachedLesson } = await supabaseAdmin
+    .from('daily_lessons')
+    .select('lesson_text')
+    .eq('user_id', user.id)
+    .eq('lesson_date', today)
+    .maybeSingle();
+
+  if (cachedLesson?.lesson_text && cachedLesson.lesson_text !== RESERVATION_PLACEHOLDER) {
+    return json({ lessonText: cachedLesson.lesson_text, hasSessionToday: true });
+  }
+
+  // Reserve today's slot before calling Groq. daily_lessons has a unique
+  // (user_id, lesson_date) constraint, so if two requests race here only
+  // one INSERT succeeds — the loser doesn't call Groq at all, closing the
+  // TOCTOU window a plain "check then call" would leave open.
+  if (!cachedLesson) {
+    const { error: reserveError } = await supabaseAdmin
+      .from('daily_lessons')
+      .insert({ user_id: user.id, lesson_date: today, lesson_text: RESERVATION_PLACEHOLDER });
+
+    if (reserveError) {
+      // Unique violation: another concurrent request just reserved (or
+      // finished) this slot. Give it a moment then return what's there.
+      const { data: raceWinner } = await supabaseAdmin
+        .from('daily_lessons')
+        .select('lesson_text')
+        .eq('user_id', user.id)
+        .eq('lesson_date', today)
+        .maybeSingle();
+      if (raceWinner?.lesson_text && raceWinner.lesson_text !== RESERVATION_PLACEHOLDER) {
+        return json({ lessonText: raceWinner.lesson_text, hasSessionToday: true });
+      }
+      return json({ error: "Ton enseignement du soir est déjà en cours de génération, réessaie dans quelques secondes." }, 429);
+    }
   }
 
   const { data: profile } = await supabaseAdmin
@@ -190,19 +266,13 @@ ${sessionLines}`;
     aiData.choices?.[0]?.message?.content?.trim() ||
     "Impossible de générer ton enseignement du jour pour le moment, réessaie plus tard.";
 
+  // The row already exists (reserved above, or from an earlier attempt
+  // today that failed after reserving) — fill it in rather than upsert.
   await supabaseAdmin
     .from('daily_lessons')
-    .upsert(
-      { user_id: user.id, lesson_date: today, lesson_text: lessonText.slice(0, 4000) },
-      { onConflict: 'user_id,lesson_date' }
-    );
+    .update({ lesson_text: lessonText.slice(0, 4000) })
+    .eq('user_id', user.id)
+    .eq('lesson_date', today);
 
   return json({ lessonText, hasSessionToday: true });
 });
-
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
-  });
-}

@@ -19,22 +19,51 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// Comma-separated list of allowed frontend origins, e.g.
+// "https://predicta.example.com,https://www.predicta.example.com".
+// Not set => '*' (current behavior), so this ships without breaking
+// anything until you opt in with: supabase secrets set APP_ORIGIN=...
+const APP_ORIGINS = (Deno.env.get('APP_ORIGIN') ?? '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+function corsHeadersFor(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') ?? '';
+  const allowOrigin = APP_ORIGINS.length === 0
+    ? '*'
+    : (APP_ORIGINS.includes(origin) ? origin : APP_ORIGINS[0]);
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  };
+}
 
 Deno.serve(async (req) => {
+  const CORS_HEADERS = corsHeadersFor(req);
+  function json(data: unknown, status = 200) {
+    return new Response(JSON.stringify(data), {
+      status,
+      headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
+    });
+  }
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
   if (req.method !== 'POST') {
     return json({ error: 'Method not allowed' }, 405);
+  }
+
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+    console.error('[delete-account] missing required secret(s): SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY');
+    return json({ error: 'Suppression momentanément indisponible (configuration serveur).' }, 500);
   }
 
   const authHeader = req.headers.get('Authorization') ?? '';
@@ -58,10 +87,3 @@ Deno.serve(async (req) => {
 
   return json({ deleted: true });
 });
-
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
-  });
-}
