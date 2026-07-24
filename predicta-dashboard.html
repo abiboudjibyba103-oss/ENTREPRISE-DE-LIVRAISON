@@ -802,12 +802,12 @@
       return;
     }
 
-    const predictions = await predictaGetPredictions(1);
-    document.getElementById('predSection1Unlocked').innerHTML = predictions.length
+    const coachMessages = await predictaGetCoachMessages(1);
+    document.getElementById('predSection1Unlocked').innerHTML = coachMessages.length
       ? `<div class="prediction-card-hero">
            <p class="prediction-eyebrow">Prédiction du jour</p>
-           <p class="prediction-text">${escapeHtml(predictions[0].prediction_text)}</p>
-           <p class="prediction-date">${formatDate(predictions[0].created_at)}</p>
+           <p class="prediction-text">${escapeHtml(coachMessages[0].reply)}</p>
+           <p class="prediction-date">${formatDate(coachMessages[0].created_at)}</p>
          </div>`
       : `<div class="card"><p class="muted-text">Prédicta analyse encore tes patterns.</p></div>`;
 

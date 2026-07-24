@@ -547,22 +547,22 @@ async function predictaInterruptActiveSession(sessionId, durationMin, interrupti
 }
 
 /**
- * Loads the current user's predictions (AI coach replies logged by the
- * `coach-chat` edge function), most recent first.
+ * Loads the current user's coach chat history (question + reply, logged
+ * by the `coach-chat` edge function), most recent first.
  */
-async function predictaGetPredictions(limit = 20) {
+async function predictaGetCoachMessages(limit = 20) {
   const session = await predictaGetSession();
   if (!session) return [];
 
   const { data, error } = await supabaseClient
-    .from('predictions')
-    .select('id, prediction_text, confidence, created_at')
+    .from('coach_messages')
+    .select('id, message, reply, created_at')
     .eq('user_id', session.user.id)
     .order('created_at', { ascending: false })
     .limit(limit);
 
   if (error) {
-    console.error('[predicta] getPredictions error', error.message);
+    console.error('[predicta] getCoachMessages error', error.message);
     return [];
   }
   return data ?? [];
