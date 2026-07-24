@@ -255,6 +255,30 @@ create policy "predictions_delete_own" on public.predictions
 
 
 -- ------------------------------------------------------------
+-- 5b. coach_messages — AI coach chat history (question asked,
+--    reply given), used by the coach-chat edge function both to
+--    log the exchange and to enforce the 1-question/day limit.
+--    Written only by the edge function (service_role) — users can
+--    only read their own, same pattern as daily_lessons.
+-- ------------------------------------------------------------
+create table if not exists public.coach_messages (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  message    text,
+  reply      text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.coach_messages enable row level security;
+
+create policy "coach_messages_select_own" on public.coach_messages
+  for select using (auth.uid() = user_id);
+
+-- No insert/update/delete policy: only the service_role key
+-- (used inside the coach-chat edge function) can write rows.
+
+
+-- ------------------------------------------------------------
 -- 6. waitlist — pre-launch sign-up (no auth required)
 --    Inserts are allowed for anyone, but reads/updates/deletes
 --    are restricted to the service role only (used by the

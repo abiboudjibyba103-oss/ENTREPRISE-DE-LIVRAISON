@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
   startOfDay.setUTCHours(0, 0, 0, 0);
 
   const { count: questionsToday } = await supabaseAdmin
-    .from('predictions')
+    .from('coach_messages')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', user.id)
     .gte('created_at', startOfDay.toISOString());
@@ -182,9 +182,10 @@ ${contextLines.join('\n')}`;
   // Best-effort: keep a history of coach messages. Only real user
   // questions count toward the daily limit, not the greeting.
   if (message) {
-    await supabaseAdmin.from('predictions').insert({
+    await supabaseAdmin.from('coach_messages').insert({
       user_id: user.id,
-      prediction_text: reply.slice(0, 2000),
+      message,
+      reply: reply.slice(0, 2000),
     });
   }
 
