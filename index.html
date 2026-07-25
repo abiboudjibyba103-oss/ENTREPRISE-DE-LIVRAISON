@@ -1277,6 +1277,7 @@
         document.getElementById('ecran-3-email-address').textContent = email;
       }
       allerEcran(3);
+      loadWaitlistStats();
     } catch(err) {
       errorEl.textContent = /already registered|already exists/i.test(err.message)
         ? 'Un compte existe déjà avec cet email. Connecte-toi plutôt.'
