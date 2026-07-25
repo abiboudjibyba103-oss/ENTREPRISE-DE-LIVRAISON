@@ -704,7 +704,7 @@
         <li><a href="#solution">Comment ça marche</a></li>
       </ul>
       <div class="nav-actions">
-        <a href="#final-cta" class="btn btn-primary magnetic">Accès anticipé</a>
+        <a href="#final-cta" class="btn btn-primary magnetic">Je veux participer</a>
       </div>
       <button class="hamburger" id="hamburger" aria-label="Menu">
         <span></span><span></span><span></span>
@@ -713,7 +713,7 @@
   </div>
   <div class="mobile-menu" id="mobile-menu">
     <a href="#solution">Comment ça marche</a>
-    <a href="#final-cta" style="color:#6C5CE7;font-weight:700;">Accès anticipé</a>
+    <a href="#final-cta" style="color:#6C5CE7;font-weight:700;">Je veux participer</a>
   </div>
 </nav>
 
@@ -742,7 +742,7 @@
         <div class="hero-ctas" id="hero-ctas" style="opacity:0;transform:translateY(16px)">
           <a href="#final-cta" class="btn btn-primary btn-lg magnetic">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            Rejoindre l'accès anticipé
+            Je veux participer
           </a>
           <a href="#solution" class="btn btn-outline btn-lg magnetic">
             Voir comment ça marche
@@ -1048,39 +1048,30 @@
 <!-- =============================================
      FINAL CTA
 ============================================= -->
-<section id="final-cta">
+<section id="final-cta" style="padding:120px 0; background: linear-gradient(135deg, #1E1050 0%, #2D1B69 100%); position:relative; overflow:hidden;">
   <div class="container">
-    <div class="final-cta-inner fade-up">
-      <span class="section-tag" id="ctaPlacesTag" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.2);">233 places · Gratuit</span>
-      <h2>Pour les personnes <span style="color:var(--violet);">sérieuses</span>.<br>Pas pour tout le monde.</h2>
-      <p style="max-width:460px;margin:0 auto 32px;">Je cherche 233 personnes prêtes à changer leur façon de travailler — et à tester l'app honnêtement. Elle est toute récente, il peut y avoir des bugs. En échange : accès complet, gratuit, pendant 17 jours.</p>
+    <div style="max-width:560px; margin:0 auto; text-align:center; position:relative; z-index:1;">
 
-      <div class="cta-countdown" id="ctaCountdown" style="display:none;">
-        <div class="countdown-unit"><span class="countdown-num" id="cdDays">17</span><span class="countdown-label">jours</span></div>
-        <div class="countdown-unit"><span class="countdown-num" id="cdHours">00</span><span class="countdown-label">heures</span></div>
-        <div class="countdown-unit"><span class="countdown-num" id="cdMinutes">00</span><span class="countdown-label">min</span></div>
-        <div class="countdown-unit"><span class="countdown-num" id="cdSeconds">00</span><span class="countdown-label">sec</span></div>
-      </div>
+      <span class="section-tag" style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);">50 membres fondateurs</span>
 
-      <form class="waitlist-form" id="waitlist-form" onsubmit="handleWaitlistSubmit(event)">
-        <input type="text" class="cta-email-input" placeholder="Ton prénom" required id="waitlist-name" maxlength="100" />
-        <input type="email" class="cta-email-input" placeholder="ton@email.com" required id="waitlist-email" maxlength="255" />
-        <input type="password" class="cta-email-input" placeholder="Choisis un mot de passe" required id="waitlist-password" minlength="8" />
-        <p id="waitlist-error" class="form-error" style="display:none;"></p>
-        <button type="submit" class="btn btn-white btn-lg magnetic">
-          Je veux une place
-        </button>
-      </form>
+      <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:clamp(32px,5vw,48px);color:#fff;letter-spacing:-0.03em;margin-bottom:20px;line-height:1.1;">
+        Pour les personnes <span style="color:#A78BFA;">sérieuses</span>.<br>Pas pour tout le monde.
+      </h2>
 
-      <div class="waitlist-success" id="waitlist-success" style="display:none;">
-        <h3 style="color:#fff;font-size:20px;font-weight:800;margin-bottom:10px;">Bienvenue dans les 233. 🎉</h3>
-        <p style="color:rgba(255,255,255,0.75);font-size:15px;">Ton compte est créé. Tu vas être redirigé vers l'app dans quelques secondes...</p>
-      </div>
-
-      <p class="cta-note">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        Gratuit · Aucune carte · Pas de spam
+      <p style="color:rgba(255,255,255,0.7);font-size:17px;line-height:1.8;margin-bottom:48px;">
+        Nous recherchons seulement <strong style="color:#fff;">50 membres fondateurs</strong>.<br>
+        Leur mission : utiliser Prédicta, partager leurs retours et nous aider à construire la première application capable de prédire les moments où l'on risque de procrastiner ou d'abandonner.<br><br>
+        En remerciement, ils recevront gratuitement <strong style="color:#A78BFA;">1 mois d'accès au Plan Pro</strong> dès le lancement officiel.
       </p>
+
+      <button onclick="ouvrirInscription()" class="btn btn-white btn-lg magnetic" style="margin-bottom:16px;">
+        Je veux participer
+      </button>
+
+      <p style="color:rgba(255,255,255,0.4);font-size:13px;">
+        Gratuit · Aucune carte bancaire · 17 jours
+      </p>
+
     </div>
   </div>
 </section>
@@ -1253,41 +1244,60 @@
     });
   });
 
-  /* --- Waitlist form submit (pre-launch sign-up) --- */
-  function getReferralCodeFromUrl() {
-    const code = new URLSearchParams(window.location.search).get('ref');
-    if (code) sessionStorage.setItem('predicta_referral_code', code);
-    return sessionStorage.getItem('predicta_referral_code') || '';
+  /* --- Registration modal (3-screen sign-up) --- */
+  function ouvrirInscription() {
+    document.getElementById('modal-inscription').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
   }
 
-  async function handleWaitlistSubmit(e) {
-    e.preventDefault();
-    const form = document.getElementById('waitlist-form');
-    const errorEl = document.getElementById('waitlist-error');
-    const btn = form.querySelector('button');
-    const name = document.getElementById('waitlist-name').value.trim();
-    const email = document.getElementById('waitlist-email').value.trim();
-    const password = document.getElementById('waitlist-password').value;
+  function fermerInscription() {
+    document.getElementById('modal-inscription').style.display = 'none';
+    document.body.style.overflow = '';
+    allerEcran(1);
+  }
+
+  function allerEcran(n) {
+    [1,2,3].forEach(i => {
+      document.getElementById('ecran-' + i).style.display = i === n ? 'block' : 'none';
+    });
+  }
+
+  async function soumettreInscription() {
+    const name = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const phone = document.getElementById('reg-phone').value.trim();
+    const errorEl = document.getElementById('reg-error');
+    const btn = document.getElementById('btn-inscription');
 
     errorEl.style.display = 'none';
+    if (!name || !email || !password) {
+      errorEl.textContent = 'Prénom, email et mot de passe sont obligatoires.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
     btn.disabled = true;
-    const originalText = btn.textContent;
     btn.textContent = 'Création en cours...';
 
     try {
-      await predictaSignUpWithPassword(email, password, name);
-      form.style.display = 'none';
-      document.getElementById('waitlist-success').style.display = 'block';
-      setTimeout(() => {
-        window.location.href = '/predicta-dashboard.html';
-      }, 2000);
-    } catch (err) {
-      console.error('[predicta] signup error', err.message);
-      errorEl.textContent = err.message || "Une erreur est survenue, réessaie dans un instant.";
+      const { error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: { data: { display_name: name, phone: phone } }
+      });
+      if (error) throw error;
+      allerEcran(3);
+    } catch(err) {
+      errorEl.textContent = err.message || 'Une erreur est survenue.';
       errorEl.style.display = 'block';
       btn.disabled = false;
-      btn.textContent = originalText;
+      btn.textContent = 'Créer mon compte';
     }
+  }
+
+  function entrerDansApp() {
+    window.location.href = '/predicta-dashboard.html';
   }
 
   /* --- Smooth scroll for anchor links --- */
@@ -1303,59 +1313,79 @@
     });
   });
 
-  /* --- Live waitlist data: headcount, places remaining, launch countdown --- */
-  const TOTAL_SPOTS = 233;
-  const COUNTDOWN_DAYS = 17;
-  let countdownIntervalId = null;
-
+  /* --- Live waitlist data: headcount --- */
   async function loadWaitlistStats() {
-    const [count, firstSignupAt] = await Promise.all([
-      predictaGetWaitlistCount(),
-      predictaGetWaitlistFirstSignupAt(),
-    ]);
-
+    const count = await predictaGetWaitlistCount();
     const heroCountEl = document.getElementById('hero-trust-count');
     if (heroCountEl) {
       heroCountEl.textContent = count > 0
         ? `+${count} personne${count > 1 ? 's' : ''} sur la liste d'attente`
         : `Sois parmi les premiers sur la liste d'attente`;
     }
-
-    const remaining = Math.max(0, TOTAL_SPOTS - count);
-    const placesTag = document.getElementById('ctaPlacesTag');
-    if (placesTag) {
-      placesTag.textContent = `${remaining} place${remaining > 1 ? 's' : ''} restante${remaining > 1 ? 's' : ''} · Gratuit`;
-    }
-
-    if (firstSignupAt) {
-      const deadline = new Date(firstSignupAt).getTime() + COUNTDOWN_DAYS * 24 * 60 * 60 * 1000;
-      startCountdown(deadline);
-    }
-  }
-
-  function startCountdown(deadlineMs) {
-    const el = document.getElementById('ctaCountdown');
-    if (!el) return;
-    el.style.display = 'flex';
-
-    function tick() {
-      const remainingMs = Math.max(0, deadlineMs - Date.now());
-      const days = Math.floor(remainingMs / 86400000);
-      const hours = Math.floor((remainingMs % 86400000) / 3600000);
-      const minutes = Math.floor((remainingMs % 3600000) / 60000);
-      const seconds = Math.floor((remainingMs % 60000) / 1000);
-      document.getElementById('cdDays').textContent = String(days).padStart(2, '0');
-      document.getElementById('cdHours').textContent = String(hours).padStart(2, '0');
-      document.getElementById('cdMinutes').textContent = String(minutes).padStart(2, '0');
-      document.getElementById('cdSeconds').textContent = String(seconds).padStart(2, '0');
-      if (remainingMs <= 0) clearInterval(countdownIntervalId);
-    }
-    tick();
-    countdownIntervalId = setInterval(tick, 1000);
   }
 
   loadWaitlistStats();
 </script>
+
+<div id="modal-inscription" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,7,51,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:24px;padding:48px;max-width:480px;width:90%;position:relative;max-height:90vh;overflow-y:auto;">
+
+    <button onclick="fermerInscription()" style="position:absolute;top:20px;right:20px;background:none;border:none;font-size:20px;cursor:pointer;color:#78716C;">✕</button>
+
+    <!-- ÉCRAN 1 -->
+    <div id="ecran-1">
+      <div style="text-align:center;margin-bottom:32px;">
+        <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--violet);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Bêta privée · 50 places</span>
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:24px;margin:12px 0;color:var(--text);">Bienvenue dans la bêta privée de Prédicta</h3>
+        <p style="color:var(--text-sec);font-size:15px;line-height:1.7;">Nous ne recherchons pas des curieux.</p>
+      </div>
+
+      <p style="font-weight:700;font-size:15px;margin-bottom:12px;color:var(--text);">Nous recherchons des personnes qui :</p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px;">
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--violet-light);border-radius:12px;font-size:14px;color:var(--violet);font-weight:500;">✦ Procrastinent réellement</div>
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--violet-light);border-radius:12px;font-size:14px;color:var(--violet);font-weight:500;">✦ Abandonnent souvent leurs projets</div>
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--violet-light);border-radius:12px;font-size:14px;color:var(--violet);font-weight:500;">✦ Veulent comprendre pourquoi</div>
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--violet-light);border-radius:12px;font-size:14px;color:var(--violet);font-weight:500;">✦ Sont prêtes à nous aider à construire Prédicta</div>
+      </div>
+
+      <p style="color:var(--text-sec);font-size:14px;line-height:1.7;margin-bottom:28px;">Pendant 17 jours, nous te demanderons ton avis afin d'améliorer l'application. En échange, tu bénéficieras d'<strong>1 mois de Plan Pro</strong> dès la sortie.</p>
+
+      <button onclick="allerEcran(2)" class="btn btn-primary" style="width:100%;justify-content:center;">Continuer →</button>
+    </div>
+
+    <!-- ÉCRAN 2 -->
+    <div id="ecran-2" style="display:none;">
+      <div style="text-align:center;margin-bottom:32px;">
+        <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--violet);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Étape 2 sur 3</span>
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:24px;margin:12px 0;color:var(--text);">Tes informations</h3>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:28px;">
+        <input type="text" id="reg-name" placeholder="Ton prénom" style="padding:14px 16px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--violet)'" onblur="this.style.borderColor='var(--border)'"/>
+        <input type="email" id="reg-email" placeholder="ton@email.com" style="padding:14px 16px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--violet)'" onblur="this.style.borderColor='var(--border)'"/>
+        <input type="password" id="reg-password" placeholder="Choisis un mot de passe" style="padding:14px 16px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--violet)'" onblur="this.style.borderColor='var(--border)'"/>
+        <input type="tel" id="reg-phone" placeholder="Ton WhatsApp (ex: +221 77 000 00 00)" style="padding:14px 16px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--violet)'" onblur="this.style.borderColor='var(--border)'"/>
+      </div>
+
+      <p id="reg-error" style="color:#EF4444;font-size:13px;margin-bottom:14px;display:none;"></p>
+      <button onclick="soumettreInscription()" id="btn-inscription" class="btn btn-primary" style="width:100%;justify-content:center;">Créer mon compte</button>
+    </div>
+
+    <!-- ÉCRAN 3 -->
+    <div id="ecran-3" style="display:none;text-align:center;">
+      <div style="font-size:48px;margin-bottom:20px;">🎉</div>
+      <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:24px;margin-bottom:16px;color:var(--text);">Avant de commencer</h3>
+      <p style="color:var(--text-sec);font-size:15px;line-height:1.8;margin-bottom:28px;">
+        Nous attendons à ce que tu utilises réellement Prédicta pendant les <strong>17 prochains jours</strong>.<br><br>
+        Nous attendons aussi des retours honnêtes.<br>
+        Si quelque chose ne fonctionne pas, dis-le.<br>
+        Si quelque chose est exceptionnel, dis-le aussi.
+      </p>
+      <button onclick="entrerDansApp()" class="btn btn-primary" style="width:100%;justify-content:center;">Entrer dans l'application →</button>
+    </div>
+
+  </div>
+</div>
 
 </body>
 </html>
