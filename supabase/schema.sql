@@ -206,12 +206,22 @@ create table if not exists public.brain_metrics (
   id             uuid primary key default gen_random_uuid(),
   user_id        uuid not null references auth.users(id) on delete cascade,
   concentration  smallint not null check (concentration between 0 and 100),
-  memoire        smallint not null check (memoire between 0 and 100),
+  memoire        smallint check (memoire between 0 and 100),
   regulation     smallint not null check (regulation between 0 and 100),
   regularite     smallint not null check (regularite between 0 and 100),
   recuperation   smallint not null check (recuperation between 0 and 100),
   recorded_at    timestamptz not null default now()
 );
+
+-- Migration for pre-existing databases: memoire isn't computed by
+-- update-brain-metrics (not one of its 5 metrics), and the table now
+-- holds a single always-current row per user rather than historical
+-- snapshots, so update-brain-metrics can upsert onConflict: 'user_id'.
+alter table public.brain_metrics alter column memoire drop not null;
+alter table public.brain_metrics add column if not exists progression smallint
+  check (progression between 0 and 100);
+create unique index if not exists brain_metrics_one_per_user
+  on public.brain_metrics (user_id);
 
 alter table public.brain_metrics enable row level security;
 

@@ -351,6 +351,39 @@ async function predictaGeneratePredictions() {
 }
 
 /**
+ * Asks Prédicta to recompute (Supabase edge function
+ * `update-brain-metrics`) and store the user's cognitive profile
+ * (concentration, régularité, résistance, récupération, progression)
+ * from their real session history. Meant to be called right after a
+ * session finishes or is interrupted. Returns { notEnoughData: true }
+ * when the user hasn't logged enough sessions yet.
+ */
+async function predictaUpdateBrainMetrics() {
+  const session = await predictaGetSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const invoke = () => supabaseClient.functions.invoke('update-brain-metrics', { body: {} });
+
+  let { data, error } = await invoke();
+
+  if (error?.context?.status === 401) {
+    const { data: refreshed, error: refreshError } = await supabaseClient.auth.refreshSession();
+    if (!refreshError && refreshed?.session) {
+      ({ data, error } = await invoke());
+    }
+  }
+
+  if (error) {
+    if (error.context?.status === 401) {
+      throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
+    }
+    throw error;
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
+/**
  * Loads the most recent brain_metrics snapshot for the radar chart.
  */
 async function predictaGetLatestBrainMetrics() {

@@ -156,6 +156,15 @@
   .progress-track { height: 8px; background: var(--border); border-radius: 100px; overflow: hidden; }
   .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--violet), var(--orange)); border-radius: 100px; transition: width 0.8s cubic-bezier(0.25,1,0.5,1); }
   .progress-label { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text-sec); margin-top: 8px; }
+
+  .brain-metrics-list { display: flex; flex-direction: column; gap: 16px; margin-top: 18px; }
+  .brain-metric-row { display: flex; align-items: center; gap: 12px; }
+  .brain-metric-label { flex: 0 0 200px; font-size: 13.5px; font-weight: 500; color: var(--text); }
+  .brain-metric-row .progress-track { flex: 1; }
+  .brain-metric-score { flex: 0 0 32px; text-align: right; font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; color: var(--violet); }
+  @media (max-width: 480px) {
+    .brain-metric-label { flex-basis: 130px; font-size: 12.5px; }
+  }
   .blurred-preview {
     margin-top: 22px; padding-top: 18px; border-top: 1px dashed var(--border);
     filter: blur(3px); opacity: 0.55; pointer-events: none; text-align: left;
@@ -732,6 +741,7 @@
       todaySessionsCache = await predictaGetTodaySessions();
       predictionsLoaded = false;
       brainLoaded = false;
+      refreshPredictionsAndBrainMetrics();
       setTimeout(() => { homeState = 'idle'; renderHome(); }, 3000);
     } catch (err) {
       showHomeError(err);
@@ -739,6 +749,20 @@
       sessionActionInFlight = false;
       if (btn) btn.disabled = false;
     }
+  }
+
+  // Best-effort background refresh right after a session (completed or
+  // interrupted): don't block the session-complete UI on these — each
+  // round-trip can take a couple seconds since generate-predictions
+  // calls Groq. Failures are only logged: Prédictions / Mon Cerveau
+  // already handle stale or missing data gracefully on their own.
+  function refreshPredictionsAndBrainMetrics() {
+    predictaGeneratePredictions().catch((err) => {
+      console.error('[predicta] background generate-predictions error', err.message);
+    });
+    predictaUpdateBrainMetrics().catch((err) => {
+      console.error('[predicta] background update-brain-metrics error', err.message);
+    });
   }
 
   function interruptSession() {
@@ -795,6 +819,7 @@
       todaySessionsCache = await predictaGetTodaySessions();
       predictionsLoaded = false;
       brainLoaded = false;
+      refreshPredictionsAndBrainMetrics();
       setTimeout(() => { homeState = 'idle'; renderHome(); }, 3000);
     } catch (err) {
       showHomeError(err);
@@ -1093,11 +1118,32 @@
       el.innerHTML = `<p class="muted-text">Pas encore assez de données pour ton profil cognitif.</p>`;
       return;
     }
-    const avg = (metrics.concentration + metrics.memoire + metrics.regulation + metrics.regularite + metrics.recuperation) / 5;
+    const bars = [
+      { label: 'Concentration', score: metrics.concentration },
+      { label: 'Régularité', score: metrics.regularite },
+      { label: 'Résistance aux interruptions', score: metrics.regulation },
+      { label: 'Récupération', score: metrics.recuperation },
+      { label: 'Progression', score: metrics.progression },
+    ];
+    const avg = bars.reduce((sum, b) => sum + (b.score || 0), 0) / bars.length;
     let label = 'Neutre', cls = 'neutral';
     if (avg >= 70) { label = 'Affûté'; cls = 'sharp'; }
     else if (avg < 40) { label = 'Chargé'; cls = 'loaded'; }
-    el.innerHTML = `<span class="profile-badge ${cls}">${label}</span>`;
+
+    el.innerHTML = `
+      <span class="profile-badge ${cls}">${label}</span>
+      <div class="brain-metrics-list">
+        ${bars.map((b, i) => `
+          <div class="brain-metric-row">
+            <span class="brain-metric-label">${escapeHtml(b.label)}</span>
+            <div class="progress-track"><div class="progress-fill" id="brainMetricBar${i}"></div></div>
+            <span class="brain-metric-score">${b.score ?? '—'}</span>
+          </div>`).join('')}
+      </div>`;
+
+    bars.forEach((b, i) => {
+      animateProgressFill(document.getElementById('brainMetricBar' + i), b.score || 0);
+    });
   }
 
   const NOT_ENOUGH_SLOT_DATA = 'Pas encore assez de sessions pour déterminer ton meilleur créneau.';
