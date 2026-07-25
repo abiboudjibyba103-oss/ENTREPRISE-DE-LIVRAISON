@@ -1298,6 +1298,7 @@
       }
       allerEcran(3);
       loadWaitlistStats();
+      mettreAJourPlaces();
     } catch(err) {
       errorEl.textContent = /already registered|already exists/i.test(err.message)
         ? 'Un compte existe déjà avec cet email. Connecte-toi plutôt.'
