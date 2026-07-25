@@ -864,16 +864,28 @@
       return;
     }
 
-    const coachMessages = await predictaGetCoachMessages(1);
-    document.getElementById('predSection1Unlocked').innerHTML = coachMessages.length
-      ? `<div class="prediction-card-hero">
-           <p class="prediction-eyebrow">Prédiction du jour</p>
-           <p class="prediction-text">${escapeHtml(coachMessages[0].reply)}</p>
-           <p class="prediction-date">${formatDate(coachMessages[0].created_at)}</p>
-         </div>`
-      : `<div class="card"><p class="muted-text">Prédicta analyse encore tes patterns.</p></div>`;
+    const [predictionsResult, allSessions] = await Promise.all([
+      predictaGeneratePredictions().catch((err) => {
+        console.error('[predicta] generatePredictions error', err.message);
+        return null;
+      }),
+      predictaGetRecentSessions(1000),
+    ]);
 
-    const allSessions = await predictaGetRecentSessions(1000);
+    document.getElementById('predSection1Unlocked').innerHTML = !predictionsResult
+      ? `<div class="card"><p class="muted-text">Prédictions momentanément indisponibles.</p></div>`
+      : predictionsResult.notEnoughData
+      ? `<div class="card"><p class="muted-text">Lance encore quelques sessions — Prédicta a besoin de plus de données pour prédire tes comportements.</p></div>`
+      : predictionsResult.predictions
+          .map(
+            (p, i) => `
+           <div class="prediction-card-hero">
+             <p class="prediction-eyebrow">Prédiction ${i + 1}</p>
+             <p class="prediction-text">${escapeHtml(p)}</p>
+           </div>`
+          )
+          .join('');
+
     const finished = allSessions.filter((s) => s.status !== 'in_progress');
 
     const patterns = computePatterns(finished);

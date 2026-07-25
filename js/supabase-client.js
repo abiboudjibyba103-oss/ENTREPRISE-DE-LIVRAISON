@@ -319,6 +319,38 @@ async function predictaDailyLesson() {
 }
 
 /**
+ * Asks Prédicta to generate (or fetch the cached version of) today's
+ * 3 personalized behavioral predictions, grounded in the user's real
+ * session history (Supabase edge function `generate-predictions`).
+ * Returns { predictions, notEnoughData }: `predictions` is an empty
+ * array when the user hasn't logged enough sessions yet.
+ */
+async function predictaGeneratePredictions() {
+  const session = await predictaGetSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const invoke = () => supabaseClient.functions.invoke('generate-predictions', { body: {} });
+
+  let { data, error } = await invoke();
+
+  if (error?.context?.status === 401) {
+    const { data: refreshed, error: refreshError } = await supabaseClient.auth.refreshSession();
+    if (!refreshError && refreshed?.session) {
+      ({ data, error } = await invoke());
+    }
+  }
+
+  if (error) {
+    if (error.context?.status === 401) {
+      throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
+    }
+    throw error;
+  }
+  if (data?.error) throw new Error(data.error);
+  return { predictions: Array.isArray(data.predictions) ? data.predictions : [], notEnoughData: !!data.notEnoughData };
+}
+
+/**
  * Loads the most recent brain_metrics snapshot for the radar chart.
  */
 async function predictaGetLatestBrainMetrics() {
