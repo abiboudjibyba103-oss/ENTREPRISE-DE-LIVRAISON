@@ -20,7 +20,7 @@
 // Frontend: js/supabase-client.js -> predictaSignInWithPassword() / predictaSignUpWithPassword()
 // ============================================================
 
-import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { createClient } from 'jsr:@supabase/supabase-js@2.45.4';
 
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 60 * 1000; // 1 minute

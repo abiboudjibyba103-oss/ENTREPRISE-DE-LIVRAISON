@@ -13,7 +13,7 @@
 // Frontend: js/supabase-client.js -> predictaUpdateBrainMetrics()
 // ============================================================
 
-import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { createClient } from 'jsr:@supabase/supabase-js@2.45.4';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -152,6 +152,30 @@ Deno.serve(async (req) => {
     return json({ error: 'Unauthorized' }, 401);
   }
   const user = userData.user;
+
+  // Cooldown: this function is called automatically in the background
+  // after every finished/interrupted session, with no rate limiting of
+  // its own. Without this, a user rapidly starting/stopping sessions
+  // (or replaying the same request) could trigger a full session-history
+  // scan + upsert on every call. Serve the just-computed snapshot back
+  // instead of recomputing within the cooldown window.
+  const COOLDOWN_MS = 5000;
+  const { data: existing } = await supabaseAdmin
+    .from('brain_metrics')
+    .select('concentration, regularite, regulation, recuperation, progression, recorded_at')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (existing && Date.now() - new Date(existing.recorded_at).getTime() < COOLDOWN_MS) {
+    return json({
+      notEnoughData: false,
+      concentration: existing.concentration,
+      regularite: existing.regularite,
+      regulation: existing.regulation,
+      recuperation: existing.recuperation,
+      progression: existing.progression,
+    });
+  }
 
   const { data: allSessions } = await supabaseAdmin
     .from('sessions')
