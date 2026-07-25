@@ -1052,7 +1052,7 @@
   <div class="container">
     <div style="max-width:560px; margin:0 auto; text-align:center; position:relative; z-index:1;">
 
-      <span class="section-tag" style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);">50 membres fondateurs</span>
+      <span id="places-tag" class="section-tag" style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);">50 membres fondateurs</span>
 
       <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:clamp(32px,5vw,48px);color:#fff;letter-spacing:-0.03em;margin-bottom:20px;line-height:1.1;">
         Pour les personnes <span style="color:#A78BFA;">sérieuses</span>.<br>Pas pour tout le monde.
@@ -1124,6 +1124,18 @@
      JAVASCRIPT
 ============================================= -->
 <script>
+  // Redirige automatiquement si l'utilisateur est déjà connecté
+  (async () => {
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        window.location.href = '/predicta-dashboard.html';
+      }
+    } catch(err) {
+      console.error('Erreur vérification session:', err);
+    }
+  })();
+
   /* --- Navbar scroll morph --- */
   const navbar = document.getElementById('navbar');
   window.addEventListener('scroll', () => {
@@ -1271,6 +1283,14 @@
       if (data.session) {
         document.getElementById('ecran-3-confirmed').style.display = 'block';
         document.getElementById('ecran-3-email-confirm').style.display = 'none';
+        // Save the WhatsApp number on profiles now that the session is
+        // active (RLS requires auth.uid() = id — only possible after
+        // predictaSignUpWithPassword's setSession() call above; with
+        // email confirmation pending there's no session yet, so this
+        // is skipped, same as the getUser()-gated dashboard flow).
+        if (phone && data.user) {
+          await supabaseClient.from('profiles').update({ phone }).eq('id', data.user.id);
+        }
       } else {
         document.getElementById('ecran-3-confirmed').style.display = 'none';
         document.getElementById('ecran-3-email-confirm').style.display = 'block';
@@ -1317,6 +1337,31 @@
   }
 
   loadWaitlistStats();
+
+  /* --- Real founding-members counter for #final-cta ---
+     Uses predictaGetWaitlistCount() (the get_waitlist_count RPC),
+     not a raw `.from('waitlist').select(...)`: the waitlist table has
+     no SELECT policy for anon/authenticated (only INSERT), so a plain
+     client-side select would be blocked by RLS and always read back 0
+     rows — showing "50 places restantes" forever regardless of the
+     real signup count. */
+  const TOTAL_FOUNDING_SPOTS = 50;
+
+  async function mettreAJourPlaces() {
+    try {
+      const count = await predictaGetWaitlistCount();
+      const placesRestantes = Math.max(0, TOTAL_FOUNDING_SPOTS - count);
+      const tag = document.getElementById('places-tag');
+      if (tag) {
+        tag.textContent = placesRestantes > 0
+          ? `${placesRestantes} places restantes sur ${TOTAL_FOUNDING_SPOTS}`
+          : "Complet — liste d'attente ouverte";
+      }
+    } catch (err) {
+      console.error('Erreur compteur places:', err);
+    }
+  }
+  mettreAJourPlaces();
 </script>
 
 <div id="modal-inscription" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,7,51,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;">

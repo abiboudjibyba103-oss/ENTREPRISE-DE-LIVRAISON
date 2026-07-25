@@ -10,6 +10,7 @@ create table if not exists public.profiles (
   id                       uuid primary key references auth.users(id) on delete cascade,
   display_name             text not null default 'Utilisateur',
   email                    text not null,
+  phone                    text,
   default_session_minutes  smallint not null default 45 check (default_session_minutes in (25, 45, 90)),
   notifications_enabled    boolean not null default true,
   plan                     text not null default 'free' check (plan in ('free', 'pro')),
@@ -27,6 +28,7 @@ alter table public.profiles add column if not exists referral_code text unique;
 alter table public.profiles add column if not exists referred_by uuid references public.profiles(id) on delete set null;
 alter table public.profiles add column if not exists evening_lesson_hour smallint not null default 17
   check (evening_lesson_hour between 0 and 23);
+alter table public.profiles add column if not exists phone text;
 
 update public.profiles
   set referral_code = upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8))
