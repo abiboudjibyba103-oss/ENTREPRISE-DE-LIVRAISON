@@ -52,6 +52,9 @@ function corsHeadersFor(req: Request): Record<string, string> {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REFERRAL_CODE_REGEX = /^[A-Z0-9]{4,16}$/;
+// At least one letter (covers accented characters) — rejects blank,
+// digits-only, or symbols-only "names".
+const NAME_REGEX = /\p{L}/u;
 
 Deno.serve(async (req) => {
   const CORS_HEADERS = corsHeadersFor(req);
@@ -147,7 +150,13 @@ Deno.serve(async (req) => {
   }
 
   // mode === 'signup'
-  const displayName = String(body.displayName ?? '').trim().slice(0, 80) || email.split('@')[0];
+  const displayName = String(body.displayName ?? '').trim().slice(0, 80);
+  // Real enforcement of "no fake/blank name": the client-side check in
+  // predictaSignUpWithPassword is only a fast-feedback convenience — a
+  // caller hitting this function directly must satisfy this too.
+  if (displayName.length < 2 || !NAME_REGEX.test(displayName)) {
+    return json({ error: "Merci d'indiquer ton vrai prénom." }, 400);
+  }
   const phone = String(body.phone ?? '').trim().slice(0, 30);
   const signUpData: Record<string, string> = { display_name: displayName };
   if (phone) signUpData.phone = phone;

@@ -1267,7 +1267,15 @@
     btn.textContent = 'Création en cours...';
 
     try {
-      await predictaSignUpWithPassword(email, password, name, '', phone);
+      const data = await predictaSignUpWithPassword(email, password, name, '', phone);
+      if (data.session) {
+        document.getElementById('ecran-3-confirmed').style.display = 'block';
+        document.getElementById('ecran-3-email-confirm').style.display = 'none';
+      } else {
+        document.getElementById('ecran-3-confirmed').style.display = 'none';
+        document.getElementById('ecran-3-email-confirm').style.display = 'block';
+        document.getElementById('ecran-3-email-address').textContent = email;
+      }
       allerEcran(3);
     } catch(err) {
       errorEl.textContent = /already registered|already exists/i.test(err.message)
@@ -1356,15 +1364,26 @@
 
     <!-- ÉCRAN 3 -->
     <div id="ecran-3" style="display:none;text-align:center;">
-      <div style="font-size:48px;margin-bottom:20px;">🎉</div>
-      <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:24px;margin-bottom:16px;color:var(--text);">Avant de commencer</h3>
-      <p style="color:var(--text-sec);font-size:15px;line-height:1.8;margin-bottom:28px;">
-        Nous attendons à ce que tu utilises réellement Prédicta pendant les <strong>17 prochains jours</strong>.<br><br>
-        Nous attendons aussi des retours honnêtes.<br>
-        Si quelque chose ne fonctionne pas, dis-le.<br>
-        Si quelque chose est exceptionnel, dis-le aussi.
-      </p>
-      <button onclick="entrerDansApp()" class="btn btn-primary" style="width:100%;justify-content:center;">Entrer dans l'application →</button>
+      <div id="ecran-3-confirmed">
+        <div style="font-size:48px;margin-bottom:20px;">🎉</div>
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:24px;margin-bottom:16px;color:var(--text);">Avant de commencer</h3>
+        <p style="color:var(--text-sec);font-size:15px;line-height:1.8;margin-bottom:28px;">
+          Nous attendons à ce que tu utilises réellement Prédicta pendant les <strong>17 prochains jours</strong>.<br><br>
+          Nous attendons aussi des retours honnêtes.<br>
+          Si quelque chose ne fonctionne pas, dis-le.<br>
+          Si quelque chose est exceptionnel, dis-le aussi.
+        </p>
+        <button onclick="entrerDansApp()" class="btn btn-primary" style="width:100%;justify-content:center;">Entrer dans l'application →</button>
+      </div>
+      <div id="ecran-3-email-confirm" style="display:none;">
+        <div style="font-size:48px;margin-bottom:20px;">📧</div>
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:24px;margin-bottom:16px;color:var(--text);">Confirme ton adresse email</h3>
+        <p style="color:var(--text-sec);font-size:15px;line-height:1.8;margin-bottom:28px;">
+          On vient de t'envoyer un lien de confirmation à <strong id="ecran-3-email-address" style="color:var(--text);"></strong>.<br><br>
+          Clique dessus pour activer ton compte, puis reviens te connecter.
+        </p>
+        <button onclick="fermerInscription()" class="btn btn-primary" style="width:100%;justify-content:center;">J'ai compris</button>
+      </div>
     </div>
 
   </div>

@@ -120,17 +120,22 @@ async function predictaGetWaitlistReferralCount(code) {
 async function predictaSignUpWithPassword(email, password, displayName, referralCode, phone) {
   email = String(email || '').trim().toLowerCase();
   password = String(password || '');
+  const name = String(displayName || '').trim().slice(0, 80);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) throw new Error('Adresse email invalide');
   if (password.length < 8) throw new Error('Le mot de passe doit contenir au moins 8 caractères');
+  // Require an actual name (at least one letter), not blank / digits-only /
+  // symbols-only. The real enforcement lives server-side in auth-rate-limit
+  // (this is just fast, friendly feedback before the network round-trip).
+  if (name.length < 2 || !/\p{L}/u.test(name)) throw new Error("Merci d'indiquer ton vrai prénom.");
 
   const { data, error } = await supabaseClient.functions.invoke('auth-rate-limit', {
     body: {
       mode: 'signup',
       email,
       password,
-      displayName: (displayName || email.split('@')[0]).trim().slice(0, 80),
+      displayName: name,
       referralCode: String(referralCode || '').trim().toUpperCase().slice(0, 16),
       phone: String(phone || '').trim().slice(0, 30),
       emailRedirectTo: `${window.location.origin}/predicta-dashboard.html`,
