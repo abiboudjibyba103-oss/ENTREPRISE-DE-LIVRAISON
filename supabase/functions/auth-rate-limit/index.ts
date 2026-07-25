@@ -81,6 +81,7 @@ Deno.serve(async (req) => {
     password?: string;
     displayName?: string;
     referralCode?: string;
+    phone?: string;
     emailRedirectTo?: string;
   };
   try {
@@ -147,7 +148,9 @@ Deno.serve(async (req) => {
 
   // mode === 'signup'
   const displayName = String(body.displayName ?? '').trim().slice(0, 80) || email.split('@')[0];
+  const phone = String(body.phone ?? '').trim().slice(0, 30);
   const signUpData: Record<string, string> = { display_name: displayName };
+  if (phone) signUpData.phone = phone;
   const referralCode = String(body.referralCode ?? '').trim().toUpperCase().slice(0, 16);
   if (REFERRAL_CODE_REGEX.test(referralCode)) {
     signUpData.referral_code = referralCode;
@@ -168,7 +171,7 @@ Deno.serve(async (req) => {
   // in on this server-side client, unlike the previous client-side insert).
   await supabaseAdmin
     .from('waitlist')
-    .insert({ user_id: data.user?.id ?? null, email, name: displayName })
+    .insert({ user_id: data.user?.id ?? null, email, name: displayName, phone: phone || null })
     .select()
     .maybeSingle();
 

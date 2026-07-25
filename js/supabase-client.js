@@ -117,7 +117,7 @@ async function predictaGetWaitlistReferralCount(code) {
  * `handle_new_user` trigger, using `displayName` from the user metadata.
  * On success, loads the returned tokens into the client's own session.
  */
-async function predictaSignUpWithPassword(email, password, displayName, referralCode) {
+async function predictaSignUpWithPassword(email, password, displayName, referralCode, phone) {
   email = String(email || '').trim().toLowerCase();
   password = String(password || '');
 
@@ -132,6 +132,7 @@ async function predictaSignUpWithPassword(email, password, displayName, referral
       password,
       displayName: (displayName || email.split('@')[0]).trim().slice(0, 80),
       referralCode: String(referralCode || '').trim().toUpperCase().slice(0, 16),
+      phone: String(phone || '').trim().slice(0, 30),
       emailRedirectTo: `${window.location.origin}/predicta-dashboard.html`,
     },
   });

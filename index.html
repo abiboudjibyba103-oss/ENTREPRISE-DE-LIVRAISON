@@ -1281,15 +1281,12 @@
     btn.textContent = 'Création en cours...';
 
     try {
-      const { error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: { data: { display_name: name, phone: phone } }
-      });
-      if (error) throw error;
+      await predictaSignUpWithPassword(email, password, name, '', phone);
       allerEcran(3);
     } catch(err) {
-      errorEl.textContent = err.message || 'Une erreur est survenue.';
+      errorEl.textContent = /already registered|already exists/i.test(err.message)
+        ? 'Un compte existe déjà avec cet email. Connecte-toi plutôt.'
+        : (err.message || 'Une erreur est survenue.');
       errorEl.style.display = 'block';
       btn.disabled = false;
       btn.textContent = 'Créer mon compte';
