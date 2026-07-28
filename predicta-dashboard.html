@@ -141,6 +141,20 @@
   .state4-icon { text-align: center; font-size: 34px; margin-bottom: 8px; }
 
   .evening-lesson-card p { font-size: 14.5px; line-height: 1.7; }
+  .evening-lesson-hero {
+    background: linear-gradient(135deg, var(--violet), #8B7CF6); color: #fff;
+    border-radius: var(--radius); padding: 22px; margin-bottom: 16px; box-shadow: var(--shadow);
+  }
+  .evening-lesson-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; margin-bottom: 4px; }
+  .evening-lesson-subtitle {
+    font-family: 'Space Mono', monospace; font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.08em; opacity: 0.85; margin-bottom: 14px;
+  }
+  .evening-lesson-text { font-size: 14.5px; line-height: 1.7; }
+  .evening-lesson-note {
+    font-size: 12px; opacity: 0.85; margin-top: 14px; padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+  }
 
   /* ===== MA MÉMOIRE ===== */
   .locked-card { text-align: center; padding: 30px 22px; }
@@ -301,7 +315,6 @@
           <input id="taskInput" class="text-input" type="text" maxlength="120" placeholder="Ex : Rapport client, révisions..." />
           <button id="startSessionBtn" class="btn btn-primary btn-block" onclick="startSession()">Lancer une session</button>
         </div>
-        <div id="yesterdayLessonCard" class="card evening-lesson-card" style="display:none;"></div>
 
         <!-- État 2 : session en cours -->
         <div id="homeState2" class="card" style="display:none;">
@@ -334,9 +347,11 @@
         <div id="homeState4" class="card" style="display:none;">
           <div class="state4-icon">✅</div>
           <p class="state-message-text" id="state4Message"></p>
-          <div id="state4LessonWrap" class="evening-lesson-card" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);"></div>
-          <button id="state4ContinueBtn" class="btn btn-primary btn-block" style="display:none;margin-top:16px;" onclick="goIdleFromState4()">Continuer →</button>
         </div>
+
+        <!-- Enseignement du soir : toujours visible, quel que soit l'état -->
+        <p class="section-label">Enseignement du soir</p>
+        <div id="eveningLessonSection"><div class="card evening-lesson-card"><p class="muted-text">Chargement...</p></div></div>
       </div>
     </section>
 
@@ -505,7 +520,7 @@
     const firstName = (currentProfile?.display_name || '').trim().split(' ')[0];
     document.getElementById('homeGreeting').textContent = firstName ? `Bonjour ${firstName}.` : 'Bonjour.';
 
-    ['homeState1', 'homeState2', 'homeState3', 'homeStateInterruptedDone', 'homeState4', 'yesterdayLessonCard'].forEach((id) => {
+    ['homeState1', 'homeState2', 'homeState3', 'homeStateInterruptedDone', 'homeState4'].forEach((id) => {
       document.getElementById(id).style.display = 'none';
     });
     stopTimerLoop();
@@ -523,13 +538,12 @@
       document.getElementById('homeState4').style.display = 'block';
       document.getElementById('state4Message').textContent =
         `Session terminée. ${lastCompletedDurationMin} minute${lastCompletedDurationMin > 1 ? 's' : ''}. Prédicta a enregistré.`;
-      document.getElementById('state4LessonWrap').style.display = 'none';
-      document.getElementById('state4ContinueBtn').style.display = 'none';
     } else {
       homeState = 'idle';
       document.getElementById('homeState1').style.display = 'block';
-      renderYesterdayLessonCard();
     }
+
+    renderEveningLessonSection();
   }
 
   async function startSession() {
@@ -599,17 +613,15 @@
       await predictaCompleteActiveSession(sessionId, durationMin);
       lastCompletedDurationMin = durationMin;
       activeSession = null;
+      // Refresh the today cache BEFORE rendering, so the evening-lesson
+      // section's "newer session than the lesson" check sees this
+      // session immediately instead of one render cycle late.
+      todaySessionsCache = await predictaGetTodaySessions();
       homeState = 'completed';
       renderHome();
-      todaySessionsCache = await predictaGetTodaySessions();
       memoryLoaded = false;
       refreshPredictionsAndBrainMetrics();
-
-      if (new Date().getHours() >= eveningHourThreshold()) {
-        showState4EveningLesson();
-      } else {
-        setTimeout(() => { if (homeState === 'completed') { homeState = 'idle'; renderHome(); } }, 3000);
-      }
+      setTimeout(() => { if (homeState === 'completed') { homeState = 'idle'; renderHome(); } }, 3000);
     } catch (err) {
       showHomeError(err);
     } finally {
@@ -681,9 +693,9 @@
     try {
       await predictaInterruptActiveSession(sessionId, interruptDurationMin, reason);
       activeSession = null;
+      todaySessionsCache = await predictaGetTodaySessions();
       homeState = 'interrupted-done';
       renderHome();
-      todaySessionsCache = await predictaGetTodaySessions();
       memoryLoaded = false;
       refreshPredictionsAndBrainMetrics();
       setTimeout(() => { homeState = 'idle'; renderHome(); }, 3000);
@@ -695,51 +707,56 @@
     }
   }
 
-  function goIdleFromState4() {
-    homeState = 'idle';
-    renderHome();
-  }
+  // Always-visible "Enseignement du soir" section at the bottom of
+  // Accueil, regardless of which of the 4 session states is showing.
+  async function renderEveningLessonSection() {
+    const el = document.getElementById('eveningLessonSection');
+    const threshold = eveningHourThreshold();
+    const thresholdLabel = `${String(threshold).padStart(2, '0')}h`;
+    const hasSessionToday = todaySessionsCache.length > 0;
 
-  // Shows today's evening teaching inline on État 4, right after
-  // finishing a session past the configured hour. No auto-return to
-  // idle in this case (see "Continuer" button) — a 3s timer would cut
-  // the lesson off mid-generation.
-  async function showState4EveningLesson() {
-    const wrap = document.getElementById('state4LessonWrap');
-    const continueBtn = document.getElementById('state4ContinueBtn');
-    wrap.style.display = 'block';
-    wrap.innerHTML = `<p class="muted-text">Prédicta analyse ta journée...</p>`;
-    try {
-      const { lessonText } = await predictaDailyLesson();
-      wrap.innerHTML = lessonText
-        ? `<p>${escapeHtml(lessonText)}</p>`
-        : `<p class="muted-text">Enseignement momentanément indisponible.</p>`;
-    } catch (err) {
-      console.error('[predicta] state4 evening lesson error', err.message);
-      wrap.innerHTML = `<p class="muted-text">Enseignement momentanément indisponible, réessaie plus tard.</p>`;
+    if (!hasSessionToday) {
+      el.innerHTML = `<div class="card evening-lesson-card"><p>Lance une session aujourd'hui — Prédicta analysera ta journée ce soir à ${thresholdLabel}.</p></div>`;
+      return;
     }
-    continueBtn.style.display = 'block';
-  }
+    if (new Date().getHours() < threshold) {
+      el.innerHTML = `<div class="card evening-lesson-card"><p>Prédicta analysera ta journée ce soir à ${thresholdLabel}.</p></div>`;
+      return;
+    }
 
-  // Yesterday's teaching, shown as a discreet card under État 1 — read
-  // only (never triggers generation), hidden entirely if none exists.
-  async function renderYesterdayLessonCard() {
-    const el = document.getElementById('yesterdayLessonCard');
-    const y = new Date();
-    y.setDate(y.getDate() - 1);
-    const yStr = y.toISOString().slice(0, 10);
+    const todayStr = new Date().toISOString().slice(0, 10);
     try {
-      const lesson = await predictaGetDailyLessonForDate(yStr);
-      if (lesson?.lesson_text) {
-        el.style.display = 'block';
-        el.innerHTML = `<p class="muted-text" style="margin-bottom:6px;">Hier soir</p><p>${escapeHtml(lesson.lesson_text)}</p>`;
+      const cached = await predictaGetDailyLessonForDate(todayStr);
+      if (cached?.lesson_text) {
+        renderEveningLessonHero(el, cached.lesson_text, cached.created_at);
+        return;
+      }
+      el.innerHTML = `<div class="card evening-lesson-card"><p class="muted-text">Prédicta analyse ta journée...</p></div>`;
+      const { lessonText } = await predictaDailyLesson();
+      if (lessonText) {
+        renderEveningLessonHero(el, lessonText, new Date().toISOString());
       } else {
-        el.style.display = 'none';
+        el.innerHTML = `<div class="card evening-lesson-card"><p class="muted-text">Enseignement momentanément indisponible.</p></div>`;
       }
     } catch (err) {
-      console.error('[predicta] yesterdayLesson error', err.message);
-      el.style.display = 'none';
+      console.error('[predicta] eveningLessonSection error', err.message);
+      el.innerHTML = `<div class="card evening-lesson-card"><p class="muted-text">Enseignement momentanément indisponible, réessaie plus tard.</p></div>`;
     }
+  }
+
+  // Violet "hero" card once today's lesson exists. If a session was
+  // started after the lesson was generated, appends a discreet note
+  // instead of regenerating (tomorrow's teaching will account for it).
+  function renderEveningLessonHero(el, lessonText, lessonCreatedAtIso) {
+    const lessonCreatedAt = new Date(lessonCreatedAtIso).getTime();
+    const newerSession = todaySessionsCache.some((s) => new Date(s.started_at).getTime() > lessonCreatedAt);
+    el.innerHTML = `
+      <div class="evening-lesson-hero">
+        <p class="evening-lesson-title">Enseignement du soir</p>
+        <p class="evening-lesson-subtitle">Tiré de ta journée d'aujourd'hui</p>
+        <p class="evening-lesson-text">${escapeHtml(lessonText)}</p>
+        ${newerSession ? `<p class="evening-lesson-note">Prédicta a enregistré. L'analyse de demain en tiendra compte.</p>` : ''}
+      </div>`;
   }
 
   // ===== MA MÉMOIRE =====
