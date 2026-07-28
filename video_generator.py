@@ -112,17 +112,24 @@ _MOTS_INTERDITS = (
     "animal", "pet", "dog", "cat", "child", "kid", "baby", "white",
     "woman", "female", "girl", "lady",
 )
-_MOTS_REQUIS = ("black", "african")
+_MOTS_REQUIS = ("black", "african", "dark", "melanin", "africa")
+
+_MOTS_CLES_ALTERNATIFS = (
+    "african man work",
+    "black man focus",
+    "african student",
+    "dark skin man laptop",
+)
 
 
 def _hit_autorise(hit: dict) -> bool:
-    """N'accepte que les vidéos explicitement taguées black/african, sans mot interdit.
+    """N'accepte que les vidéos explicitement taguées black/african/dark/melanin, sans mot interdit.
 
     Un simple mot-clé de recherche ne garantit pas que Pixabay retourne des
     vidéos correspondant réellement à des hommes noirs africains — beaucoup de
     résultats n'ont aucune indication d'origine ethnique dans leurs tags. On
-    exige donc explicitement "black" ou "african" dans les tags/titre, en plus
-    d'exclure les mots interdits.
+    exige donc explicitement un des mots de `_MOTS_REQUIS` dans les tags/titre,
+    en plus d'exclure les mots interdits.
     """
     texte = f"{hit.get('tags', '')} {hit.get('title', '')}".lower()
     if any(mot in texte for mot in _MOTS_INTERDITS):
@@ -131,25 +138,30 @@ def _hit_autorise(hit: dict) -> bool:
 
 
 def download_videos(keywords: list, output_dir: str, count_per_keyword: int = 2) -> list:
-    """Télécharge des vidéos Pixabay pour chaque mot-clé et retourne leurs chemins."""
+    """Télécharge des vidéos Pixabay pour chaque mot-clé et retourne leurs chemins.
+
+    Si un mot-clé ne fournit pas assez de vidéos passant `_hit_autorise`, on
+    complète avec les mots-clés alternatifs de `_MOTS_CLES_ALTERNATIFS`, dans
+    l'ordre — plutôt que de retirer "african"/"black" de la requête, ce qui
+    ne faisait que renvoyer des vidéos génériques rejetées par le filtre.
+    """
     os.makedirs(output_dir, exist_ok=True)
     chemins_videos = []
 
     for mot_cle in keywords:
-        hits = _rechercher_pixabay(mot_cle)
-
-        if not hits:
-            mot_cle_simplifie = re.sub(
-                r"\b(african|black)\b", "", mot_cle, flags=re.IGNORECASE
-            ).strip()
-            mot_cle_simplifie = re.sub(r"\s+", " ", mot_cle_simplifie)
-            if mot_cle_simplifie and mot_cle_simplifie != mot_cle:
-                hits = _rechercher_pixabay(mot_cle_simplifie)
-
+        candidats = _rechercher_pixabay(mot_cle)
+        index_alternatif = 0
         telecharges = 0
-        for hit in hits:
-            if telecharges >= count_per_keyword:
-                break
+
+        while telecharges < count_per_keyword:
+            if not candidats:
+                if index_alternatif >= len(_MOTS_CLES_ALTERNATIFS):
+                    break
+                candidats = _rechercher_pixabay(_MOTS_CLES_ALTERNATIFS[index_alternatif])
+                index_alternatif += 1
+                continue
+
+            hit = candidats.pop(0)
 
             if not _hit_autorise(hit):
                 continue
@@ -337,8 +349,8 @@ def generer_fichier_sous_titres(mots: list, platform: str, chemin_sortie: str) -
         f"PlayResY: {hauteur}\n",
         "\n",
         "[V4+ Styles]\n",
-        "Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, Bold, Outline, Alignment, MarginV\n",
-        f"Style: Predicta,Arial,{taille},&H0000FFFF,&H00000000,-1,3,2,40\n",
+        "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, BorderStyle, Outline, Alignment, MarginL, MarginR, MarginV\n",
+        f"Style: Predicta,Arial,{taille},&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,1,3,2,0,0,40\n",
         "\n",
         "[Events]\n",
         "Format: Layer, Start, End, Style, Text\n",
@@ -366,12 +378,30 @@ def _chemin_pour_filtre_ffmpeg(chemin: str) -> str:
     return chemin_abs.replace(":", "\\:")
 
 
+def _libass_disponible() -> bool:
+    """Vérifie que le filtre FFmpeg 'ass' (nécessite libass) est bien disponible."""
+    resultat = subprocess.run(["ffmpeg", "-filters"], capture_output=True, text=True)
+    for ligne in resultat.stdout.splitlines():
+        parties = ligne.split()
+        if len(parties) >= 2 and parties[1] == "ass":
+            return True
+    return False
+
+
 def add_subtitles(video_path: str, mots: list, platform: str) -> str:
     """Brûle les sous-titres stylés dans la vidéo assemblée, à partir du timing des mots."""
     if not mots:
         print(
             "Aucun timing de mot reçu — les sous-titres sont ignorés "
             "(vérifie que generate_voice() a bien capturé les WordBoundary d'Edge TTS)."
+        )
+        return video_path
+
+    if not _libass_disponible():
+        print(
+            "FFmpeg n'a pas été compilé avec libass (filtre 'ass' indisponible) — "
+            "les sous-titres ne peuvent pas être incrustés. Réinstalle FFmpeg avec "
+            "le support libass (--enable-libass) pour activer les sous-titres."
         )
         return video_path
 
@@ -383,7 +413,7 @@ def add_subtitles(video_path: str, mots: list, platform: str) -> str:
     _executer_ffmpeg([
         "ffmpeg",
         "-i", video_path,
-        "-vf", f"ass={_chemin_pour_filtre_ffmpeg(chemin_ass)}",
+        "-vf", f"ass='{_chemin_pour_filtre_ffmpeg(chemin_ass)}'",
         "-c:v", "libx264",
         "-c:a", "copy",
         "-y",

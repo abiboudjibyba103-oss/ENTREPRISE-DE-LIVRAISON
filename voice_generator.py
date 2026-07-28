@@ -30,7 +30,7 @@ except ImportError:
 AudioSegment.converter = imageio_ffmpeg.get_ffmpeg_exe()
 
 VOICE = "fr-FR-HenriNeural"  # voix masculine française, naturelle et gratuite
-PAUSE_MS = 100  # petite pause entre chaque phrase, juste pour marquer la fin
+PAUSE_MS = 50  # petite pause entre chaque phrase, juste pour marquer la fin
 
 _HEADER_RE = re.compile(r"^#{1,6}\s*")
 _SEPARATEUR_RE = re.compile(r"^[-=_*]{3,}$")
@@ -136,8 +136,8 @@ def _rogner_silence(segment: AudioSegment) -> tuple:
     # Seuil plus permissif que le défaut (-50dBFS) : le "silence" réel en fin
     # de phrase Edge TTS n'est pas parfaitement muet (bruit de fond léger),
     # donc un seuil trop strict ne détectait presque rien à rogner.
-    debut_silence = detect_leading_silence(segment, silence_threshold=-35.0)
-    fin_silence = detect_leading_silence(segment.reverse(), silence_threshold=-35.0)
+    debut_silence = detect_leading_silence(segment, silence_threshold=-28.0)
+    fin_silence = detect_leading_silence(segment.reverse(), silence_threshold=-28.0)
     fin = max(len(segment) - fin_silence, debut_silence)
     return segment[debut_silence:fin], debut_silence / 1000.0
 
