@@ -367,14 +367,10 @@
             <div class="progress-track"><div class="progress-fill" id="memoryProgressFill"></div></div>
             <p class="progress-label" id="memoryProgressLabel">Jour 1 / 7</p>
           </div>
-          <div class="card evening-lesson-card" id="memoryEarlyLesson"><p class="muted-text">Chargement...</p></div>
         </div>
 
         <!-- État J7+ -->
         <div id="memoryMain" style="display:none;">
-          <p class="section-label">Enseignement du soir</p>
-          <div id="memorySection1"><div class="card evening-lesson-card"><p class="muted-text">Chargement...</p></div></div>
-
           <p class="section-label">Ton évolution</p>
           <div class="card">
             <div class="chart-toggle">
@@ -771,77 +767,14 @@
     if (early) {
       document.getElementById('memoryProgressLabel').textContent = `Jour ${dayJ} / 7`;
       animateProgressFill(document.getElementById('memoryProgressFill'), Math.min(100, (dayJ / 7) * 100));
-      renderEarlyDaysLessonHint();
       return;
     }
-
-    renderEveningLessonWidget('memorySection1');
 
     const sessions = await predictaGetRecentSessions(1000);
     memoryChartSessions = sessions.filter((s) => s.status !== 'in_progress');
     renderMemoryChart('week');
 
     renderMemorySection3(dayJ);
-  }
-
-  // État J1-J6: only shows today's lesson if a session was already
-  // logged today AND it's past the configured hour; otherwise a single
-  // combined nudge to launch a session.
-  async function renderEarlyDaysLessonHint() {
-    const el = document.getElementById('memoryEarlyLesson');
-    const thresholdLabel = `${String(eveningHourThreshold()).padStart(2, '0')}h`;
-    const hasSessionToday = todaySessionsCache.length > 0;
-
-    if (!hasSessionToday || new Date().getHours() < eveningHourThreshold()) {
-      el.innerHTML = `<p>Lance une session aujourd'hui — Prédicta analysera ta journée ce soir à ${thresholdLabel}.</p>`;
-      return;
-    }
-
-    const todayStr = new Date().toISOString().slice(0, 10);
-    try {
-      const cached = await predictaGetDailyLessonForDate(todayStr);
-      if (cached?.lesson_text) {
-        el.innerHTML = `<p>${escapeHtml(cached.lesson_text)}</p>`;
-        return;
-      }
-      el.innerHTML = `<p class="muted-text">Prédicta analyse ta journée...</p>`;
-      const { lessonText } = await predictaDailyLesson();
-      el.innerHTML = lessonText
-        ? `<p>${escapeHtml(lessonText)}</p>`
-        : `<p class="muted-text">Enseignement momentanément indisponible.</p>`;
-    } catch (err) {
-      console.error('[predicta] earlyDaysLesson error', err.message);
-      el.innerHTML = `<p class="muted-text">Enseignement momentanément indisponible, réessaie plus tard.</p>`;
-    }
-  }
-
-  // État J7+, section "Enseignement du soir": before the configured
-  // hour, just says when to come back; after it, shows today's cached
-  // lesson or generates one via the daily-lesson edge function.
-  async function renderEveningLessonWidget(elId) {
-    const el = document.getElementById(elId);
-    const threshold = eveningHourThreshold();
-    const thresholdLabel = `${String(threshold).padStart(2, '0')}h`;
-
-    if (new Date().getHours() < threshold) {
-      el.innerHTML = `<div class="card evening-lesson-card"><p>Prédicta analysera ta journée ce soir à ${thresholdLabel}.</p></div>`;
-      return;
-    }
-
-    const todayStr = new Date().toISOString().slice(0, 10);
-    try {
-      const cached = await predictaGetDailyLessonForDate(todayStr);
-      if (cached?.lesson_text) {
-        el.innerHTML = `<div class="card evening-lesson-card"><p>${escapeHtml(cached.lesson_text)}</p></div>`;
-        return;
-      }
-      el.innerHTML = `<div class="card evening-lesson-card"><p class="muted-text">Prédicta analyse ta journée...</p></div>`;
-      const { lessonText } = await predictaDailyLesson();
-      el.innerHTML = `<div class="card evening-lesson-card"><p>${lessonText ? escapeHtml(lessonText) : 'Enseignement momentanément indisponible.'}</p></div>`;
-    } catch (err) {
-      console.error('[predicta] eveningLessonWidget error', err.message);
-      el.innerHTML = `<div class="card evening-lesson-card"><p class="muted-text">Enseignement momentanément indisponible, réessaie plus tard.</p></div>`;
-    }
   }
 
   // "Ton évolution": simple hand-rolled SVG line chart (no external
