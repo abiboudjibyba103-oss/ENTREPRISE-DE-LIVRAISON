@@ -265,16 +265,20 @@ create policy "predictions_update_own" on public.predictions
 create policy "predictions_delete_own" on public.predictions
   for delete using (auth.uid() = user_id);
 
--- Lets generate-predictions store exactly 3 predictions per user per
--- day, regenerable same-day without piling up duplicates (mirrors
--- daily_lessons / coach_messages' own "one per day" pattern). A plain
--- unique(user_id, prediction_date) would only allow ONE row per day,
--- silently dropping 2 of the 3 predictions on upsert — hence the
--- extra prediction_index column.
+-- Lets generate-predictions store up to 4 "mémoires personnalisées" per
+-- user per day, regenerable same-day without piling up duplicates
+-- (mirrors daily_lessons / coach_messages' own "one per day" pattern).
+-- A plain unique(user_id, prediction_date) would only allow ONE row
+-- per day, silently dropping the rest of the memories on upsert —
+-- hence the extra prediction_index column.
 alter table public.predictions add column if not exists prediction_date date
   not null default (now() at time zone 'utc')::date;
 alter table public.predictions add column if not exists prediction_index smallint
-  not null default 0 check (prediction_index between 0 and 2);
+  not null default 0 check (prediction_index between 0 and 3);
+-- Real number of times the underlying pattern was actually observed
+-- in the user's sessions (shown as "Observé N fois" on the card) —
+-- computed in code, never left to the LLM to invent.
+alter table public.predictions add column if not exists occurrence_count smallint;
 
 create unique index if not exists predictions_one_set_per_user_per_day
   on public.predictions (user_id, prediction_date, prediction_index);

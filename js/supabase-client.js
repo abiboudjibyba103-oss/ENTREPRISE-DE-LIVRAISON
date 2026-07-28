@@ -320,10 +320,13 @@ async function predictaDailyLesson() {
 
 /**
  * Asks Prédicta to generate (or fetch the cached version of) today's
- * 3 personalized behavioral predictions, grounded in the user's real
- * session history (Supabase edge function `generate-predictions`).
- * Returns { predictions, notEnoughData }: `predictions` is an empty
- * array when the user hasn't logged enough sessions yet.
+ * personalized memories ("mémoires personnalisées" — up to 4), each
+ * grounded in a real repeated pattern found in the user's session
+ * history (Supabase edge function `generate-predictions`). Returns
+ * { predictions, notEnoughData }: `predictions` is an array of
+ * { text, count } (count = real number of times the pattern was
+ * observed), empty when there isn't enough data or no pattern repeats
+ * often enough yet.
  */
 async function predictaGeneratePredictions() {
   const session = await predictaGetSession();

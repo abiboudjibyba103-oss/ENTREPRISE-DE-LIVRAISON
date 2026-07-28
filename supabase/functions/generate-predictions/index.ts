@@ -1,15 +1,19 @@
 // ============================================================
 // Prédicta — generate-predictions edge function
 //
-// Analyzes the user's full session history and asks an LLM (Llama
-// 3.3 70B via Groq) for 3 short, personalized behavioral predictions
-// in French, grounded in real computed metrics (hardest day of the
-// week, best time slot, most frequent interruption cause, average
-// session length, 7-day trend). Cached per user/day in `predictions`
-// (3 rows, one per prediction) so re-opening the Prédictions page
-// doesn't regenerate it — it IS regenerated the next time it's
-// called on a new day, or the first time it's called with enough
-// data.
+// Detects real repeated behavioral patterns in the user's session
+// history (same time-of-day + quick interruption, short sessions
+// completed in full, long sessions interrupted, same weekday+slot +
+// same interruption reason — each requiring at least 3 real
+// occurrences, computed in code, never left to the LLM to invent or
+// miscount) and asks an LLM (Llama 3.3 70B via Groq) to phrase each
+// one into a short French "mémoire personnalisée":
+//   "Les [N] dernières fois que [situation], [ce qui s'est passé]."
+// Up to 4 memories, cached per user/day in `predictions` (one row per
+// memory, via upsert on user_id+prediction_date+prediction_index) so
+// re-opening the Ma mémoire page doesn't regenerate it. Returns
+// { predictions: [], notEnoughData: true } when there isn't enough
+// data or no pattern repeats often enough yet.
 //
 // Deploy with:
 //   supabase functions deploy generate-predictions
@@ -26,6 +30,7 @@ const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
 
 const PREDICTION_MODEL = 'llama-3.3-70b-versatile';
 const MIN_SESSIONS = 3;
+const MAX_MEMORIES = 4;
 
 // Comma-separated list of allowed frontend origins, e.g.
 // "https://predicta.example.com,https://www.predicta.example.com".
@@ -58,130 +63,74 @@ type SessionRow = {
   interruption_reason: string | null;
 };
 
-function computeMetrics(sessions: SessionRow[]) {
-  // 1. Hardest day of the week: lowest completion rate, needs at
-  // least 2 sessions on that weekday to mean anything.
-  const byDay = new Map<number, { total: number; completed: number }>();
-  sessions.forEach((s) => {
-    const d = new Date(s.started_at).getDay();
-    const stats = byDay.get(d) ?? { total: 0, completed: 0 };
-    stats.total += 1;
-    if (s.status === 'completed') stats.completed += 1;
-    byDay.set(d, stats);
-  });
-  let hardestDay: { day: string; rate: number; total: number } | null = null;
-  let hardestRate = Infinity;
-  for (const [d, stats] of byDay) {
-    if (stats.total < 2) continue;
-    const rate = stats.completed / stats.total;
-    if (rate < hardestRate) {
-      hardestRate = rate;
-      hardestDay = { day: DAY_NAMES[d], rate, total: stats.total };
-    }
-  }
+type PatternCandidate = { count: number; description: string };
 
-  // 2. Best time slot: highest average duration among completed
-  // sessions (same 3-bucket definition used by the dashboard's own
-  // "Mon Cerveau" best-slot card, for consistency across the app).
-  const slots: Record<string, number[]> = {
-    'matin (5h-12h)': [],
-    'après-midi (12h-18h)': [],
-    'soir (18h-24h)': [],
-  };
-  sessions
-    .filter((s) => s.status === 'completed' && s.duration_min != null)
-    .forEach((s) => {
-      const h = new Date(s.started_at).getHours();
-      if (h >= 5 && h < 12) slots['matin (5h-12h)'].push(s.duration_min as number);
-      else if (h >= 12 && h < 18) slots['après-midi (12h-18h)'].push(s.duration_min as number);
-      else if (h >= 18 && h < 24) slots['soir (18h-24h)'].push(s.duration_min as number);
-    });
-  let bestSlot: { slot: string; avg: number; count: number } | null = null;
-  let bestAvg = -Infinity;
-  for (const [slot, durations] of Object.entries(slots)) {
-    if (durations.length === 0) continue;
-    const avg = durations.reduce((a, b) => a + b, 0) / durations.length;
-    if (avg > bestAvg) {
-      bestAvg = avg;
-      bestSlot = { slot, avg, count: durations.length };
-    }
-  }
-
-  // 3. Most frequent interruption cause.
-  const reasons = sessions
-    .filter((s) => s.status === 'interrupted' && s.interruption_reason)
-    .map((s) => s.interruption_reason as string);
-  let topReason: { reason: string; count: number; total: number } | null = null;
-  if (reasons.length > 0) {
-    const counts = new Map<string, number>();
-    reasons.forEach((r) => counts.set(r, (counts.get(r) ?? 0) + 1));
-    const [reason, count] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
-    topReason = { reason, count, total: reasons.length };
-  }
-
-  // 4. Average duration of completed sessions.
-  const completed = sessions.filter((s) => s.status === 'completed' && s.duration_min != null);
-  const avgDuration = completed.length
-    ? completed.reduce((sum, s) => sum + (s.duration_min as number), 0) / completed.length
-    : null;
-
-  // 5. Trend: completion rate over the last 7 days vs the 7 days
-  // before that.
-  const now = Date.now();
-  const DAY_MS = 24 * 60 * 60 * 1000;
-  const last7 = sessions.filter((s) => now - new Date(s.started_at).getTime() <= 7 * DAY_MS);
-  const prev7 = sessions.filter((s) => {
-    const age = now - new Date(s.started_at).getTime();
-    return age > 7 * DAY_MS && age <= 14 * DAY_MS;
-  });
-  const completionRate = (arr: SessionRow[]) =>
-    arr.length ? arr.filter((s) => s.status === 'completed').length / arr.length : null;
-  const rateLast7 = completionRate(last7);
-  const ratePrev7 = completionRate(prev7);
-  let trend: { direction: string; rateLast7: number; ratePrev7: number } | null = null;
-  if (rateLast7 != null && ratePrev7 != null) {
-    const direction =
-      rateLast7 > ratePrev7 + 0.05 ? 'amélioration' : rateLast7 < ratePrev7 - 0.05 ? 'dégradation' : 'stable';
-    trend = { direction, rateLast7, ratePrev7 };
-  }
-
-  return {
-    hardestDay,
-    bestSlot,
-    topReason,
-    avgDuration,
-    completedCount: completed.length,
-    totalCount: sessions.length,
-    trend,
-  };
+function timeSlotOf(hour: number): string {
+  if (hour >= 5 && hour < 12) return 'le matin';
+  if (hour >= 12 && hour < 18) return "l'après-midi";
+  if (hour >= 18 && hour < 20) return 'en début de soirée';
+  return 'tard le soir'; // 20h-5h
 }
 
-function buildDataLines(metrics: ReturnType<typeof computeMetrics>): string[] {
-  const lines = [`Nombre total de sessions: ${metrics.totalCount} (${metrics.completedCount} complétée(s))`];
-  if (metrics.hardestDay) {
-    lines.push(
-      `Jour le plus difficile: ${metrics.hardestDay.day} (${Math.round(metrics.hardestDay.rate * 100)}% de sessions complétées sur ${metrics.hardestDay.total} sessions ce jour-là)`
-    );
+// Every candidate here requires >= 3 real occurrences to exist at
+// all — that's the actual enforcement of "minimum 3 occurrences",
+// computed in code rather than trusted to the LLM's obedience.
+function computeRepeatedPatterns(sessions: SessionRow[]): PatternCandidate[] {
+  const candidates: PatternCandidate[] = [];
+
+  // A. Same time-of-day slot -> quick interruption (before 15 min).
+  const bySlotQuickInterrupt = new Map<string, number>();
+  sessions.forEach((s) => {
+    if (s.status !== 'interrupted' || s.duration_min == null || s.duration_min >= 15) return;
+    const slot = timeSlotOf(new Date(s.started_at).getHours());
+    bySlotQuickInterrupt.set(slot, (bySlotQuickInterrupt.get(slot) ?? 0) + 1);
+  });
+  for (const [slot, count] of bySlotQuickInterrupt) {
+    if (count >= 3) {
+      candidates.push({ count, description: `tu as travaillé ${slot}, tu as interrompu ta session avant 15 minutes` });
+    }
   }
-  if (metrics.bestSlot) {
-    lines.push(
-      `Meilleure tranche horaire: ${metrics.bestSlot.slot}, durée moyenne ${Math.round(metrics.bestSlot.avg)} min sur ${metrics.bestSlot.count} session(s) complétée(s)`
-    );
+
+  // B. Short sessions (20 min or less) completed all the way through.
+  const shortCompleted = sessions.filter((s) => s.status === 'completed' && s.duration_min != null && s.duration_min <= 20);
+  if (shortCompleted.length >= 3) {
+    candidates.push({
+      count: shortCompleted.length,
+      description: "tu as commencé par une session courte (20 minutes ou moins), tu l'as menée jusqu'au bout",
+    });
   }
-  if (metrics.topReason) {
-    lines.push(
-      `Cause d'interruption la plus fréquente: "${metrics.topReason.reason}" (${metrics.topReason.count} fois sur ${metrics.topReason.total} interruption(s))`
-    );
+
+  // C. Long sessions (45 min or more) ending in an interruption.
+  const longInterrupted = sessions.filter((s) => s.status === 'interrupted' && s.duration_min != null && s.duration_min >= 45);
+  if (longInterrupted.length >= 3) {
+    candidates.push({
+      count: longInterrupted.length,
+      description: "tu as travaillé plus de 45 minutes d'affilée, ta session s'est terminée par une interruption",
+    });
   }
-  if (metrics.avgDuration != null) {
-    lines.push(`Durée moyenne des sessions complétées: ${Math.round(metrics.avgDuration)} min`);
+
+  // D. Same weekday + time slot -> same interruption reason, repeated.
+  const byDaySlotReason = new Map<string, { count: number; day: string; slot: string; reason: string }>();
+  sessions.forEach((s) => {
+    if (s.status !== 'interrupted' || !s.interruption_reason) return;
+    const d = new Date(s.started_at);
+    const day = DAY_NAMES[d.getDay()];
+    const slot = timeSlotOf(d.getHours());
+    const key = `${day}|${slot}|${s.interruption_reason}`;
+    const existing = byDaySlotReason.get(key);
+    if (existing) existing.count += 1;
+    else byDaySlotReason.set(key, { count: 1, day, slot, reason: s.interruption_reason });
+  });
+  for (const { count, day, slot, reason } of byDaySlotReason.values()) {
+    if (count >= 3) {
+      candidates.push({
+        count,
+        description: `tu as lancé une session le ${day} ${slot}, tu l'as interrompue pour la raison : "${reason}"`,
+      });
+    }
   }
-  if (metrics.trend) {
-    lines.push(
-      `Tendance sur les 7 derniers jours vs les 7 précédents: ${metrics.trend.direction} (${Math.round(metrics.trend.rateLast7 * 100)}% de complétion cette semaine vs ${Math.round(metrics.trend.ratePrev7 * 100)}% la semaine précédente)`
-    );
-  }
-  return lines;
+
+  return candidates.sort((a, b) => b.count - a.count).slice(0, MAX_MEMORIES);
 }
 
 Deno.serve(async (req) => {
@@ -203,7 +152,7 @@ Deno.serve(async (req) => {
 
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !GROQ_API_KEY) {
     console.error('[generate-predictions] missing required secret(s): SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GROQ_API_KEY');
-    return json({ error: 'Prédictions momentanément indisponibles (configuration serveur).' }, 500);
+    return json({ error: 'Mémoires momentanément indisponibles (configuration serveur).' }, 500);
   }
 
   const authHeader = req.headers.get('Authorization') ?? '';
@@ -222,20 +171,26 @@ Deno.serve(async (req) => {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  // Cache hit: today's 3 predictions already exist — return them
-  // without spending another Groq call. Without this, simply opening
-  // the Prédictions page would burn a Groq call every single time.
+  // Cache hit: today's memories already exist — return them without
+  // spending another Groq call. Without this, simply opening the Ma
+  // mémoire page would burn a Groq call every single time.
   const { data: cached } = await supabaseAdmin
     .from('predictions')
-    .select('prediction_text, prediction_index')
+    .select('prediction_text, prediction_index, occurrence_count')
     .eq('user_id', user.id)
     .eq('prediction_date', today)
     .order('prediction_index', { ascending: true });
 
-  if (cached && cached.length === 3) {
-    return json({ predictions: cached.map((p) => p.prediction_text), notEnoughData: false });
+  if (cached && cached.length > 0) {
+    return json({
+      predictions: cached.map((p) => ({ text: p.prediction_text, count: p.occurrence_count ?? 0 })),
+      notEnoughData: false,
+    });
   }
 
+  // Always re-derive the user's own sessions from our own trusted
+  // query, scoped to the authenticated user.id — never from a
+  // client-submitted session list, which could be tampered with.
   const { data: allSessions } = await supabaseAdmin
     .from('sessions')
     .select('duration_min, status, started_at, interruption_reason')
@@ -246,21 +201,31 @@ Deno.serve(async (req) => {
     return json({ predictions: [], notEnoughData: true });
   }
 
-  const metrics = computeMetrics(allSessions);
-  const dataLines = buildDataLines(metrics);
+  const candidates = computeRepeatedPatterns(allSessions);
+  if (candidates.length === 0) {
+    // No pattern repeats often enough yet — nothing to ask Groq about,
+    // so this costs nothing beyond the two queries above.
+    return json({ predictions: [], notEnoughData: true });
+  }
 
-  const systemPrompt = `Tu es le moteur de prédiction de Prédicta.
-Analyse les données de sessions de cet utilisateur et génère exactement 3 prédictions personnalisées en français.
-Chaque prédiction doit être une phrase courte et précise basée sur les données réelles ci-dessous.
-Exemples de bon format:
-- "Tu as 75% de chances de décrocher avant 45 minutes le lundi"
-- "Ton meilleur créneau est le matin entre 8h et 11h"
-- "Tu interromps tes sessions 2x plus souvent quand tu travailles l'après-midi"
-N'invente jamais de données : base-toi uniquement sur les faits listés ci-dessous. Si une donnée n'est pas disponible, n'en parle pas.
-Réponds UNIQUEMENT avec un JSON: {"predictions": ["pred1", "pred2", "pred3"]}
+  const systemPrompt = `Tu es le moteur de mémoire personnalisée de Prédicta.
+On te fournit une liste de patterns RÉELS déjà détectés dans les sessions de l'utilisateur, avec leur nombre exact d'occurrences.
+Ta seule tâche : transformer CHAQUE pattern fourni en une phrase suivant EXACTEMENT ce format, rien d'autre :
+"Les [N] dernières fois que [situation], [ce qui s'est passé]."
 
-Données de l'utilisateur:
-${dataLines.join('\n')}`;
+Exemples de bon format :
+- "Les 3 dernières fois que tu as travaillé après 20h, tu as interrompu ta session avant 15 minutes."
+- "Les 4 dernières fois que tu as commencé par une tâche courte, tu as complété ta session jusqu'au bout."
+- "Chaque fois que tu as lancé une session le lundi matin, tu l'as interrompue avec la raison 'pensée extérieure'."
+
+Règles strictes :
+- N'utilise QUE les patterns fournis ci-dessous, dans le même ordre — n'invente jamais de nouveau pattern, ne change jamais le nombre N fourni.
+- Jamais de conseil générique.
+- Une phrase par pattern fourni, pas plus, pas moins.
+- Réponds UNIQUEMENT avec un JSON : {"memories": ["phrase1", "phrase2", ...]}
+
+Patterns détectés (nombre réel d'occurrences entre parenthèses) :
+${candidates.map((c, i) => `${i + 1}. (${c.count} fois) ${c.description}`).join('\n')}`;
 
   let aiRes: Response;
   try {
@@ -276,47 +241,61 @@ ${dataLines.join('\n')}`;
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: 'Génère mes 3 prédictions basées sur mes données réelles.' },
+          { role: 'user', content: 'Transforme ces patterns en mémoires personnalisées, dans le même ordre.' },
         ],
       }),
     });
   } catch (err) {
     console.error('[generate-predictions] fetch error', err);
-    return json({ error: 'Prédictions momentanément indisponibles.' }, 502);
+    return json({ error: 'Mémoires momentanément indisponibles.' }, 502);
   }
 
   if (!aiRes.ok) {
     const errText = await aiRes.text();
     console.error('[generate-predictions] Groq error', aiRes.status, errText);
-    return json({ error: 'Prédictions momentanément indisponibles.' }, 502);
+    return json({ error: 'Mémoires momentanément indisponibles.' }, 502);
   }
 
   const aiData = await aiRes.json();
   const rawContent: string = aiData.choices?.[0]?.message?.content?.trim() || '';
 
-  let predictions: string[] = [];
+  let memoryTexts: string[] = [];
   try {
     const parsed = JSON.parse(rawContent);
-    if (Array.isArray(parsed.predictions)) {
-      predictions = parsed.predictions
-        .filter((p: unknown): p is string => typeof p === 'string' && p.trim().length > 0)
-        .map((p: string) => p.trim().slice(0, 500))
-        .slice(0, 3);
+    if (Array.isArray(parsed.memories)) {
+      memoryTexts = parsed.memories
+        .filter((m: unknown): m is string => typeof m === 'string' && m.trim().length > 0)
+        .map((m: string) => m.trim().slice(0, 500))
+        .slice(0, candidates.length);
     }
   } catch (err) {
     console.error('[generate-predictions] JSON parse error', err, rawContent);
   }
 
-  if (predictions.length !== 3) {
-    console.error('[generate-predictions] unexpected prediction count', predictions.length, rawContent);
-    return json({ error: 'Impossible de générer tes prédictions pour le moment, réessaie plus tard.' }, 502);
+  if (memoryTexts.length === 0) {
+    console.error('[generate-predictions] no memories returned', rawContent);
+    return json({ error: 'Impossible de générer tes mémoires pour le moment, réessaie plus tard.' }, 502);
   }
 
-  const rows = predictions.map((text, i) => ({
+  // Pair each phrased memory with its candidate's real, code-computed
+  // occurrence count (never a number the LLM made up).
+  const memories = memoryTexts.map((text, i) => ({ text, count: candidates[i].count }));
+
+  // Clear any stale rows beyond today's new count, in case an earlier
+  // call today produced more memories than this one.
+  await supabaseAdmin
+    .from('predictions')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('prediction_date', today)
+    .gte('prediction_index', memories.length);
+
+  const rows = memories.map((m, i) => ({
     user_id: user.id,
-    prediction_text: text,
+    prediction_text: m.text,
     prediction_date: today,
     prediction_index: i,
+    occurrence_count: m.count,
   }));
 
   const { error: upsertError } = await supabaseAdmin
@@ -327,5 +306,5 @@ ${dataLines.join('\n')}`;
     console.error('[generate-predictions] upsert error', upsertError);
   }
 
-  return json({ predictions, notEnoughData: false });
+  return json({ predictions: memories, notEnoughData: false });
 });

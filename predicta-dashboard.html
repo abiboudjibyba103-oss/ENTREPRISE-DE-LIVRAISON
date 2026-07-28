@@ -169,6 +169,16 @@
     border-radius: var(--radius); padding: 22px; margin-bottom: 16px; box-shadow: var(--shadow);
   }
   .prediction-text { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 15px; line-height: 1.55; }
+  .memory-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .memory-card-icon { font-size: 18px; line-height: 1; }
+  .memory-card-title {
+    font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.9;
+  }
+  .memory-card-footer {
+    font-family: 'Space Mono', monospace; font-size: 11.5px; opacity: 0.8;
+    margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.2);
+  }
 
   .chart-toggle { display: flex; gap: 8px; margin-bottom: 18px; }
   .chart-toggle-btn {
@@ -860,9 +870,17 @@
     el.innerHTML = `<div class="card"><p class="muted-text">Prédicta analyse tes patterns...</p></div>`;
     try {
       const { predictions, notEnoughData } = await predictaGeneratePredictions();
-      el.innerHTML = notEnoughData
-        ? `<div class="card"><p class="muted-text">Prédicta accumule encore tes données. Reviens dans quelques jours.</p></div>`
-        : predictions.map((p) => `<div class="prediction-card-hero"><p class="prediction-text">${escapeHtml(p)}</p></div>`).join('');
+      el.innerHTML = notEnoughData || predictions.length === 0
+        ? `<div class="card"><p class="muted-text">Prédicta accumule encore tes données. Tes premières mémoires apparaîtront après J14.</p></div>`
+        : predictions.map((m) => `
+            <div class="prediction-card-hero">
+              <div class="memory-card-header">
+                <span class="memory-card-icon">🧠</span>
+                <span class="memory-card-title">Mémoire personnalisée</span>
+              </div>
+              <p class="prediction-text">${escapeHtml(m.text)}</p>
+              <p class="memory-card-footer">Observé ${m.count} fois</p>
+            </div>`).join('');
     } catch (err) {
       console.error('[predicta] memory patterns error', err.message);
       el.innerHTML = `<div class="card"><p class="muted-text">Mémoires momentanément indisponibles.</p></div>`;
