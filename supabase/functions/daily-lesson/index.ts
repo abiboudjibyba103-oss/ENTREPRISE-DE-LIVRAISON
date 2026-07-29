@@ -7,9 +7,12 @@
 // base below, but written specifically about what actually
 // happened in the user's sessions today (when they dropped off,
 // how long they held focus, etc). Cached per user/day in
-// `daily_lessons` so re-opening the app doesn't regenerate it
-// (it IS regenerated after every session that day, to reflect
-// the most complete picture so far).
+// `daily_lessons`, and genuinely regenerated (not just re-served)
+// whenever a session has finished more recently than the cached
+// lesson (daily_lessons.updated_at vs the latest session's
+// ended_at) — see migration_daily_lessons_updated_at.sql. The
+// prompt also gets the last 3 days' lessons so it can vary which
+// researcher/concept it leans on instead of repeating itself.
 //
 // Deploy with:
 //   supabase functions deploy daily-lesson
@@ -133,7 +136,7 @@ Deno.serve(async (req) => {
   // this function and avoids trusting a client-controlled session list.
   const { data: todaySessions } = await supabaseAdmin
     .from('sessions')
-    .select('duration_min, focus_score, status, started_at, notes, interruption_reason')
+    .select('duration_min, focus_score, status, started_at, ended_at, notes, interruption_reason')
     .eq('user_id', user.id)
     .gte('started_at', startOfDay.toISOString())
     .order('started_at', { ascending: true });
@@ -142,25 +145,37 @@ Deno.serve(async (req) => {
     return json({ lessonText: null, hasSessionToday: false });
   }
 
-  // Cache hit: a lesson already exists for today — return it without
-  // spending another Groq call. Without this, any authenticated caller
-  // could hit this endpoint directly (bypassing the dashboard's own
-  // client-side cache check) and burn unlimited Groq calls.
+  // Cache check: a lesson already exists for today — return it without
+  // spending another Groq call, UNLESS a session has finished more
+  // recently than the lesson was last generated, in which case it's
+  // stale and needs regenerating to reflect the fuller picture.
   const { data: cachedLesson } = await supabaseAdmin
     .from('daily_lessons')
-    .select('lesson_text')
+    .select('lesson_text, updated_at')
     .eq('user_id', user.id)
     .eq('lesson_date', today)
     .maybeSingle();
 
-  if (cachedLesson?.lesson_text && cachedLesson.lesson_text !== RESERVATION_PLACEHOLDER) {
+  const finishedSessions = todaySessions.filter((s) => s.status === 'completed' || s.status === 'interrupted');
+  const latestSessionEndedAt = finishedSessions.reduce((latest, s) => {
+    const t = s.ended_at ? new Date(s.ended_at).getTime() : 0;
+    return t > latest ? t : latest;
+  }, 0);
+  const isStale = latestSessionEndedAt > 0
+    && !!cachedLesson?.updated_at
+    && new Date(cachedLesson.updated_at).getTime() < latestSessionEndedAt;
+
+  if (cachedLesson?.lesson_text && cachedLesson.lesson_text !== RESERVATION_PLACEHOLDER && !isStale) {
     return json({ lessonText: cachedLesson.lesson_text, hasSessionToday: true });
   }
 
-  // Reserve today's slot before calling Groq. daily_lessons has a unique
-  // (user_id, lesson_date) constraint, so if two requests race here only
-  // one INSERT succeeds — the loser doesn't call Groq at all, closing the
-  // TOCTOU window a plain "check then call" would leave open.
+  // Reserve today's slot before calling Groq. A brand-new day's row is
+  // reserved with a conditional INSERT (daily_lessons has a unique
+  // (user_id, lesson_date) constraint, so only one concurrent INSERT
+  // succeeds); a stale existing row is reserved with a conditional
+  // UPDATE that only succeeds if it still holds the exact text just
+  // read. Either way, a losing concurrent request doesn't call Groq at
+  // all, closing the TOCTOU window a plain "check then write" would leave open.
   if (!cachedLesson) {
     const { error: reserveError } = await supabaseAdmin
       .from('daily_lessons')
@@ -180,6 +195,31 @@ Deno.serve(async (req) => {
       }
       return json({ error: "Ton enseignement du soir est déjà en cours de génération, réessaie dans quelques secondes." }, 429);
     }
+  } else if (isStale && cachedLesson.lesson_text !== RESERVATION_PLACEHOLDER) {
+    const { data: reserved } = await supabaseAdmin
+      .from('daily_lessons')
+      .update({ lesson_text: RESERVATION_PLACEHOLDER })
+      .eq('user_id', user.id)
+      .eq('lesson_date', today)
+      .eq('lesson_text', cachedLesson.lesson_text)
+      .select('lesson_text')
+      .maybeSingle();
+
+    if (!reserved) {
+      // Someone else already started (or finished) regenerating this
+      // lesson — return whatever's there now instead of racing a
+      // second Groq call.
+      const { data: raceWinner } = await supabaseAdmin
+        .from('daily_lessons')
+        .select('lesson_text')
+        .eq('user_id', user.id)
+        .eq('lesson_date', today)
+        .maybeSingle();
+      if (raceWinner?.lesson_text && raceWinner.lesson_text !== RESERVATION_PLACEHOLDER) {
+        return json({ lessonText: raceWinner.lesson_text, hasSessionToday: true });
+      }
+      return json({ error: "Ton enseignement du soir est déjà en cours de génération, réessaie dans quelques secondes." }, 429);
+    }
   }
 
   const { data: profile } = await supabaseAdmin
@@ -187,6 +227,22 @@ Deno.serve(async (req) => {
     .select('display_name')
     .eq('id', user.id)
     .maybeSingle();
+
+  // Last 3 days' lessons, so the prompt can steer away from repeating
+  // the same researcher/concept two days running. Excludes today's own
+  // row (real content or the just-set reservation placeholder).
+  const { data: recentLessons } = await supabaseAdmin
+    .from('daily_lessons')
+    .select('lesson_date, lesson_text')
+    .eq('user_id', user.id)
+    .neq('lesson_date', today)
+    .order('lesson_date', { ascending: false })
+    .limit(3);
+
+  const pastLessons = (recentLessons ?? []).filter((l) => l.lesson_text && l.lesson_text !== RESERVATION_PLACEHOLDER);
+  const lessonsHistory = pastLessons.length > 0
+    ? pastLessons.map((l) => `${l.lesson_date}: ${l.lesson_text.slice(0, 100)}...`).join('\n')
+    : 'Aucune leçon précédente';
 
   const totalSessions = todaySessions.length;
   const completedSessions = todaySessions.filter((s) => s.status === 'completed').length;
@@ -221,12 +277,16 @@ Règles strictes:
 - Termine par une action concrète à appliquer dès la prochaine session.
 - 4 à 6 phrases maximum. Pas de titres, pas de listes, juste un texte fluide adressé directement à l'utilisateur ("tu").
 - N'invente jamais de données : utilise uniquement les sessions et le résumé listés ci-dessous.
+- Tu ne dois JAMAIS utiliser deux fois de suite le même chercheur ou le même concept scientifique. Regarde les sessions précédentes des derniers jours et choisis un angle scientifique différent de celui utilisé hier et avant-hier. Voici les concepts à alterner : mind-wandering (Raichle), résistance au démarrage (Sirois & Pychyl), coût de transition (Gloria Mark), dopamine (Olds & Milner), fatigue décisionnelle (Baumeister), neuroplasticité (Maguire), formation d'habitudes (Graybiel).
 
 Comment choisir l'angle scientifique selon ce qui s'est vraiment passé:
 - Si une ou plusieurs interruptions ont pour cause "une pensée ou une tâche extérieure a capté mon attention": explique le vagabondage mental (mind-wandering) et la façon dont le réseau cérébral par défaut reprend le dessus sur le réseau attentionnel (Raichle).
 - Si une session a duré environ 10 minutes ou moins avant d'être interrompue ou terminée: parle de la résistance au démarrage plutôt que d'un décrochage en cours de tâche (Sirois & Pychyl — la procrastination est une régulation émotionnelle, pas un manque de temps).
 - Si une session longue (45 minutes ou plus) a été menée jusqu'au bout (statut "completed"): explique le coût de transition cognitif et pourquoi enchaîner immédiatement sur une autre tâche est difficile (Gloria Mark, Sophie Leroy — attention résiduelle).
 - S'il y a plusieurs sessions interrompues aujourd'hui, concentre-toi sur la raison la plus fréquente parmi celles données par l'utilisateur plutôt que de toutes les citer.
+
+Leçons des 3 derniers jours (évite de répéter les mêmes concepts) :
+${lessonsHistory}
 
 Prénom: ${profile?.display_name ?? 'utilisateur'}
 ${summaryLine}

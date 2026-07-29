@@ -749,17 +749,15 @@
       return;
     }
 
-    const todayStr = new Date().toISOString().slice(0, 10);
+    el.innerHTML = `<div class="card evening-lesson-card"><p class="muted-text">Prédicta analyse ta journée...</p></div>`;
     try {
-      const cached = await predictaGetDailyLessonForDate(todayStr);
-      if (cached?.lesson_text) {
-        renderEveningLessonHero(el, cached.lesson_text, cached.created_at);
-        return;
-      }
-      el.innerHTML = `<div class="card evening-lesson-card"><p class="muted-text">Prédicta analyse ta journée...</p></div>`;
+      // Always go through the edge function: it decides itself whether
+      // to serve the cached lesson or regenerate it (a session finished
+      // more recently than the cache), so there's no need for a
+      // separate client-side cache read that could show a stale lesson.
       const { lessonText } = await predictaDailyLesson();
       if (lessonText) {
-        renderEveningLessonHero(el, lessonText, new Date().toISOString());
+        renderEveningLessonHero(el, lessonText);
       } else {
         el.innerHTML = `<div class="card evening-lesson-card"><p class="muted-text">Enseignement momentanément indisponible.</p></div>`;
       }
@@ -769,18 +767,13 @@
     }
   }
 
-  // Violet "hero" card once today's lesson exists. If a session was
-  // started after the lesson was generated, appends a discreet note
-  // instead of regenerating (tomorrow's teaching will account for it).
-  function renderEveningLessonHero(el, lessonText, lessonCreatedAtIso) {
-    const lessonCreatedAt = new Date(lessonCreatedAtIso).getTime();
-    const newerSession = todaySessionsCache.some((s) => new Date(s.started_at).getTime() > lessonCreatedAt);
+  // Violet "hero" card once today's lesson exists.
+  function renderEveningLessonHero(el, lessonText) {
     el.innerHTML = `
       <div class="evening-lesson-hero">
         <p class="evening-lesson-title">Enseignement du soir</p>
         <p class="evening-lesson-subtitle">Tiré de ta journée d'aujourd'hui</p>
         <p class="evening-lesson-text">${escapeHtml(lessonText)}</p>
-        ${newerSession ? `<p class="evening-lesson-note">Prédicta a enregistré. L'analyse de demain en tiendra compte.</p>` : ''}
       </div>`;
   }
 

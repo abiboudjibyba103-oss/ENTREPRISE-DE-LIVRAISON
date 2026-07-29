@@ -685,30 +685,6 @@ async function predictaGetCoachMessages(limit = 20) {
 }
 
 /**
- * Looks up whether a daily lesson already exists for the given date
- * (YYYY-MM-DD) without triggering generation. Used to avoid calling the
- * `daily-lesson` edge function (and burning a Groq request) when the
- * evening teaching was already generated earlier today.
- */
-async function predictaGetDailyLessonForDate(dateStr) {
-  const session = await predictaGetSession();
-  if (!session) return null;
-
-  const { data, error } = await supabaseClient
-    .from('daily_lessons')
-    .select('lesson_text, lesson_date, created_at')
-    .eq('user_id', session.user.id)
-    .eq('lesson_date', dateStr)
-    .maybeSingle();
-
-  if (error) {
-    console.error('[predicta] getDailyLessonForDate error', error.message);
-    return null;
-  }
-  return data;
-}
-
-/**
  * Permanently deletes the current user's account (Supabase edge function
  * `delete-account`, service role). Cascades to every table owned by the
  * user. Caller is responsible for signing out / redirecting afterwards.

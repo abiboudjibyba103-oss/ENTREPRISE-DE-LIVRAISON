@@ -116,11 +116,12 @@ which is what the dashboard's "Prédictions" page reads.
 ## 8. Daily lesson (`daily-lesson` edge function)
 
 `supabase/functions/daily-lesson/index.ts` generates the "enseignement du
-soir" shown on the dashboard's Prédictions page: one AI-written teaching
-per user per day, grounded in that day's real sessions, cached in
-`daily_lessons`. Deploy it the same way as `coach-chat` (reuses the same
-`GROQ_API_KEY` secret). Frontend usage: `predictaDailyLesson()` and
-`predictaGetDailyLessonForDate()` in `js/supabase-client.js`.
+soir" shown on the dashboard's Accueil page: one AI-written teaching per
+user per day, grounded in that day's real sessions, cached in
+`daily_lessons` and regenerated whenever a session finishes more recently
+than the cached lesson (see `migration_daily_lessons_updated_at.sql`).
+Deploy it the same way as `coach-chat` (reuses the same `GROQ_API_KEY`
+secret). Frontend usage: `predictaDailyLesson()` in `js/supabase-client.js`.
 
 ## 9. Account deletion (`delete-account` edge function)
 

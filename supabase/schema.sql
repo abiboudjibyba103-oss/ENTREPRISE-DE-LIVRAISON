@@ -504,9 +504,16 @@ create policy "daily_lessons_select_own" on public.daily_lessons
 -- No insert/update/delete policy: only the service_role key
 -- (used inside the daily-lesson edge function) can write rows.
 
+-- Lets daily-lesson tell whether a session finished after the cached
+-- lesson was generated (and therefore whether to regenerate it),
+-- bumped automatically on every UPDATE by the set_updated_at()
+-- trigger defined below (trigger creation lives there since the
+-- function isn't defined yet at this point in the script).
+alter table public.daily_lessons add column if not exists updated_at timestamptz not null default now();
+
 
 -- ------------------------------------------------------------
--- updated_at trigger helper for profiles
+-- updated_at trigger helper for profiles / daily_lessons
 -- ------------------------------------------------------------
 create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$
@@ -519,4 +526,9 @@ $$;
 drop trigger if exists set_profiles_updated_at on public.profiles;
 create trigger set_profiles_updated_at
   before update on public.profiles
+  for each row execute procedure public.set_updated_at();
+
+drop trigger if exists set_daily_lessons_updated_at on public.daily_lessons;
+create trigger set_daily_lessons_updated_at
+  before update on public.daily_lessons
   for each row execute procedure public.set_updated_at();
