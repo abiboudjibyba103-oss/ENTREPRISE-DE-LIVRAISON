@@ -1,19 +1,26 @@
 // ============================================================
 // Prédicta — generate-predictions edge function
 //
-// Detects real repeated behavioral patterns in the user's session
-// history (same time-of-day + quick interruption, short sessions
-// completed in full, long sessions interrupted, same weekday+slot +
-// same interruption reason — each requiring at least 3 real
-// occurrences, computed in code, never left to the LLM to invent or
-// miscount) and asks an LLM (Llama 3.3 70B via Groq) to phrase each
-// one into a short French "mémoire personnalisée":
-//   "Les [N] dernières fois que [situation], [ce qui s'est passé]."
-// Up to 4 memories, cached per user/day in `predictions` (one row per
-// memory, via upsert on user_id+prediction_date+prediction_index) so
-// re-opening the Ma mémoire page doesn't regenerate it. Returns
-// { predictions: [], notEnoughData: true } when there isn't enough
-// data or no pattern repeats often enough yet.
+// Two independent, code-computed outputs from the user's real session
+// history — never left to the LLM to invent or miscount:
+//
+// 1. "memories" — up to 3 POSITIVE repeated patterns (same time slot,
+//    weekday+slot, or duration bracket, each requiring >= 3 real
+//    occurrences), phrased by an LLM (Llama 3.3 70B via Groq) into:
+//      "Les [N] dernières fois que [situation], [ce qui a marché]."
+//    Only what WORKED is surfaced — never a failure or interruption.
+//    Cached per user/day in `predictions` (one row per memory, via
+//    upsert on user_id+prediction_date+prediction_index) so re-opening
+//    the Ma mémoire page doesn't regenerate it.
+//
+// 2. "insights" — forward-looking statistics (completion rate before
+//    10h, a weekday that struggles across multiple distinct weeks, the
+//    time slot with the highest drop-off rate). Pure arithmetic over
+//    the same session list, no LLM call, so it's recomputed on every
+//    request rather than cached — there's no generation cost to save.
+//
+// Returns { memories: [], insights: [], notEnoughData: true } when
+// there isn't enough session history yet.
 //
 // Deploy with:
 //   supabase functions deploy generate-predictions
@@ -30,7 +37,7 @@ const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
 
 const PREDICTION_MODEL = 'llama-3.3-70b-versatile';
 const MIN_SESSIONS = 3;
-const MAX_MEMORIES = 4;
+const MAX_MEMORIES = 3;
 
 // Comma-separated list of allowed frontend origins, e.g.
 // "https://predicta.example.com,https://www.predicta.example.com".
@@ -60,10 +67,10 @@ type SessionRow = {
   duration_min: number | null;
   status: string;
   started_at: string;
-  interruption_reason: string | null;
 };
 
 type PatternCandidate = { count: number; description: string };
+type Insight = { text: string; basis: number };
 
 function timeSlotOf(hour: number): string {
   if (hour >= 5 && hour < 12) return 'le matin';
@@ -74,20 +81,22 @@ function timeSlotOf(hour: number): string {
 
 // Every candidate here requires >= 3 real occurrences to exist at
 // all — that's the actual enforcement of "minimum 3 occurrences",
-// computed in code rather than trusted to the LLM's obedience.
+// computed in code rather than trusted to the LLM's obedience. Only
+// POSITIVE outcomes (completed sessions) are considered — this is a
+// memory of what worked, never a record of what failed.
 function computeRepeatedPatterns(sessions: SessionRow[]): PatternCandidate[] {
   const candidates: PatternCandidate[] = [];
 
-  // A. Same time-of-day slot -> quick interruption (before 15 min).
-  const bySlotQuickInterrupt = new Map<string, number>();
+  // A. Same time-of-day slot -> session completed in full.
+  const bySlotCompleted = new Map<string, number>();
   sessions.forEach((s) => {
-    if (s.status !== 'interrupted' || s.duration_min == null || s.duration_min >= 15) return;
+    if (s.status !== 'completed') return;
     const slot = timeSlotOf(new Date(s.started_at).getHours());
-    bySlotQuickInterrupt.set(slot, (bySlotQuickInterrupt.get(slot) ?? 0) + 1);
+    bySlotCompleted.set(slot, (bySlotCompleted.get(slot) ?? 0) + 1);
   });
-  for (const [slot, count] of bySlotQuickInterrupt) {
+  for (const [slot, count] of bySlotCompleted) {
     if (count >= 3) {
-      candidates.push({ count, description: `tu as travaillé ${slot}, tu as interrompu ta session avant 15 minutes` });
+      candidates.push({ count, description: `tu as lancé ta session ${slot}, tu l'as complétée jusqu'au bout` });
     }
   }
 
@@ -100,37 +109,115 @@ function computeRepeatedPatterns(sessions: SessionRow[]): PatternCandidate[] {
     });
   }
 
-  // C. Long sessions (45 min or more) ending in an interruption.
-  const longInterrupted = sessions.filter((s) => s.status === 'interrupted' && s.duration_min != null && s.duration_min >= 45);
-  if (longInterrupted.length >= 3) {
+  // C. Long sessions (45 min or more) completed all the way through.
+  const longCompleted = sessions.filter((s) => s.status === 'completed' && s.duration_min != null && s.duration_min >= 45);
+  if (longCompleted.length >= 3) {
     candidates.push({
-      count: longInterrupted.length,
-      description: "tu as travaillé plus de 45 minutes d'affilée, ta session s'est terminée par une interruption",
+      count: longCompleted.length,
+      description: "tu as travaillé plus de 45 minutes d'affilée, tu es allé jusqu'au bout de ta session",
     });
   }
 
-  // D. Same weekday + time slot -> same interruption reason, repeated.
-  const byDaySlotReason = new Map<string, { count: number; day: string; slot: string; reason: string }>();
+  // D. Same weekday + time slot, with every session in that bucket
+  // completed (zero interruptions) — a real "you never drop this one".
+  const byDaySlot = new Map<string, { day: string; slot: string; total: number; completed: number }>();
   sessions.forEach((s) => {
-    if (s.status !== 'interrupted' || !s.interruption_reason) return;
     const d = new Date(s.started_at);
     const day = DAY_NAMES[d.getDay()];
     const slot = timeSlotOf(d.getHours());
-    const key = `${day}|${slot}|${s.interruption_reason}`;
-    const existing = byDaySlotReason.get(key);
-    if (existing) existing.count += 1;
-    else byDaySlotReason.set(key, { count: 1, day, slot, reason: s.interruption_reason });
+    const key = `${day}|${slot}`;
+    const existing = byDaySlot.get(key) ?? { day, slot, total: 0, completed: 0 };
+    existing.total += 1;
+    if (s.status === 'completed') existing.completed += 1;
+    byDaySlot.set(key, existing);
   });
-  for (const { count, day, slot, reason } of byDaySlotReason.values()) {
-    if (count >= 3) {
-      candidates.push({
-        count,
-        description: `tu as lancé une session le ${day} ${slot}, tu l'as interrompue pour la raison : "${reason}"`,
-      });
+  for (const { day, slot, total, completed } of byDaySlot.values()) {
+    if (completed >= 3 && completed === total) {
+      candidates.push({ count: completed, description: `tu as travaillé le ${day} ${slot}, tu n'as eu aucune interruption` });
     }
   }
 
   return candidates.sort((a, b) => b.count - a.count).slice(0, MAX_MEMORIES);
+}
+
+const SLOT_HOUR_LABEL: Record<string, string> = {
+  'le matin': '5h',
+  "l'après-midi": '12h',
+  'en début de soirée': '18h',
+  'tard le soir': '20h',
+};
+
+// Coarse "distinct week" bucket for the current user's own history —
+// only ever compared for equality within one user, so it doesn't need
+// to match the strict ISO week definition.
+function weekKeyOf(date: Date): string {
+  const first = new Date(date.getFullYear(), 0, 1);
+  const days = Math.floor((date.getTime() - first.getTime()) / 86400000);
+  const week = Math.ceil((days + first.getDay() + 1) / 7);
+  return `${date.getFullYear()}-W${week}`;
+}
+
+// Pure arithmetic over the session list — no LLM involved, so nothing
+// here needs caching (recomputing costs nothing beyond the query
+// already made for the memories above).
+function computeInsights(sessions: SessionRow[]): Insight[] {
+  const insights: Insight[] = [];
+  const countable = sessions.filter((s) => s.status !== 'in_progress');
+
+  // 1. Completion rate for sessions started before 10h.
+  const beforeTen = countable.filter((s) => new Date(s.started_at).getHours() < 10);
+  if (beforeTen.length >= 3) {
+    const rate = Math.round((beforeTen.filter((s) => s.status === 'completed').length / beforeTen.length) * 100);
+    if (rate >= 60) {
+      insights.push({ text: `Tu as ${rate}% de chances de compléter ta session si tu la lances avant 10h.`, basis: beforeTen.length });
+    }
+  }
+
+  // 2. Weekday that struggles across multiple distinct weeks.
+  const byWeekday = new Map<number, { weeks: Set<string> }>();
+  countable.forEach((s) => {
+    if (s.status !== 'interrupted') return;
+    const d = new Date(s.started_at);
+    const wd = d.getDay();
+    const entry = byWeekday.get(wd) ?? { weeks: new Set<string>() };
+    entry.weeks.add(weekKeyOf(d));
+    byWeekday.set(wd, entry);
+  });
+  let worstWeekday: { day: string; weeks: number } | null = null;
+  for (const [wd, entry] of byWeekday) {
+    if (entry.weeks.size >= 2 && (!worstWeekday || entry.weeks.size > worstWeekday.weeks)) {
+      worstWeekday = { day: DAY_NAMES[wd], weeks: entry.weeks.size };
+    }
+  }
+  if (worstWeekday) {
+    insights.push({
+      text: `Ce ${worstWeekday.day} risque d'être difficile — pattern observé ${worstWeekday.weeks} semaines de suite.`,
+      basis: worstWeekday.weeks,
+    });
+  }
+
+  // 3. Time slot with the highest interruption (drop-off) rate.
+  const bySlot = new Map<string, { total: number; interrupted: number }>();
+  countable.forEach((s) => {
+    const slot = timeSlotOf(new Date(s.started_at).getHours());
+    const entry = bySlot.get(slot) ?? { total: 0, interrupted: 0 };
+    entry.total += 1;
+    if (s.status === 'interrupted') entry.interrupted += 1;
+    bySlot.set(slot, entry);
+  });
+  let worstSlot: { slot: string; rate: number; total: number } | null = null;
+  for (const [slot, entry] of bySlot) {
+    if (slot === 'le matin' || entry.total < 3) continue;
+    const rate = entry.interrupted / entry.total;
+    if (rate >= 0.5 && (!worstSlot || rate > worstSlot.rate)) {
+      worstSlot = { slot, rate, total: entry.total };
+    }
+  }
+  if (worstSlot) {
+    insights.push({ text: `Tu décroches plus souvent quand tu travailles après ${SLOT_HOUR_LABEL[worstSlot.slot]}.`, basis: worstSlot.total });
+  }
+
+  return insights;
 }
 
 Deno.serve(async (req) => {
@@ -171,6 +258,23 @@ Deno.serve(async (req) => {
 
   const today = new Date().toISOString().slice(0, 10);
 
+  // Always re-derive the user's own sessions from our own trusted
+  // query, scoped to the authenticated user.id — never from a
+  // client-submitted session list, which could be tampered with.
+  // Needed for both memories (below) and insights, so this always
+  // runs, even on a memories cache hit.
+  const { data: allSessions } = await supabaseAdmin
+    .from('sessions')
+    .select('duration_min, status, started_at')
+    .eq('user_id', user.id)
+    .order('started_at', { ascending: true });
+
+  if (!allSessions || allSessions.length < MIN_SESSIONS) {
+    return json({ memories: [], insights: [], notEnoughData: true });
+  }
+
+  const insights = computeInsights(allSessions);
+
   // Cache hit: today's memories already exist — return them without
   // spending another Groq call. Without this, simply opening the Ma
   // mémoire page would burn a Groq call every single time.
@@ -183,44 +287,33 @@ Deno.serve(async (req) => {
 
   if (cached && cached.length > 0) {
     return json({
-      predictions: cached.map((p) => ({ text: p.prediction_text, count: p.occurrence_count ?? 0 })),
+      memories: cached.map((p) => ({ text: p.prediction_text, count: p.occurrence_count ?? 0 })),
+      insights,
       notEnoughData: false,
     });
   }
 
-  // Always re-derive the user's own sessions from our own trusted
-  // query, scoped to the authenticated user.id — never from a
-  // client-submitted session list, which could be tampered with.
-  const { data: allSessions } = await supabaseAdmin
-    .from('sessions')
-    .select('duration_min, status, started_at, interruption_reason')
-    .eq('user_id', user.id)
-    .order('started_at', { ascending: true });
-
-  if (!allSessions || allSessions.length < MIN_SESSIONS) {
-    return json({ predictions: [], notEnoughData: true });
-  }
-
   const candidates = computeRepeatedPatterns(allSessions);
   if (candidates.length === 0) {
-    // No pattern repeats often enough yet — nothing to ask Groq about,
-    // so this costs nothing beyond the two queries above.
-    return json({ predictions: [], notEnoughData: true });
+    // No positive pattern repeats often enough yet — nothing to ask
+    // Groq about, so this costs nothing beyond the queries above.
+    return json({ memories: [], insights, notEnoughData: false });
   }
 
   const systemPrompt = `Tu es le moteur de mémoire personnalisée de Prédicta.
-On te fournit une liste de patterns RÉELS déjà détectés dans les sessions de l'utilisateur, avec leur nombre exact d'occurrences.
+On te fournit une liste de patterns POSITIFS RÉELS déjà détectés dans les sessions de l'utilisateur, avec leur nombre exact d'occurrences.
 Ta seule tâche : transformer CHAQUE pattern fourni en une phrase suivant EXACTEMENT ce format, rien d'autre :
-"Les [N] dernières fois que [situation], [ce qui s'est passé]."
+"Les [N] dernières fois que [situation], [ce qui a marché]."
 
 Exemples de bon format :
-- "Les 3 dernières fois que tu as travaillé après 20h, tu as interrompu ta session avant 15 minutes."
-- "Les 4 dernières fois que tu as commencé par une tâche courte, tu as complété ta session jusqu'au bout."
-- "Chaque fois que tu as lancé une session le lundi matin, tu l'as interrompue avec la raison 'pensée extérieure'."
+- "Les 3 dernières fois que tu as lancé ta session avant 10h, tu l'as complétée jusqu'au bout."
+- "Les 4 dernières fois que tu as commencé par une tâche courte, tu as tenu plus de 45 minutes."
+- "Chaque fois que tu as travaillé le mardi matin, tu n'as eu aucune interruption."
 
 Règles strictes :
+- Uniquement des observations positives : ce qui A MARCHÉ. Ne mentionne jamais un échec ou une interruption.
 - N'utilise QUE les patterns fournis ci-dessous, dans le même ordre — n'invente jamais de nouveau pattern, ne change jamais le nombre N fourni.
-- Jamais de conseil générique.
+- Jamais de conseil, jamais de suggestion — uniquement des observations.
 - Une phrase par pattern fourni, pas plus, pas moins.
 - Réponds UNIQUEMENT avec un JSON : {"memories": ["phrase1", "phrase2", ...]}
 
@@ -306,5 +399,5 @@ ${candidates.map((c, i) => `${i + 1}. (${c.count} fois) ${c.description}`).join(
     console.error('[generate-predictions] upsert error', upsertError);
   }
 
-  return json({ predictions: memories, notEnoughData: false });
+  return json({ memories, insights, notEnoughData: false });
 });

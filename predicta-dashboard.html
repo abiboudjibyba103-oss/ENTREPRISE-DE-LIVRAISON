@@ -180,14 +180,36 @@
     margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.2);
   }
 
-  .chart-toggle { display: flex; gap: 8px; margin-bottom: 18px; }
-  .chart-toggle-btn {
-    flex: 1; padding: 9px; border-radius: 10px; border: 1.5px solid var(--border);
-    background: #fff; color: var(--text-sec); font-family: 'DM Sans', sans-serif;
-    font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+  .stat-cards-row { display: flex; gap: 10px; margin-bottom: 16px; }
+  .stat-card {
+    flex: 1; min-width: 0; background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 10px; box-shadow: var(--shadow); text-align: center;
   }
-  .chart-toggle-btn.active { background: var(--violet); border-color: var(--violet); color: #fff; }
-  .chart-svg-wrap { width: 100%; }
+  .stat-card-value { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 13px; line-height: 1.4; }
+  .stat-card-compare {
+    font-size: 11px; color: var(--text-sec); margin-top: 6px; line-height: 1.4;
+    display: flex; align-items: center; justify-content: center; gap: 3px;
+  }
+  .stat-trend-up { color: var(--success); font-weight: 700; }
+  .stat-trend-down { color: var(--danger); font-weight: 700; }
+  .stat-progress-track { height: 6px; background: var(--border); border-radius: 100px; overflow: hidden; margin-bottom: 8px; }
+  .stat-progress-fill { height: 100%; background: var(--violet); border-radius: 100px; transition: width 0.8s cubic-bezier(0.25,1,0.5,1); }
+  .active-days-dots { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; margin-bottom: 8px; }
+  .active-day-dot { width: 9px; height: 9px; border-radius: 50%; }
+  .active-day-dot.dot-green { background: var(--success); }
+  .active-day-dot.dot-orange { background: var(--orange); }
+  .active-day-dot.dot-gray { background: var(--border); }
+
+  .insight-card {
+    background: var(--orange-light); border: 1px solid rgba(234,88,12,0.18);
+    border-radius: var(--radius); padding: 22px; margin-bottom: 16px;
+  }
+  .insight-card-icon { font-size: 16px; margin-right: 6px; }
+  .insight-text { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 15px; line-height: 1.55; color: var(--text); }
+  .insight-card-footer {
+    font-family: 'Space Mono', monospace; font-size: 11.5px; color: var(--text-sec);
+    margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(234,88,12,0.18);
+  }
 
   /* ===== SETTINGS ===== */
   .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
@@ -382,16 +404,13 @@
         <!-- État J7+ -->
         <div id="memoryMain" style="display:none;">
           <p class="section-label">Ton évolution</p>
-          <div class="card">
-            <div class="chart-toggle">
-              <button type="button" class="chart-toggle-btn active" data-range="week" onclick="renderMemoryChart('week')">Cette semaine</button>
-              <button type="button" class="chart-toggle-btn" data-range="month" onclick="renderMemoryChart('month')">Ce mois</button>
-            </div>
-            <div id="memoryChartSvgWrap" class="chart-svg-wrap"></div>
-          </div>
+          <div id="memoryStatsCards"><div class="card"><p class="muted-text">Chargement...</p></div></div>
 
           <p class="section-label">Mémoire personnalisée</p>
           <div id="memorySection3"><div class="card"><p class="muted-text">Chargement...</p></div></div>
+
+          <p class="section-label">Ce que Prédicta anticipe pour toi</p>
+          <div id="predictionsSection"><div class="card"><p class="muted-text">Chargement...</p></div></div>
         </div>
       </div>
     </section>
@@ -462,7 +481,7 @@
 
   let memoryLoaded = false;
   let settingsLoaded = false;
-  let memoryChartSessions = [];
+  let memorySessions = [];
 
   // ===== Utilities =====
   function escapeHtml(str) {
@@ -781,110 +800,138 @@
     }
 
     const sessions = await predictaGetRecentSessions(1000);
-    memoryChartSessions = sessions.filter((s) => s.status !== 'in_progress');
-    renderMemoryChart('week');
+    memorySessions = sessions.filter((s) => s.status !== 'in_progress');
+    renderMemoryStatsCards(memorySessions);
 
-    renderMemorySection3(dayJ);
-  }
-
-  // "Ton évolution": simple hand-rolled SVG line chart (no external
-  // library) of average session duration per day, from `sessions`.
-  function renderMemoryChart(range) {
-    document.querySelectorAll('#memoryMain .chart-toggle-btn').forEach((b) => b.classList.toggle('active', b.dataset.range === range));
-    const days = range === 'month' ? 30 : 7;
-    const chartData = buildDailyAvgBuckets(memoryChartSessions, days);
-    document.getElementById('memoryChartSvgWrap').innerHTML = buildLineChartSVG(chartData, 320, 140, days > 7);
-  }
-
-  function buildDailyAvgBuckets(sessions, days) {
-    const dayLabels = ['Di', 'Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa'];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const buckets = [];
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      buckets.push({
-        time: d.getTime(),
-        label: days > 7 ? String(d.getDate()) : dayLabels[d.getDay()],
-        totalMin: 0,
-        count: 0,
-      });
-    }
-
-    sessions.forEach((s) => {
-      if (s.duration_min == null) return;
-      const sd = new Date(s.started_at);
-      sd.setHours(0, 0, 0, 0);
-      const bucket = buckets.find((b) => b.time === sd.getTime());
-      if (!bucket) return;
-      bucket.totalMin += s.duration_min;
-      bucket.count += 1;
-    });
-
-    return buckets.map((b) => ({ label: b.label, value: b.count ? Math.round(b.totalMin / b.count) : 0 }));
-  }
-
-  function buildLineChartSVG(data, width, height, sparseLabels) {
-    const padL = 8, padR = 8, padT = 12, padB = 22;
-    const innerW = width - padL - padR;
-    const innerH = height - padT - padB;
-    const maxVal = Math.max(1, ...data.map((d) => d.value));
-    const stepX = data.length > 1 ? innerW / (data.length - 1) : 0;
-
-    const points = data.map((d, i) => ({
-      x: padL + i * stepX,
-      y: padT + innerH - (d.value / maxVal) * innerH,
-    }));
-
-    const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
-    const areaPath = `${linePath} L ${points[points.length - 1].x.toFixed(1)} ${padT + innerH} L ${points[0].x.toFixed(1)} ${padT + innerH} Z`;
-
-    const dots = points.map((p, i) => (data[i].value > 0
-      ? `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="#6C5CE7"/>`
-      : '')).join('');
-
-    const showLabel = (i) => !sparseLabels || i === 0 || i === data.length - 1 || i === Math.floor(data.length / 2);
-    const labels = points.map((p, i) => (showLabel(i)
-      ? `<text x="${p.x.toFixed(1)}" y="${height - 6}" font-size="9" fill="#78716C" text-anchor="middle" font-family="'Space Mono',monospace">${escapeHtml(data[i].label)}</text>`
-      : '')).join('');
-
-    return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" preserveAspectRatio="none">
-      <path d="${areaPath}" fill="#6C5CE7" opacity="0.12"/>
-      <path d="${linePath}" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      ${dots}
-      ${labels}
-    </svg>`;
-  }
-
-  // État J7-J13: static nudge. État J14+: real patterns from
-  // generate-predictions, shown as violet cards.
-  async function renderMemorySection3(dayJ) {
-    const el = document.getElementById('memorySection3');
     if (dayJ < 14) {
-      el.innerHTML = `<div class="card"><p class="muted-text">Pas encore assez de répétitions pour identifier ce qui marche vraiment pour toi. Continue tes sessions.</p></div>`;
+      document.getElementById('memorySection3').innerHTML = `<div class="card"><p class="muted-text">Pas encore assez de répétitions pour identifier ce qui marche vraiment pour toi. Continue tes sessions.</p></div>`;
+      document.getElementById('predictionsSection').innerHTML = `<div class="card"><p class="muted-text">Prédicta accumule encore tes données. Tes premières prédictions apparaîtront après J14.</p></div>`;
       return;
     }
 
-    el.innerHTML = `<div class="card"><p class="muted-text">Prédicta analyse tes patterns...</p></div>`;
+    document.getElementById('memorySection3').innerHTML = `<div class="card"><p class="muted-text">Prédicta analyse tes patterns...</p></div>`;
+    document.getElementById('predictionsSection').innerHTML = `<div class="card"><p class="muted-text">Prédicta analyse tes patterns...</p></div>`;
     try {
-      const { predictions, notEnoughData } = await predictaGeneratePredictions();
-      el.innerHTML = notEnoughData || predictions.length === 0
-        ? `<div class="card"><p class="muted-text">Prédicta accumule encore tes données. Tes premières mémoires apparaîtront après J14.</p></div>`
-        : predictions.map((m) => `
-            <div class="prediction-card-hero">
-              <div class="memory-card-header">
-                <span class="memory-card-icon">🧠</span>
-                <span class="memory-card-title">Mémoire personnalisée</span>
-              </div>
-              <p class="prediction-text">${escapeHtml(m.text)}</p>
-              <p class="memory-card-footer">Observé ${m.count} fois</p>
-            </div>`).join('');
+      const { memories, insights, notEnoughData } = await predictaGeneratePredictions();
+      renderMemorySection3(memories, notEnoughData);
+      renderPredictionsSection(insights, notEnoughData);
     } catch (err) {
-      console.error('[predicta] memory patterns error', err.message);
-      el.innerHTML = `<div class="card"><p class="muted-text">Mémoires momentanément indisponibles.</p></div>`;
+      console.error('[predicta] generate-predictions error', err.message);
+      document.getElementById('memorySection3').innerHTML = `<div class="card"><p class="muted-text">Mémoires momentanément indisponibles.</p></div>`;
+      document.getElementById('predictionsSection').innerHTML = `<div class="card"><p class="muted-text">Prédictions momentanément indisponibles.</p></div>`;
     }
+  }
+
+  // "Ton évolution": 3 stat cards computed client-side from `sessions`
+  // — durée moyenne (semaine actuelle vs première semaine), taux de
+  // complétion (idem), et les 14 derniers jours en points colorés.
+  function renderMemoryStatsCards(sessions) {
+    const createdAt = new Date(currentProfile.created_at);
+    const firstWeekEnd = new Date(createdAt.getTime() + 7 * 86400000);
+    const currentWeekStart = new Date(Date.now() - 7 * 86400000);
+
+    const firstWeekSessions = sessions.filter((s) => {
+      const d = new Date(s.started_at);
+      return d >= createdAt && d < firstWeekEnd;
+    });
+    const currentWeekSessions = sessions.filter((s) => new Date(s.started_at) >= currentWeekStart);
+
+    document.getElementById('memoryStatsCards').innerHTML = `
+      <div class="stat-cards-row">
+        ${buildDurationCard(firstWeekSessions, currentWeekSessions)}
+        ${buildCompletionCard(firstWeekSessions, currentWeekSessions)}
+        ${buildActiveDaysCard(sessions)}
+      </div>`;
+  }
+
+  function avgCompletedDuration(sessions) {
+    const completed = sessions.filter((s) => s.status === 'completed' && s.duration_min != null);
+    if (completed.length === 0) return null;
+    return Math.round(completed.reduce((sum, s) => sum + s.duration_min, 0) / completed.length);
+  }
+
+  function completionRatePct(sessions) {
+    if (sessions.length === 0) return null;
+    return Math.round((sessions.filter((s) => s.status === 'completed').length / sessions.length) * 100);
+  }
+
+  function buildDurationCard(firstWeekSessions, currentWeekSessions) {
+    const current = avgCompletedDuration(currentWeekSessions);
+    const first = avgCompletedDuration(firstWeekSessions);
+    const arrow = current != null && first != null && current !== first
+      ? (current > first ? `<span class="stat-trend-up">↑</span>` : `<span class="stat-trend-down">↓</span>`)
+      : '';
+    return `
+      <div class="stat-card">
+        <p class="stat-card-value">${current != null ? `Tu tiens en moyenne ${current} min` : 'Pas encore de données'}</p>
+        ${first != null ? `<p class="stat-card-compare">${arrow} contre ${first} min à J1</p>` : ''}
+      </div>`;
+  }
+
+  function buildCompletionCard(firstWeekSessions, currentWeekSessions) {
+    const current = completionRatePct(currentWeekSessions);
+    const first = completionRatePct(firstWeekSessions);
+    return `
+      <div class="stat-card">
+        <div class="stat-progress-track"><div class="stat-progress-fill" style="width:${current ?? 0}%"></div></div>
+        <p class="stat-card-value">${current != null ? `${current}%` : '—'}</p>
+        ${first != null ? `<p class="stat-card-compare">contre ${first}% à J1</p>` : ''}
+      </div>`;
+  }
+
+  function buildActiveDaysCard(sessions) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const days = [];
+    for (let i = 13; i >= 0; i--) {
+      days.push({ time: today.getTime() - i * 86400000, completed: false, interrupted: false });
+    }
+    sessions.forEach((s) => {
+      const d = new Date(s.started_at);
+      d.setHours(0, 0, 0, 0);
+      const bucket = days.find((day) => day.time === d.getTime());
+      if (!bucket) return;
+      if (s.status === 'completed') bucket.completed = true;
+      else if (s.status === 'interrupted') bucket.interrupted = true;
+    });
+    const activeCount = days.filter((d) => d.completed || d.interrupted).length;
+    const dots = days.map((d) => {
+      const cls = d.completed ? 'dot-green' : (d.interrupted ? 'dot-orange' : 'dot-gray');
+      return `<span class="active-day-dot ${cls}"></span>`;
+    }).join('');
+    return `
+      <div class="stat-card">
+        <div class="active-days-dots">${dots}</div>
+        <p class="stat-card-compare">Tu as travaillé ${activeCount} jours sur les 14 derniers</p>
+      </div>`;
+  }
+
+  // Mémoire personnalisée: up to 3 positive patterns from generate-predictions.
+  function renderMemorySection3(memories, notEnoughData) {
+    const el = document.getElementById('memorySection3');
+    el.innerHTML = notEnoughData || memories.length === 0
+      ? `<div class="card"><p class="muted-text">Prédicta accumule encore tes données. Tes premières mémoires apparaîtront après J14.</p></div>`
+      : memories.map((m) => `
+          <div class="prediction-card-hero">
+            <div class="memory-card-header">
+              <span class="memory-card-icon">🧠</span>
+              <span class="memory-card-title">Mémoire personnalisée</span>
+            </div>
+            <p class="prediction-text">${escapeHtml(m.text)}</p>
+            <p class="memory-card-footer">Observé ${m.count} fois</p>
+          </div>`).join('');
+  }
+
+  // "Ce que Prédicta anticipe pour toi": forward-looking stats from generate-predictions.
+  function renderPredictionsSection(insights, notEnoughData) {
+    const el = document.getElementById('predictionsSection');
+    el.innerHTML = notEnoughData || insights.length === 0
+      ? `<div class="card"><p class="muted-text">Prédicta accumule encore tes données. Tes premières prédictions apparaîtront après J14.</p></div>`
+      : insights.map((p) => `
+          <div class="insight-card">
+            <p class="insight-text"><span class="insight-card-icon">🔮</span>${escapeHtml(p.text)}</p>
+            <p class="insight-card-footer">Basé sur ${p.basis} sessions</p>
+          </div>`).join('');
   }
 
   // ===== RÉGLAGES =====

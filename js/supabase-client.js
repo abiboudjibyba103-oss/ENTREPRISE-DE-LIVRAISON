@@ -320,12 +320,14 @@ async function predictaDailyLesson() {
 
 /**
  * Asks Prédicta to generate (or fetch the cached version of) today's
- * personalized memories ("mémoires personnalisées" — up to 4), each
- * grounded in a real repeated pattern found in the user's session
+ * personalized memories and predictions from the user's session
  * history (Supabase edge function `generate-predictions`). Returns
- * { predictions, notEnoughData }: `predictions` is an array of
- * { text, count } (count = real number of times the pattern was
- * observed), empty when there isn't enough data or no pattern repeats
+ * { memories, insights, notEnoughData }:
+ * - `memories`: up to 3 POSITIVE repeated patterns, as { text, count }
+ *   (count = real number of times the pattern was observed).
+ * - `insights`: forward-looking statistics, as { text, basis }
+ *   (basis = real number of sessions the stat is computed from).
+ * Both are empty when there isn't enough data or no pattern repeats
  * often enough yet.
  */
 async function predictaGeneratePredictions() {
@@ -350,7 +352,11 @@ async function predictaGeneratePredictions() {
     throw error;
   }
   if (data?.error) throw new Error(data.error);
-  return { predictions: Array.isArray(data.predictions) ? data.predictions : [], notEnoughData: !!data.notEnoughData };
+  return {
+    memories: Array.isArray(data.memories) ? data.memories : [],
+    insights: Array.isArray(data.insights) ? data.insights : [],
+    notEnoughData: !!data.notEnoughData,
+  };
 }
 
 /**
