@@ -271,10 +271,45 @@ create policy "predictions_delete_own" on public.predictions
 -- A plain unique(user_id, prediction_date) would only allow ONE row
 -- per day, silently dropping the rest of the memories on upsert —
 -- hence the extra prediction_index column.
-alter table public.predictions add column if not exists prediction_date date
-  not null default (now() at time zone 'utc')::date;
-alter table public.predictions add column if not exists prediction_index smallint
-  not null default 0 check (prediction_index between 0 and 3);
+--
+-- prediction_date/prediction_index are backfilled from created_at and
+-- deduped per (user_id, prediction_date) before the NOT NULL/default
+-- and unique index are applied, since a plain ALTER ... DEFAULT would
+-- stamp every pre-existing row with the same date/index and collide
+-- on the unique index below. See migration_predictions_memories.sql
+-- for the version to run against an already-populated database.
+alter table public.predictions add column if not exists prediction_date date;
+
+update public.predictions
+  set prediction_date = (created_at at time zone 'utc')::date
+  where prediction_date is null;
+
+alter table public.predictions alter column prediction_date
+  set default (now() at time zone 'utc')::date;
+alter table public.predictions alter column prediction_date set not null;
+
+alter table public.predictions add column if not exists prediction_index smallint;
+
+with ranked as (
+  select id, row_number() over (
+    partition by user_id, prediction_date order by created_at, id
+  ) - 1 as rn
+  from public.predictions
+  where prediction_index is null
+)
+update public.predictions p
+  set prediction_index = ranked.rn
+  from ranked
+  where p.id = ranked.id;
+
+delete from public.predictions where prediction_index > 3;
+
+alter table public.predictions alter column prediction_index set default 0;
+alter table public.predictions alter column prediction_index set not null;
+alter table public.predictions drop constraint if exists predictions_prediction_index_check;
+alter table public.predictions add constraint predictions_prediction_index_check
+  check (prediction_index between 0 and 3);
+
 -- Real number of times the underlying pattern was actually observed
 -- in the user's sessions (shown as "Observé N fois" on the card) —
 -- computed in code, never left to the LLM to invent.
