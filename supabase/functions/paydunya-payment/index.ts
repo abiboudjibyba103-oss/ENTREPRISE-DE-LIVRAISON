@@ -12,14 +12,11 @@
 // the client request body — a client could otherwise ask this
 // function to create an invoice for 1 FCFA and nothing would catch it.
 //
-// Scope note: this function only creates the checkout link. It does
-// NOT flip profiles.plan to 'pro' after a successful payment — that
-// requires a PayDunya IPN/webhook handler (a separate function, not
-// built here) that verifies the payment server-side and updates the
-// DB with the service role key. Until that exists, completing a
-// sandbox payment will NOT change what the dashboard shows; see the
-// deploy notes for how to flip a test account manually in the
-// meantime.
+// This function only creates the checkout link. profiles.plan is
+// flipped to 'pro' by the paydunya-webhook edge function, invoked by
+// PayDunya itself via the callback_url set below once it independently
+// confirms the payment — see that function for why the callback body
+// itself is never trusted directly.
 //
 // Deploy with:
 //   supabase functions deploy paydunya-payment
@@ -116,9 +113,10 @@ Deno.serve(async (req) => {
     actions: {
       cancel_url: `${APP_URL}/predicta-dashboard.html`,
       return_url: `${APP_URL}/predicta-dashboard.html?paiement=success`,
+      callback_url: `${SUPABASE_URL}/functions/v1/paydunya-webhook`,
     },
-    // Lets a future IPN/webhook handler match the PayDunya payment
-    // back to this user without guessing from the email alone.
+    // Lets paydunya-webhook match the confirmed PayDunya payment back
+    // to this user without guessing from the email alone.
     custom_data: {
       user_id: user.id,
     },

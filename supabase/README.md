@@ -153,3 +153,44 @@ was created before the mobile dashboard was added — it adds
 0.441.0) and `@supabase/supabase-js` 2.45.4 was added. Run `npm install` to
 refresh `package-lock.json` (this sandbox has no registry access, so the
 lockfile could not be regenerated here).
+
+## 11. PayDunya payments (`paydunya-payment` + `paydunya-webhook`)
+
+Plan Pro (4900 FCFA/month) is required to use the dashboard at all —
+`predicta-dashboard.html`'s `init()` shows a payment-lock screen instead of
+the app whenever `profiles.plan !== 'pro'`.
+
+- `paydunya-payment/index.ts`: creates a PayDunya sandbox checkout for the
+  authenticated user (amount/description hardcoded server-side) and returns
+  the checkout URL. Frontend usage: `predictaInitiatePayment()` in
+  `js/supabase-client.js`, called from the landing page's signup flow
+  (`payerEtEntrer()`) and the dashboard's Réglages/lock screen
+  (`passerAuPro()`).
+- `paydunya-webhook/index.ts`: receives PayDunya's IPN callback, but never
+  trusts its body directly — it re-confirms the payment against PayDunya's
+  own `checkout-invoice/confirm` endpoint using our own keys, records the
+  invoice in `paydunya_payments` (unique on `invoice_token`, so retried
+  IPN calls are a no-op), and only then sets `profiles.plan = 'pro'` /
+  `plan_expire_at`. Deploy with `--no-verify-jwt` (PayDunya calls this with
+  no Supabase auth header).
+
+Required secrets (sandbox test keys, from PayDunya → Mon compte → API &
+Config): `PAYDUNYA_MASTER_KEY`, `PAYDUNYA_PRIVATE_KEY`,
+`PAYDUNYA_PUBLIC_KEY`, `PAYDUNYA_TOKEN`, plus `APP_URL` (the deployed
+site's canonical origin, no trailing slash, used to build the checkout's
+return/cancel links).
+
+```
+supabase secrets set PAYDUNYA_MASTER_KEY=... PAYDUNYA_PRIVATE_KEY=... PAYDUNYA_PUBLIC_KEY=... PAYDUNYA_TOKEN=... APP_URL=https://...
+supabase functions deploy paydunya-payment
+supabase functions deploy paydunya-webhook --no-verify-jwt
+```
+
+Run `supabase/migration_profiles_plan_expire.sql` and
+`supabase/migration_paydunya_payments.sql` in the SQL editor first (both
+already part of a fresh `schema.sql` run).
+
+SANDBOX ONLY: both functions hardcode PayDunya's sandbox URLs. Switching to
+production requires updating both `PAYDUNYA_API_URL` (paydunya-payment) and
+`PAYDUNYA_CONFIRM_URL_PREFIX` (paydunya-webhook) together, and swapping in
+live keys.
