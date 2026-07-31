@@ -44,6 +44,26 @@ async function predictaGetSession() {
 }
 
 /**
+ * supabase-js's default error for a non-2xx edge function response is a
+ * generic "Edge Function returned a non-2xx status code" — it doesn't
+ * read the response body. Every edge function in this app replies with
+ * a real, human-readable { error } JSON body on failure; this pulls
+ * that out so callers (and the user) see the actual reason instead of
+ * the generic message.
+ */
+async function predictaFunctionErrorMessage(error) {
+  try {
+    const body = await error.context.json();
+    if (body?.error) return body.error;
+  } catch {
+    // Response wasn't JSON, already consumed, or error.context isn't a
+    // Response at all (e.g. a network-level FunctionsRelayError) —
+    // fall back to the generic message below.
+  }
+  return error.message;
+}
+
+/**
  * Creates a new account with email + password, via the `auth-rate-limit`
  * edge function (server-side signUp + per-IP rate limiting + best-effort
  * waitlist capture). A `profiles` row is auto-created by the
@@ -80,7 +100,7 @@ async function predictaSignUpWithPassword(email, password, displayName, referral
     if (status === 429) {
       throw new Error('Trop de tentatives. Réessaie dans une minute.');
     }
-    throw error;
+    throw new Error(await predictaFunctionErrorMessage(error));
   }
   if (data?.error) throw new Error(data.error);
 
@@ -117,7 +137,7 @@ async function predictaSignInWithPassword(email, password) {
     if (status === 429) {
       throw new Error('Trop de tentatives. Réessaie dans une minute.');
     }
-    throw error;
+    throw new Error(await predictaFunctionErrorMessage(error));
   }
   if (data?.error) throw new Error(data.error);
 
@@ -245,7 +265,7 @@ async function predictaDailyLesson() {
     if (error.context?.status === 401) {
       throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
     }
-    throw error;
+    throw new Error(await predictaFunctionErrorMessage(error));
   }
   if (data?.error) throw new Error(data.error);
   return { lessonText: data.lessonText ?? null, hasSessionToday: !!data.hasSessionToday };
@@ -282,7 +302,7 @@ async function predictaGeneratePredictions() {
     if (error.context?.status === 401) {
       throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
     }
-    throw error;
+    throw new Error(await predictaFunctionErrorMessage(error));
   }
   if (data?.error) throw new Error(data.error);
   return {
@@ -318,7 +338,7 @@ async function predictaInitiatePayment() {
     if (error.context?.status === 401) {
       throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
     }
-    throw error;
+    throw new Error(await predictaFunctionErrorMessage(error));
   }
   if (data?.error) throw new Error(data.error);
   if (!data?.paymentUrl) throw new Error('Lien de paiement introuvable.');
@@ -352,7 +372,7 @@ async function predictaUpdateBrainMetrics() {
     if (error.context?.status === 401) {
       throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
     }
-    throw error;
+    throw new Error(await predictaFunctionErrorMessage(error));
   }
   if (data?.error) throw new Error(data.error);
   return data;
@@ -489,7 +509,7 @@ async function predictaCoachChat(message, history) {
     if (status === 401) {
       throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
     }
-    throw error;
+    throw new Error(await predictaFunctionErrorMessage(error));
   }
   if (data?.error) throw new Error(data.error);
   return { reply: data.reply, limitReached: !!data.limitReached };
@@ -674,7 +694,7 @@ async function predictaDeleteAccount() {
     if (error.context?.status === 401) {
       throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
     }
-    throw error;
+    throw new Error(await predictaFunctionErrorMessage(error));
   }
   if (data?.error) throw new Error(data.error);
   return true;
