@@ -44,23 +44,70 @@ async function predictaGetSession() {
 }
 
 /**
- * supabase-js's default error for a non-2xx edge function response is a
- * generic "Edge Function returned a non-2xx status code" — it doesn't
- * read the response body. Every edge function in this app replies with
- * a real, human-readable { error } JSON body on failure; this pulls
- * that out so callers (and the user) see the actual reason instead of
- * the generic message.
+ * Returns the total number of people on the waitlist. The waitlist table
+ * itself has no public select policy (RLS), so this goes through the
+ * security-definer `get_waitlist_count` RPC, which exposes only the
+ * aggregate count, never individual rows.
  */
-async function predictaFunctionErrorMessage(error) {
-  try {
-    const body = await error.context.json();
-    if (body?.error) return body.error;
-  } catch {
-    // Response wasn't JSON, already consumed, or error.context isn't a
-    // Response at all (e.g. a network-level FunctionsRelayError) —
-    // fall back to the generic message below.
+async function predictaGetWaitlistCount() {
+  const { data, error } = await supabaseClient.rpc('get_waitlist_count');
+  if (error) {
+    console.error('[predicta] getWaitlistCount error', error.message);
+    return 0;
   }
-  return error.message;
+  return typeof data === 'number' ? data : 0;
+}
+
+/**
+ * Returns the timestamp of the earliest waitlist signup, or null if the
+ * waitlist is empty. Used to anchor the landing page's 17-day launch
+ * countdown when no explicit launch date is configured.
+ */
+async function predictaGetWaitlistFirstSignupAt() {
+  const { data, error } = await supabaseClient.rpc('get_waitlist_first_signup_at');
+  if (error) {
+    console.error('[predicta] getWaitlistFirstSignupAt error', error.message);
+    return null;
+  }
+  return data || null;
+}
+
+/**
+ * Pre-launch sign-up: registers name + email + phone on the waitlist via
+ * the `waitlist-join` edge function, optionally linking the signup to
+ * whoever referred them. Returns { referralCode, alreadyRegistered }.
+ */
+async function predictaWaitlistJoin({ name, email, phone, ref }) {
+  const safeName = String(name || '').trim().slice(0, 100);
+  const safeEmail = String(email || '').trim().toLowerCase().slice(0, 255);
+  const safeRef = String(ref || '').trim().toUpperCase().slice(0, 16);
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!safeName) throw new Error('Le prénom est requis.');
+  if (!emailRegex.test(safeEmail)) throw new Error('Adresse email invalide.');
+
+  const { data, error } = await supabaseClient.functions.invoke('waitlist-join', {
+    body: { name: safeName, email: safeEmail, ref: safeRef },
+  });
+
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return { referralCode: data.referralCode, alreadyRegistered: !!data.alreadyRegistered };
+}
+
+/**
+ * Returns how many people joined the waitlist using the given referral code.
+ */
+async function predictaGetWaitlistReferralCount(code) {
+  const safeCode = String(code || '').trim().toUpperCase().slice(0, 16);
+  if (!safeCode) return 0;
+
+  const { data, error } = await supabaseClient.rpc('get_waitlist_referral_count', { code: safeCode });
+  if (error) {
+    console.error('[predicta] getWaitlistReferralCount error', error.message);
+    return 0;
+  }
+  return typeof data === 'number' ? data : 0;
 }
 
 /**
@@ -100,7 +147,7 @@ async function predictaSignUpWithPassword(email, password, displayName, referral
     if (status === 429) {
       throw new Error('Trop de tentatives. Réessaie dans une minute.');
     }
-    throw new Error(await predictaFunctionErrorMessage(error));
+    throw error;
   }
   if (data?.error) throw new Error(data.error);
 
@@ -137,7 +184,7 @@ async function predictaSignInWithPassword(email, password) {
     if (status === 429) {
       throw new Error('Trop de tentatives. Réessaie dans une minute.');
     }
-    throw new Error(await predictaFunctionErrorMessage(error));
+    throw error;
   }
   if (data?.error) throw new Error(data.error);
 
@@ -265,7 +312,7 @@ async function predictaDailyLesson() {
     if (error.context?.status === 401) {
       throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
     }
-    throw new Error(await predictaFunctionErrorMessage(error));
+    throw error;
   }
   if (data?.error) throw new Error(data.error);
   return { lessonText: data.lessonText ?? null, hasSessionToday: !!data.hasSessionToday };
@@ -302,7 +349,7 @@ async function predictaGeneratePredictions() {
     if (error.context?.status === 401) {
       throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
     }
-    throw new Error(await predictaFunctionErrorMessage(error));
+    throw error;
   }
   if (data?.error) throw new Error(data.error);
   return {
@@ -310,39 +357,6 @@ async function predictaGeneratePredictions() {
     insights: Array.isArray(data.insights) ? data.insights : [],
     notEnoughData: !!data.notEnoughData,
   };
-}
-
-/**
- * Initiates a PayDunya sandbox checkout for the Plan Pro subscription
- * (Supabase edge function `paydunya-payment`). The amount and
- * description are fixed server-side — nothing sent from here can
- * influence what's actually charged. Returns the checkout URL to
- * redirect the browser to.
- */
-async function predictaInitiatePayment() {
-  const session = await predictaGetSession();
-  if (!session) throw new Error('Not authenticated');
-
-  const invoke = () => supabaseClient.functions.invoke('paydunya-payment', { body: {} });
-
-  let { data, error } = await invoke();
-
-  if (error?.context?.status === 401) {
-    const { data: refreshed, error: refreshError } = await supabaseClient.auth.refreshSession();
-    if (!refreshError && refreshed?.session) {
-      ({ data, error } = await invoke());
-    }
-  }
-
-  if (error) {
-    if (error.context?.status === 401) {
-      throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
-    }
-    throw new Error(await predictaFunctionErrorMessage(error));
-  }
-  if (data?.error) throw new Error(data.error);
-  if (!data?.paymentUrl) throw new Error('Lien de paiement introuvable.');
-  return data.paymentUrl;
 }
 
 /**
@@ -372,7 +386,7 @@ async function predictaUpdateBrainMetrics() {
     if (error.context?.status === 401) {
       throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
     }
-    throw new Error(await predictaFunctionErrorMessage(error));
+    throw error;
   }
   if (data?.error) throw new Error(data.error);
   return data;
@@ -509,7 +523,7 @@ async function predictaCoachChat(message, history) {
     if (status === 401) {
       throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
     }
-    throw new Error(await predictaFunctionErrorMessage(error));
+    throw error;
   }
   if (data?.error) throw new Error(data.error);
   return { reply: data.reply, limitReached: !!data.limitReached };
@@ -694,7 +708,7 @@ async function predictaDeleteAccount() {
     if (error.context?.status === 401) {
       throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
     }
-    throw new Error(await predictaFunctionErrorMessage(error));
+    throw error;
   }
   if (data?.error) throw new Error(data.error);
   return true;

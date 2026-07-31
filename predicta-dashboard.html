@@ -224,9 +224,6 @@
   .settings-delete-link { color: var(--danger); }
   .settings-delete-link:hover { color: #B91C1C; }
 
-  .plan-status { font-weight: 700; font-size: 15px; margin-bottom: 12px; }
-  .plan-renew { color: var(--text-sec); font-size: 13px; }
-
   /* ===== BOTTOM NAV ===== */
   .bottom-nav {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 500;
@@ -329,25 +326,6 @@
 
 <div id="authGate"><div class="spinner"></div></div>
 
-<div id="paymentLock" style="display:none;">
-  <div class="page-inner" style="max-width:420px;padding-top:80px;">
-    <p class="topbar-logo" style="text-align:center;margin-bottom:32px;display:block;">Prédicta</p>
-
-    <div class="card" id="paymentLockPay" style="text-align:center;padding:36px 26px;">
-      <div style="font-size:40px;margin-bottom:16px;">🔒</div>
-      <h1 class="page-title" style="margin-bottom:12px;">Accès Plan Pro requis</h1>
-      <p class="muted-text" style="margin-bottom:24px;">Prédicta est accessible avec l'abonnement Plan Pro, 4 900 FCFA/mois.</p>
-      <button class="btn btn-primary btn-block" id="paymentLockBtn" onclick="passerAuPro()">Payer 4 900 FCFA/mois</button>
-      <a class="settings-logout-link" onclick="handleLogout()" style="display:block;margin-top:18px;">Se déconnecter</a>
-    </div>
-
-    <div class="card" id="paymentLockVerifying" style="display:none;text-align:center;padding:36px 26px;">
-      <div class="spinner" style="margin:0 auto 16px;"></div>
-      <p class="muted-text" id="paymentVerifyingText">Vérification de ton paiement...</p>
-    </div>
-  </div>
-</div>
-
 <div id="app">
   <div class="topbar"><span class="topbar-logo">Prédicta</span></div>
 
@@ -448,9 +426,6 @@
           <div class="settings-row"><span class="settings-label">Inscrit le</span><span class="settings-value" id="settingsSignupDate">—</span></div>
           <a class="settings-logout-link" onclick="handleLogout()">Se déconnecter</a>
         </div>
-
-        <p class="section-label">Plan</p>
-        <div class="card" id="planCard"><p class="muted-text">Chargement...</p></div>
 
         <div class="card">
           <label class="field-label" for="lessonHourSelect">Heure de l'enseignement du soir</label>
@@ -964,37 +939,6 @@
     const select = document.getElementById('lessonHourSelect');
     select.innerHTML = Array.from({ length: 24 }, (_, h) => `<option value="${h}">${String(h).padStart(2, '0')}h</option>`).join('');
     select.value = String(currentProfile?.evening_lesson_hour ?? 17);
-
-    renderPlanCard();
-  }
-
-  function renderPlanCard() {
-    const el = document.getElementById('planCard');
-    if (currentProfile?.plan === 'pro') {
-      const renewDate = currentProfile?.plan_expire_at
-        ? new Date(currentProfile.plan_expire_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-        : '—';
-      el.innerHTML = `
-        <p class="plan-status">Plan Pro actif ✅</p>
-        <p class="plan-renew">Prochain renouvellement le ${renewDate}</p>`;
-    } else {
-      el.innerHTML = `
-        <p class="plan-status">Plan Gratuit · Accès bêta</p>
-        <button class="btn btn-primary btn-block" id="passerAuProBtn" onclick="passerAuPro()">Passer au Pro — 4 900 FCFA/mois</button>`;
-    }
-  }
-
-  async function passerAuPro() {
-    const btn = document.getElementById('passerAuProBtn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Redirection...'; }
-    try {
-      const paymentUrl = await predictaInitiatePayment();
-      window.location.href = paymentUrl;
-    } catch (err) {
-      console.error('[predicta] passerAuPro error', err.message);
-      showToast(err.message || 'Paiement impossible pour le moment.', 'error');
-      if (btn) { btn.disabled = false; btn.textContent = 'Passer au Pro — 4 900 FCFA/mois'; }
-    }
   }
 
   async function saveLessonHour() {
@@ -1039,22 +983,8 @@
     }
 
     document.getElementById('authGate').style.display = 'none';
-
-    // Plan Pro is required to use the dashboard at all — profiles.plan
-    // is only ever flipped to 'pro' by the paydunya-webhook edge
-    // function once it independently confirms a real payment with
-    // PayDunya, never by the client.
-    if (currentProfile.plan !== 'pro') {
-      document.getElementById('paymentLock').style.display = 'block';
-      await handlePaymentReturn();
-      return;
-    }
-
     document.getElementById('app').style.display = 'flex';
-    await startApp();
-  }
 
-  async function startApp() {
     document.getElementById('sidebarUserName').textContent = currentProfile?.display_name || '';
     document.getElementById('sidebarUserEmail').textContent = currentProfile?.email || currentUser?.email || '';
 
@@ -1071,33 +1001,6 @@
     }
 
     renderHome();
-  }
-
-  // After a PayDunya redirect back (?paiement=success), the webhook that
-  // actually grants Pro access runs asynchronously on PayDunya's side —
-  // it may not have landed yet, so this polls profiles.plan for a bit
-  // instead of assuming the payment already went through.
-  async function handlePaymentReturn() {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('paiement') !== 'success') return;
-
-    document.getElementById('paymentLockPay').style.display = 'none';
-    document.getElementById('paymentLockVerifying').style.display = 'block';
-
-    for (let i = 0; i < 10; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      currentProfile = await predictaGetProfile();
-      if (currentProfile?.plan === 'pro') {
-        window.history.replaceState({}, '', '/predicta-dashboard.html');
-        document.getElementById('paymentLock').style.display = 'none';
-        document.getElementById('app').style.display = 'flex';
-        await startApp();
-        return;
-      }
-    }
-
-    document.getElementById('paymentVerifyingText').textContent =
-      "On n'a pas encore reçu la confirmation de ton paiement. Si tu as bien payé, réessaie dans une minute ou contacte-nous.";
   }
 
   init();
