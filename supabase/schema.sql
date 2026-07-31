@@ -14,6 +14,7 @@ create table if not exists public.profiles (
   default_session_minutes  smallint not null default 45 check (default_session_minutes in (25, 45, 90)),
   notifications_enabled    boolean not null default true,
   plan                     text not null default 'free' check (plan in ('free', 'pro')),
+  plan_expire_at           timestamptz,
   phase                    text not null default 'Phase 1 — Découverte',
   referral_code            text unique,
   referred_by              uuid references public.profiles(id) on delete set null,
@@ -29,6 +30,10 @@ alter table public.profiles add column if not exists referred_by uuid references
 alter table public.profiles add column if not exists evening_lesson_hour smallint not null default 17
   check (evening_lesson_hour between 0 and 23);
 alter table public.profiles add column if not exists phone text;
+-- Next Pro-plan renewal date, set by the (future) PayDunya payment
+-- webhook alongside `plan` — never by the client, see
+-- protect_profile_columns() below.
+alter table public.profiles add column if not exists plan_expire_at timestamptz;
 
 update public.profiles
   set referral_code = upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8))
@@ -115,6 +120,7 @@ as $$
 begin
   if auth.role() <> 'service_role' then
     new.plan := old.plan;
+    new.plan_expire_at := old.plan_expire_at;
     new.referral_code := old.referral_code;
     new.referred_by := old.referred_by;
     new.email := old.email;

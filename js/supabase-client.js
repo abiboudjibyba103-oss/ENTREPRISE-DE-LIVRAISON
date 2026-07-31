@@ -360,6 +360,39 @@ async function predictaGeneratePredictions() {
 }
 
 /**
+ * Initiates a PayDunya sandbox checkout for the Plan Pro subscription
+ * (Supabase edge function `paydunya-payment`). The amount and
+ * description are fixed server-side — nothing sent from here can
+ * influence what's actually charged. Returns the checkout URL to
+ * redirect the browser to.
+ */
+async function predictaInitiatePayment() {
+  const session = await predictaGetSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const invoke = () => supabaseClient.functions.invoke('paydunya-payment', { body: {} });
+
+  let { data, error } = await invoke();
+
+  if (error?.context?.status === 401) {
+    const { data: refreshed, error: refreshError } = await supabaseClient.auth.refreshSession();
+    if (!refreshError && refreshed?.session) {
+      ({ data, error } = await invoke());
+    }
+  }
+
+  if (error) {
+    if (error.context?.status === 401) {
+      throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
+    }
+    throw error;
+  }
+  if (data?.error) throw new Error(data.error);
+  if (!data?.paymentUrl) throw new Error('Lien de paiement introuvable.');
+  return data.paymentUrl;
+}
+
+/**
  * Asks Prédicta to recompute (Supabase edge function
  * `update-brain-metrics`) and store the user's cognitive profile
  * (concentration, régularité, résistance, récupération, progression)

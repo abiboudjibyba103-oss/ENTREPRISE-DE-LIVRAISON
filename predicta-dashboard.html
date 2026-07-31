@@ -224,6 +224,9 @@
   .settings-delete-link { color: var(--danger); }
   .settings-delete-link:hover { color: #B91C1C; }
 
+  .plan-status { font-weight: 700; font-size: 15px; margin-bottom: 12px; }
+  .plan-renew { color: var(--text-sec); font-size: 13px; }
+
   /* ===== BOTTOM NAV ===== */
   .bottom-nav {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 500;
@@ -426,6 +429,9 @@
           <div class="settings-row"><span class="settings-label">Inscrit le</span><span class="settings-value" id="settingsSignupDate">—</span></div>
           <a class="settings-logout-link" onclick="handleLogout()">Se déconnecter</a>
         </div>
+
+        <p class="section-label">Plan</p>
+        <div class="card" id="planCard"><p class="muted-text">Chargement...</p></div>
 
         <div class="card">
           <label class="field-label" for="lessonHourSelect">Heure de l'enseignement du soir</label>
@@ -939,6 +945,37 @@
     const select = document.getElementById('lessonHourSelect');
     select.innerHTML = Array.from({ length: 24 }, (_, h) => `<option value="${h}">${String(h).padStart(2, '0')}h</option>`).join('');
     select.value = String(currentProfile?.evening_lesson_hour ?? 17);
+
+    renderPlanCard();
+  }
+
+  function renderPlanCard() {
+    const el = document.getElementById('planCard');
+    if (currentProfile?.plan === 'pro') {
+      const renewDate = currentProfile?.plan_expire_at
+        ? new Date(currentProfile.plan_expire_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+        : '—';
+      el.innerHTML = `
+        <p class="plan-status">Plan Pro actif ✅</p>
+        <p class="plan-renew">Prochain renouvellement le ${renewDate}</p>`;
+    } else {
+      el.innerHTML = `
+        <p class="plan-status">Plan Gratuit · Accès bêta</p>
+        <button class="btn btn-primary btn-block" id="passerAuProBtn" onclick="passerAuPro()">Passer au Pro — 4 900 FCFA/mois</button>`;
+    }
+  }
+
+  async function passerAuPro() {
+    const btn = document.getElementById('passerAuProBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Redirection...'; }
+    try {
+      const paymentUrl = await predictaInitiatePayment();
+      window.location.href = paymentUrl;
+    } catch (err) {
+      console.error('[predicta] passerAuPro error', err.message);
+      showToast(err.message || 'Paiement impossible pour le moment.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Passer au Pro — 4 900 FCFA/mois'; }
+    }
   }
 
   async function saveLessonHour() {
