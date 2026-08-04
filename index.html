@@ -1265,6 +1265,9 @@ src="https://www.facebook.com/tr?id=2429471554536741&ev=PageView&noscript=1"
   });
 
   /* --- Registration modal (3-screen sign-up) --- */
+  let declencheurSelectionne = null;
+  let inscriptionUserId = null;
+
   function ouvrirInscription() {
     document.getElementById('modal-inscription').style.display = 'flex';
     document.body.style.overflow = 'hidden';
@@ -1275,12 +1278,70 @@ src="https://www.facebook.com/tr?id=2429471554536741&ev=PageView&noscript=1"
     document.getElementById('modal-inscription').style.display = 'none';
     document.body.style.overflow = '';
     allerEcran(1);
+    declencheurSelectionne = null;
+    inscriptionUserId = null;
+    document.querySelectorAll('.declencheur-option').forEach((opt) => {
+      opt.style.borderColor = 'var(--border)';
+      opt.style.background = '#fff';
+    });
+    const textarea = document.getElementById('declencheur-libre');
+    if (textarea) { textarea.value = ''; textarea.style.display = 'none'; }
+    const declencheurError = document.getElementById('declencheur-error');
+    if (declencheurError) declencheurError.style.display = 'none';
   }
 
   function allerEcran(n) {
-    [1,2,3].forEach(i => {
-      document.getElementById('ecran-' + i).style.display = i === n ? 'block' : 'none';
+    ['1', '2', '2b', '3'].forEach((i) => {
+      document.getElementById('ecran-' + i).style.display = i === String(n) ? 'block' : 'none';
     });
+  }
+
+  function selectionnerDeclencheur(el, valeur) {
+    document.querySelectorAll('.declencheur-option').forEach((opt) => {
+      opt.style.borderColor = 'var(--border)';
+      opt.style.background = '#fff';
+    });
+    el.style.borderColor = 'var(--violet)';
+    el.style.background = 'var(--violet-light)';
+    declencheurSelectionne = valeur;
+    const textarea = document.getElementById('declencheur-libre');
+    if (valeur === 'autre') {
+      textarea.style.display = 'block';
+      textarea.focus();
+    } else {
+      textarea.style.display = 'none';
+    }
+  }
+
+  async function validerDeclencheur() {
+    const errorEl = document.getElementById('declencheur-error');
+    if (!declencheurSelectionne) {
+      errorEl.textContent = 'Choisis une option pour continuer.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    let valeur = declencheurSelectionne;
+    if (valeur === 'autre') {
+      const texte = document.getElementById('declencheur-libre').value.trim();
+      if (!texte) {
+        errorEl.textContent = "Décris ce qui t'a aidé pour continuer.";
+        errorEl.style.display = 'block';
+        return;
+      }
+      valeur = texte;
+    }
+    errorEl.style.display = 'none';
+
+    // Best-effort: this is a nice-to-have personalization signal, not a
+    // blocker — a save failure shouldn't stop the person from getting
+    // into the app. supabase-js resolves with { error } rather than
+    // throwing, so this is checked explicitly instead of try/catch.
+    if (inscriptionUserId) {
+      const { error } = await supabaseClient.from('profiles').update({ declencheur_naturel: valeur }).eq('id', inscriptionUserId);
+      if (error) console.error('[predicta] save déclencheur error', error.message);
+    }
+
+    allerEcran(3);
   }
 
   async function soumettreInscription() {
@@ -1320,7 +1381,17 @@ src="https://www.facebook.com/tr?id=2429471554536741&ev=PageView&noscript=1"
         document.getElementById('ecran-3-email-address').textContent = email;
       }
       if (typeof fbq === 'function') fbq('track', 'CompleteRegistration');
-      allerEcran(3);
+      if (data.session && data.user) {
+        // Ask the déclencheur naturel question before letting them into
+        // the app — only possible with an active session (RLS requires
+        // auth.uid() = id, and there's no session yet when email
+        // confirmation is pending, so that case skips straight to
+        // écran 3 like before).
+        inscriptionUserId = data.user.id;
+        allerEcran('2b');
+      } else {
+        allerEcran(3);
+      }
       loadWaitlistStats();
       mettreAJourPlaces();
     } catch(err) {
@@ -1431,6 +1502,42 @@ src="https://www.facebook.com/tr?id=2429471554536741&ev=PageView&noscript=1"
 
       <p id="reg-error" style="color:#EF4444;font-size:13px;margin-bottom:14px;display:none;"></p>
       <button onclick="soumettreInscription()" id="btn-inscription" class="btn btn-primary" style="width:100%;justify-content:center;">Créer mon compte</button>
+    </div>
+
+    <!-- ÉCRAN 2B -->
+    <div id="ecran-2b" style="display:none;">
+      <div style="text-align:center;margin-bottom:32px;">
+        <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--violet);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Une question importante</span>
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:20px;margin:12px 0;color:var(--text);">La dernière fois que tu as travaillé sans te forcer — qu'est-ce qui t'a aidé à continuer ?</h3>
+        <p style="color:var(--text-sec);font-size:14px;line-height:1.7;">Prédicta utilisera cette réponse pour t'aider au bon moment.</p>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px;">
+
+        <div class="declencheur-option" onclick="selectionnerDeclencheur(this, 'micro-action')" style="padding:16px;border:1.5px solid var(--border);border-radius:14px;cursor:pointer;transition:all 0.2s;">
+          <p style="font-weight:600;font-size:15px;color:var(--text);margin-bottom:4px;">J'ai commencé par quelque chose de très petit</p>
+          <p style="font-size:13px;color:var(--text-sec);">Et une fois lancé, j'ai continué naturellement</p>
+        </div>
+
+        <div class="declencheur-option" onclick="selectionnerDeclencheur(this, 'heure-precise')" style="padding:16px;border:1.5px solid var(--border);border-radius:14px;cursor:pointer;transition:all 0.2s;">
+          <p style="font-weight:600;font-size:15px;color:var(--text);margin-bottom:4px;">Je m'étais fixé une heure précise pour commencer</p>
+          <p style="font-size:13px;color:var(--text-sec);">Et je l'ai respectée</p>
+        </div>
+
+        <div class="declencheur-option" onclick="selectionnerDeclencheur(this, 'pression-externe')" style="padding:16px;border:1.5px solid var(--border);border-radius:14px;cursor:pointer;transition:all 0.2s;">
+          <p style="font-weight:600;font-size:15px;color:var(--text);margin-bottom:4px;">Je ne voulais pas décevoir quelqu'un</p>
+          <p style="font-size:13px;color:var(--text-sec);">Ou j'avais une deadline qui me mettait la pression</p>
+        </div>
+
+        <div class="declencheur-option" onclick="selectionnerDeclencheur(this, 'autre')" style="padding:16px;border:1.5px solid var(--border);border-radius:14px;cursor:pointer;transition:all 0.2s;">
+          <p style="font-weight:600;font-size:15px;color:var(--text);margin-bottom:4px;">Autre chose →</p>
+          <textarea id="declencheur-libre" placeholder="Décris ce qui t'a aidé..." style="display:none;margin-top:12px;width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;resize:none;height:80px;outline:none;" onfocus="this.style.borderColor='var(--violet)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        </div>
+
+      </div>
+
+      <p id="declencheur-error" style="color:#EF4444;font-size:13px;margin-bottom:14px;display:none;">Choisis une option pour continuer.</p>
+      <button onclick="validerDeclencheur()" class="btn btn-primary" style="width:100%;justify-content:center;">Continuer →</button>
     </div>
 
     <!-- ÉCRAN 3 -->

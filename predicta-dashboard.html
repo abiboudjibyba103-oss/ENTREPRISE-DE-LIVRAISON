@@ -372,7 +372,7 @@
 
         <!-- État 3 (suite) : confirmation d'interruption -->
         <div id="homeStateInterruptedDone" class="card" style="display:none;">
-          <p class="state-message-text">Prédicta a enregistré. Continue ta journée.</p>
+          <p class="state-message-text" id="interruptedDoneMessage">Prédicta a enregistré. Continue ta journée.</p>
         </div>
 
         <!-- État 4 : session terminée -->
@@ -539,6 +539,25 @@
     if (name === 'settings' && !settingsLoaded) loadSettings();
   }
 
+  // Personalizes the interruption-confirmation message using what the
+  // user said, during onboarding, naturally helps them get started
+  // (profiles.declencheur_naturel) — falls back to the generic message
+  // for accounts that predate this question or skipped it.
+  function declencheurMessage() {
+    const declencheur = currentProfile?.declencheur_naturel;
+    if (!declencheur) return 'Prédicta a enregistré. Continue ta journée.';
+    switch (declencheur) {
+      case 'micro-action':
+        return 'Prédicta a enregistré. Lance juste une toute petite action sur ta tâche. Une fois lancé, tu continueras naturellement.';
+      case 'heure-precise':
+        return "Prédicta a enregistré. Fixe-toi une heure précise pour reprendre. Pas \"bientôt\" — une heure exacte.";
+      case 'pression-externe':
+        return 'Prédicta a enregistré. Dis à quelqu\'un ce que tu vas accomplir aujourd\'hui. Ça change tout.';
+      default:
+        return `Prédicta a enregistré. Rappelle-toi : ${declencheur}`;
+    }
+  }
+
   // ===== ACCUEIL =====
   function renderHome() {
     document.getElementById('homeDate').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -559,6 +578,7 @@
       resetReasonPicker();
     } else if (homeState === 'interrupted-done') {
       document.getElementById('homeStateInterruptedDone').style.display = 'block';
+      document.getElementById('interruptedDoneMessage').textContent = declencheurMessage();
     } else if (homeState === 'completed') {
       document.getElementById('homeState4').style.display = 'block';
       document.getElementById('state4Message').textContent =

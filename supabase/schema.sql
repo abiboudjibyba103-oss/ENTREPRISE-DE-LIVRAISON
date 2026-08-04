@@ -19,6 +19,7 @@ create table if not exists public.profiles (
   referral_code            text unique,
   referred_by              uuid references public.profiles(id) on delete set null,
   evening_lesson_hour      smallint not null default 17 check (evening_lesson_hour between 0 and 23),
+  declencheur_naturel      text,
   created_at               timestamptz not null default now(),
   updated_at               timestamptz not null default now()
 );
@@ -34,6 +35,11 @@ alter table public.profiles add column if not exists phone text;
 -- webhook alongside `plan` — never by the client, see
 -- protect_profile_columns() below.
 alter table public.profiles add column if not exists plan_expire_at timestamptz;
+-- What naturally helps this user get started, answered during
+-- onboarding (index.html écran 2b) and used to personalize the
+-- interruption message on the dashboard. User-writable directly —
+-- not added to protect_profile_columns() below.
+alter table public.profiles add column if not exists declencheur_naturel text;
 
 update public.profiles
   set referral_code = upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8))
