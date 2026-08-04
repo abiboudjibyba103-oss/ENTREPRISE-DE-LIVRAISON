@@ -790,61 +790,12 @@ src="https://www.facebook.com/tr?id=2429471554536741&ev=PageView&noscript=1"
           <div class="brain-dot brain-dot-3"></div>
           <div class="brain-dot brain-dot-4"></div>
 
-          <!-- Brain SVG -->
-          <div class="brain-svg-wrap">
-            <svg width="220" height="220" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Left hemisphere -->
-              <path d="M110 180C110 180 60 175 45 148C30 121 32 95 40 80C48 65 55 58 55 58C55 58 50 50 52 42C54 34 62 30 70 32C78 34 80 40 80 40C80 40 85 32 94 30C103 28 110 34 110 40V180Z" fill="#EDE9FE"/>
-              <path d="M110 180C110 180 160 175 175 148C190 121 188 95 180 80C172 65 165 58 165 58C165 58 170 50 168 42C166 34 158 30 150 32C142 34 140 40 140 40C140 40 135 32 126 30C117 28 110 34 110 40V180Z" fill="#DDD6FE"/>
-
-              <!-- Brain details left -->
-              <path d="M70 85 Q65 95 68 105 Q72 115 78 110 Q85 105 82 95 Q79 85 70 85Z" fill="#C4B5FD" opacity="0.6"/>
-              <path d="M85 120 Q78 130 82 140 Q88 150 96 145 Q102 138 98 128 Q93 120 85 120Z" fill="#C4B5FD" opacity="0.4"/>
-              <path d="M60 115 Q55 125 60 133 Q66 140 72 136 Q78 130 74 120 Q70 112 60 115Z" fill="#A78BFA" opacity="0.35"/>
-
-              <!-- Brain details right -->
-              <path d="M150 85 Q155 95 152 105 Q148 115 142 110 Q135 105 138 95 Q141 85 150 85Z" fill="#C4B5FD" opacity="0.6"/>
-              <path d="M135 120 Q142 130 138 140 Q132 150 124 145 Q118 138 122 128 Q127 120 135 120Z" fill="#C4B5FD" opacity="0.4"/>
-              <path d="M160 115 Q165 125 160 133 Q154 140 148 136 Q142 130 146 120 Q150 112 160 115Z" fill="#A78BFA" opacity="0.35"/>
-
-              <!-- Center line -->
-              <line x1="110" y1="42" x2="110" y2="178" stroke="#A78BFA" stroke-width="1" stroke-dasharray="3 4" opacity="0.6"/>
-
-              <!-- Neural pathways -->
-              <path d="M80 75 Q95 70 110 72 Q125 70 140 75" stroke="#6C5CE7" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.4"/>
-              <path d="M75 100 Q90 95 110 98 Q130 95 145 100" stroke="#6C5CE7" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.4"/>
-              <path d="M78 128 Q92 122 110 125 Q128 122 142 128" stroke="#6C5CE7" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.4"/>
-              <path d="M82 155 Q94 148 110 151 Q126 148 138 155" stroke="#6C5CE7" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.35"/>
-
-              <!-- Stem -->
-              <rect x="100" y="178" width="20" height="18" rx="10" fill="#C4B5FD"/>
-
-              <!-- Glow dots on brain -->
-              <circle cx="75" cy="90" r="4" fill="#6C5CE7" opacity="0.7">
-                <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite"/>
-                <animate attributeName="r" values="4;5.5;4" dur="2s" repeatCount="indefinite"/>
-              </circle>
-              <circle cx="148" cy="100" r="3" fill="#EA580C" opacity="0.7">
-                <animate attributeName="opacity" values="0.7;1;0.7" dur="2.5s" repeatCount="indefinite" begin="0.5s"/>
-                <animate attributeName="r" values="3;4.5;3" dur="2.5s" repeatCount="indefinite" begin="0.5s"/>
-              </circle>
-              <circle cx="95" cy="145" r="3.5" fill="#6C5CE7" opacity="0.6">
-                <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="1s"/>
-                <animate attributeName="r" values="3.5;5;3.5" dur="3s" repeatCount="indefinite" begin="1s"/>
-              </circle>
-              <circle cx="130" cy="135" r="3" fill="#A78BFA" opacity="0.7">
-                <animate attributeName="opacity" values="0.7;1;0.7" dur="1.8s" repeatCount="indefinite" begin="0.8s"/>
-              </circle>
-
-              <!-- Neural sparks -->
-              <line x1="75" y1="90" x2="95" y2="98" stroke="#6C5CE7" stroke-width="1" opacity="0.4">
-                <animate attributeName="opacity" values="0.4;0.8;0.4" dur="2s" repeatCount="indefinite"/>
-              </line>
-              <line x1="148" y1="100" x2="130" y2="135" stroke="#EA580C" stroke-width="1" opacity="0.4">
-                <animate attributeName="opacity" values="0.4;0.8;0.4" dur="2.5s" repeatCount="indefinite" begin="0.5s"/>
-              </line>
-            </svg>
-          </div>
+          <!-- Brain image -->
+          <img
+            src="brain.png"
+            alt="Cerveau Prédicta"
+            style="position:relative;z-index:2;width:280px;height:280px;object-fit:contain;filter:drop-shadow(0 0 40px rgba(108,92,231,0.35));"
+          />
 
           <!-- Floating info cards around brain -->
           <div style="position:absolute;top:30px;right:0;background:#fff;border-radius:12px;padding:10px 14px;box-shadow:0 4px 20px rgba(108,92,231,0.15);border:1px solid rgba(108,92,231,0.1);font-size:12px;font-weight:600;color:#6C5CE7;white-space:nowrap;animation:brain-float 5s ease-in-out infinite;animation-delay:-2s;">
