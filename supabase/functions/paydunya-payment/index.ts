@@ -2,7 +2,7 @@
 // Prédicta — paydunya-payment edge function
 //
 // Initiates a PayDunya checkout for the Plan Pro subscription
-// (4900 FCFA/month). SANDBOX ONLY for now: PAYDUNYA_API_URL below is
+// (3900 FCFA/month, after a 15-day free trial). SANDBOX ONLY for now: PAYDUNYA_API_URL below is
 // hardcoded to PayDunya's sandbox checkout-invoice/create endpoint,
 // never the live one. Do not point it at the production endpoint
 // (https://app.paydunya.com/api/v1/checkout-invoice/create) or swap
@@ -43,7 +43,7 @@ const APP_URL = Deno.env.get('APP_URL');
 
 const PAYDUNYA_API_URL = 'https://app.paydunya.com/sandbox-api/v1/checkout-invoice/create';
 
-const PRO_PLAN_AMOUNT_FCFA = 4900;
+const PRO_PLAN_AMOUNT_FCFA = 3900;
 const PRO_PLAN_DESCRIPTION = 'Prédicta Plan Pro — Abonnement mensuel';
 
 // Comma-separated list of allowed frontend origins — same convention

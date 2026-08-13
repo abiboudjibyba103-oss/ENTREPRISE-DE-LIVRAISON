@@ -20,6 +20,7 @@ create table if not exists public.profiles (
   referred_by              uuid references public.profiles(id) on delete set null,
   evening_lesson_hour      smallint not null default 17 check (evening_lesson_hour between 0 and 23),
   declencheur_naturel      text,
+  trial_started_at         timestamptz default now(),
   created_at               timestamptz not null default now(),
   updated_at               timestamptz not null default now()
 );
@@ -31,8 +32,8 @@ alter table public.profiles add column if not exists referred_by uuid references
 alter table public.profiles add column if not exists evening_lesson_hour smallint not null default 17
   check (evening_lesson_hour between 0 and 23);
 alter table public.profiles add column if not exists phone text;
--- Next Pro-plan renewal date, set by the (future) PayDunya payment
--- webhook alongside `plan` — never by the client, see
+-- Next Pro-plan renewal date, set by the PayDunya payment webhook
+-- alongside `plan` — never by the client, see
 -- protect_profile_columns() below.
 alter table public.profiles add column if not exists plan_expire_at timestamptz;
 -- What naturally helps this user get started, answered during
@@ -40,6 +41,9 @@ alter table public.profiles add column if not exists plan_expire_at timestamptz;
 -- interruption message on the dashboard. User-writable directly —
 -- not added to protect_profile_columns() below.
 alter table public.profiles add column if not exists declencheur_naturel text;
+-- Not currently read anywhere — the dashboard's 15-day trial gate uses
+-- created_at, which is already accurate. Kept for possible future use.
+alter table public.profiles add column if not exists trial_started_at timestamptz default now();
 
 update public.profiles
   set referral_code = upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8))

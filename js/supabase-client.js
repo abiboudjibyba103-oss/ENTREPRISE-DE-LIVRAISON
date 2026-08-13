@@ -44,6 +44,26 @@ async function predictaGetSession() {
 }
 
 /**
+ * supabase-js's default error for a non-2xx edge function response is a
+ * generic "Edge Function returned a non-2xx status code" — it doesn't
+ * read the response body. Every edge function in this app replies with
+ * a real, human-readable { error } JSON body on failure; this pulls
+ * that out so callers (and the user) see the actual reason instead of
+ * the generic message.
+ */
+async function predictaFunctionErrorMessage(error) {
+  try {
+    const body = await error.context.json();
+    if (body?.error) return body.error;
+  } catch {
+    // Response wasn't JSON, already consumed, or error.context isn't a
+    // Response at all (e.g. a network-level FunctionsRelayError) —
+    // fall back to the generic message below.
+  }
+  return error.message;
+}
+
+/**
  * Returns the total number of people on the waitlist. The waitlist table
  * itself has no public select policy (RLS), so this goes through the
  * security-definer `get_waitlist_count` RPC, which exposes only the
@@ -357,6 +377,39 @@ async function predictaGeneratePredictions() {
     insights: Array.isArray(data.insights) ? data.insights : [],
     notEnoughData: !!data.notEnoughData,
   };
+}
+
+/**
+ * Initiates a PayDunya sandbox checkout for the Plan Pro subscription
+ * (Supabase edge function `paydunya-payment`). The amount and
+ * description are fixed server-side — nothing sent from here can
+ * influence what's actually charged. Returns the checkout URL to
+ * redirect the browser to.
+ */
+async function predictaInitiatePayment() {
+  const session = await predictaGetSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const invoke = () => supabaseClient.functions.invoke('paydunya-payment', { body: {} });
+
+  let { data, error } = await invoke();
+
+  if (error?.context?.status === 401) {
+    const { data: refreshed, error: refreshError } = await supabaseClient.auth.refreshSession();
+    if (!refreshError && refreshed?.session) {
+      ({ data, error } = await invoke());
+    }
+  }
+
+  if (error) {
+    if (error.context?.status === 401) {
+      throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
+    }
+    throw new Error(await predictaFunctionErrorMessage(error));
+  }
+  if (data?.error) throw new Error(data.error);
+  if (!data?.paymentUrl) throw new Error('Lien de paiement introuvable.');
+  return data.paymentUrl;
 }
 
 /**

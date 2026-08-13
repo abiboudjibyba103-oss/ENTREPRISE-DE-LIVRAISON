@@ -156,16 +156,17 @@ lockfile could not be regenerated here).
 
 ## 11. PayDunya payments (`paydunya-payment` + `paydunya-webhook`)
 
-Plan Pro (4900 FCFA/month) is required to use the dashboard at all —
-`predicta-dashboard.html`'s `init()` shows a payment-lock screen instead of
-the app whenever `profiles.plan !== 'pro'`.
+Signup is free for a 15-day trial. `predicta-dashboard.html`'s
+`verifierPeriodeEssai()` (called at the end of `init()`) shows a blocking
+`#ecran-blocage` overlay instead of hiding the app whenever
+`dayNumberSince(profiles.created_at) >= 15 && profiles.plan === 'free'`,
+with a button (`passerAuPro()`) to upgrade to Plan Pro (3900 FCFA/month).
 
 - `paydunya-payment/index.ts`: creates a PayDunya sandbox checkout for the
   authenticated user (amount/description hardcoded server-side) and returns
   the checkout URL. Frontend usage: `predictaInitiatePayment()` in
-  `js/supabase-client.js`, called from the landing page's signup flow
-  (`payerEtEntrer()`) and the dashboard's Réglages/lock screen
-  (`passerAuPro()`).
+  `js/supabase-client.js`, called from the dashboard's trial-blocking
+  overlay (`passerAuPro()`).
 - `paydunya-webhook/index.ts`: receives PayDunya's IPN callback, but never
   trusts its body directly — it re-confirms the payment against PayDunya's
   own `checkout-invoice/confirm` endpoint using our own keys, records the

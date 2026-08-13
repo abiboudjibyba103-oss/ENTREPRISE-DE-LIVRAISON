@@ -1,0 +1,21 @@
+-- ============================================================
+-- Migration: 15-day free trial gating on the dashboard.
+--
+-- NOTE on profiles.plan: it already exists (see schema.sql — text,
+-- default 'free', check (plan in ('free', 'pro'))), so re-declaring
+-- it with DEFAULT 'gratuit' would be a no-op (IF NOT EXISTS skips it)
+-- and would conflict with the existing check constraint anyway. The
+-- dashboard's trial-gating code checks profiles.plan = 'free' (the
+-- real value), not 'gratuit'. plan_expire_at already exists too (from
+-- the PayDunya work) — both omitted here since there's nothing to add.
+--
+-- trial_started_at is added as asked, but nothing in the current code
+-- reads it (the 15-day check uses profiles.created_at, which is
+-- already accurate for every account) — it's here for possible future
+-- use, not wired to anything yet.
+--
+-- Copy ALL of this file into a new query in the Supabase SQL
+-- Editor and click Run.
+-- ============================================================
+
+alter table public.profiles add column if not exists trial_started_at timestamptz default now();
