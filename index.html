@@ -722,7 +722,7 @@ src="https://www.facebook.com/tr?id=2429471554536741&ev=PageView&noscript=1"
         <li><a href="#solution">Comment ça marche</a></li>
       </ul>
       <div class="nav-actions">
-        <a href="#final-cta" class="btn btn-primary magnetic">Commencer gratuitement</a>
+        <a href="javascript:void(0)" onclick="ouvrirInscription()" class="btn btn-primary magnetic">Commencer gratuitement</a>
       </div>
       <button class="hamburger" id="hamburger" aria-label="Menu">
         <span></span><span></span><span></span>
@@ -731,7 +731,7 @@ src="https://www.facebook.com/tr?id=2429471554536741&ev=PageView&noscript=1"
   </div>
   <div class="mobile-menu" id="mobile-menu">
     <a href="#solution">Comment ça marche</a>
-    <a href="#final-cta" style="color:#6C5CE7;font-weight:700;">Commencer gratuitement</a>
+    <a href="javascript:void(0)" onclick="ouvrirInscription()" style="color:#6C5CE7;font-weight:700;">Commencer gratuitement</a>
   </div>
 </nav>
 
@@ -756,7 +756,7 @@ src="https://www.facebook.com/tr?id=2429471554536741&ev=PageView&noscript=1"
           Pas des conseils. Une analyse de TON comportement.
         </p>
         <div class="hero-ctas" id="hero-ctas" style="opacity:0;transform:translateY(16px)">
-          <a href="#final-cta" class="btn btn-primary btn-lg magnetic">
+          <a href="javascript:void(0)" onclick="ouvrirInscription()" class="btn btn-primary btn-lg magnetic">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             Commencer gratuitement
           </a>
@@ -1416,20 +1416,30 @@ src="https://www.facebook.com/tr?id=2429471554536741&ev=PageView&noscript=1"
 
     <!-- ÉCRAN 1 -->
     <div id="ecran-1">
-      <div style="text-align:center;margin-bottom:32px;">
-        <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--violet);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">15 jours gratuits</span>
+      <div style="text-align:center;margin-bottom:24px;">
+        <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--violet);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Ton plan Prédicta</span>
         <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:22px;margin:12px 0;color:var(--text);">Commence à comprendre comment tu fonctionnes</h3>
-        <p style="color:var(--text-sec);font-size:15px;line-height:1.7;">Prédicta apprend tes patterns, anticipe tes moments de décrochage et t'explique chaque soir pourquoi ton cerveau a réagi comme ça.</p>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px;">
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--violet-light);border-radius:12px;font-size:14px;color:var(--violet);font-weight:500;">✦ 15 jours d'accès complet gratuit</div>
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--violet-light);border-radius:12px;font-size:14px;color:var(--violet);font-weight:500;">✦ Enseignement personnalisé chaque soir</div>
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--violet-light);border-radius:12px;font-size:14px;color:var(--violet);font-weight:500;">✦ Tes patterns détectés dès J7</div>
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--violet-light);border-radius:12px;font-size:14px;color:var(--violet);font-weight:500;">✦ Ta mémoire personnalisée dès J14</div>
+      <div style="display:flex;gap:12px;margin-bottom:16px;">
+        <div style="flex:1;text-align:center;padding:16px 10px;border:1.5px solid var(--violet);border-radius:14px;background:var(--violet-light);">
+          <p style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:22px;color:var(--violet);margin-bottom:2px;">Gratuit</p>
+          <p style="font-size:12px;color:var(--text-sec);">Essai 15 jours</p>
+        </div>
+        <div style="flex:1;text-align:center;padding:16px 10px;border:1.5px solid var(--border);border-radius:14px;">
+          <p style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:22px;color:var(--text);margin-bottom:2px;">3 900 FCFA</p>
+          <p style="font-size:12px;color:var(--text-sec);">Renouvellement auto/mois</p>
+        </div>
       </div>
 
-      <p style="color:var(--text-sec);font-size:14px;line-height:1.7;margin-bottom:28px;">Après 15 jours, continue avec le Plan Pro à <strong>3 900 FCFA/mois</strong>. Annulable à tout moment.</p>
+      <p style="color:var(--text-sec);font-size:13px;line-height:1.6;margin-bottom:24px;">Renouvellement automatique après l'essai de 15 jours. Annulable à tout moment depuis les réglages de ton profil.</p>
+
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px;">
+        <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text);"><span style="color:var(--violet);font-weight:700;">✓</span> Enseignement personnalisé chaque soir</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text);"><span style="color:var(--violet);font-weight:700;">✓</span> Tes patterns détectés dès J7</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text);"><span style="color:var(--violet);font-weight:700;">✓</span> Ta mémoire personnalisée dès J14</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text);"><span style="color:var(--violet);font-weight:700;">✓</span> Prédictions basées sur ton comportement réel</div>
+      </div>
 
       <button onclick="allerEcran(2)" class="btn btn-primary" style="width:100%;justify-content:center;">Commencer gratuitement →</button>
     </div>
