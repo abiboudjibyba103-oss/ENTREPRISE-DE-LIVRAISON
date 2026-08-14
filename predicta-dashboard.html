@@ -1051,7 +1051,10 @@
     }
 
     renderHome();
-    verifierPeriodeEssai();
+    // verifierPeriodeEssai(); — disabled for now while PayDunya sandbox
+    // testing/config is sorted out (return_url, test account funding).
+    // Re-enable this call once that's working; nothing else below was
+    // touched, so it's a one-line flip to turn the paywall back on.
   }
 
   // Blocks the dashboard behind #ecran-blocage once the 15-day free
