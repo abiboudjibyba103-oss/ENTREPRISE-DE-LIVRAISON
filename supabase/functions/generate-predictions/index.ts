@@ -302,9 +302,17 @@ Deno.serve(async (req) => {
     return json({ ...EMPTY, notEnoughData: true });
   }
 
-  // Cache hit: today's content already exists for at least one kind —
-  // return it all without spending another Groq call. Without this,
-  // simply opening the Ma mémoire page would burn a Groq call every time.
+  const patternCandidates = computePatternCandidates(allSessions);
+  const predictionCandidates = computePredictionCandidates(allSessions);
+  const memoryCandidates = computeMemoryCandidates(allSessions);
+  const anticipationCandidate = computeAnticipationCandidate(patternCandidates, predictionCandidates, memoryCandidates);
+
+  // Cache hit: today's content already exists — return it without
+  // spending another Groq call. A kind only counts as cached when its
+  // row count matches what today's candidates say it should be; this
+  // also self-heals from stale/partial rows (e.g. old pre-migration
+  // rows backfilled to kind='memoire') instead of trusting them
+  // forever and leaving the other kinds permanently empty.
   const { data: cached } = await supabaseAdmin
     .from('predictions')
     .select('kind, prediction_text, prediction_index, occurrence_count')
@@ -312,23 +320,26 @@ Deno.serve(async (req) => {
     .eq('prediction_date', today)
     .order('prediction_index', { ascending: true });
 
-  if (cached && cached.length > 0) {
-    const byKind = (kind: string) => cached
-      .filter((r) => r.kind === kind)
-      .map((r) => ({ text: r.prediction_text, count: r.occurrence_count ?? 0 }));
+  const cachedFor = (kind: string, expectedCount: number) => {
+    const rows = (cached ?? []).filter((r) => r.kind === kind);
+    if (rows.length !== expectedCount) return null;
+    return rows.map((r) => ({ text: r.prediction_text, count: r.occurrence_count ?? 0 }));
+  };
+
+  const cachedPatterns = cachedFor('pattern', patternCandidates.length);
+  const cachedPredictions = cachedFor('prediction', predictionCandidates.length);
+  const cachedMemoire = cachedFor('memoire', memoryCandidates.length);
+  const cachedAnticipation = cachedFor('anticipation', anticipationCandidate ? 1 : 0);
+
+  if (cachedPatterns && cachedPredictions && cachedMemoire && cachedAnticipation) {
     return json({
-      patterns: byKind('pattern'),
-      predictions: byKind('prediction'),
-      memoire: byKind('memoire'),
-      anticipation: byKind('anticipation'),
+      patterns: cachedPatterns,
+      predictions: cachedPredictions,
+      memoire: cachedMemoire,
+      anticipation: cachedAnticipation,
       notEnoughData: false,
     });
   }
-
-  const patternCandidates = computePatternCandidates(allSessions);
-  const predictionCandidates = computePredictionCandidates(allSessions);
-  const memoryCandidates = computeMemoryCandidates(allSessions);
-  const anticipationCandidate = computeAnticipationCandidate(patternCandidates, predictionCandidates, memoryCandidates);
 
   if (patternCandidates.length === 0 && predictionCandidates.length === 0 && memoryCandidates.length === 0) {
     // Nothing repeats often enough yet — nothing to ask Groq about,

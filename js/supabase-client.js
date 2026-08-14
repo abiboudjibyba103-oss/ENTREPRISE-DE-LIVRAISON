@@ -302,6 +302,7 @@ async function predictaGeneratePredictions() {
     throw new Error(await predictaFunctionErrorMessage(error));
   }
   if (data?.error) throw new Error(data.error);
+  console.log('[predicta] generate-predictions raw response', data);
   return {
     patterns: Array.isArray(data.patterns) ? data.patterns : [],
     predictions: Array.isArray(data.predictions) ? data.predictions : [],

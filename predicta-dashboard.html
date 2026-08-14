@@ -467,6 +467,9 @@
 
         <!-- État J7+ -->
         <div id="memoryMain" style="display:none;">
+          <p class="section-label">Ton évolution</p>
+          <div id="memoryStatsCards"><div class="card"><p class="muted-text">Chargement...</p></div></div>
+
           <div class="section-memoire" id="carousel-patterns">
             <h3 class="section-titre">Patterns détectés</h3>
             <div class="card carousel-message"><p class="muted-text">Chargement...</p></div>
@@ -917,6 +920,9 @@
       return;
     }
 
+    const sessions = await predictaGetRecentSessions(1000);
+    renderMemoryStatsCards(sessions.filter((s) => s.status !== 'in_progress'));
+
     if (dayJ < 14) {
       const msg = 'Prédicta accumule encore tes données. Cette section apparaîtra après J14.';
       MEMORY_SECTIONS.forEach(({ id, builder }) => renderCarouselOrMessage(id, [], msg, builder));
@@ -926,6 +932,7 @@
     MEMORY_SECTIONS.forEach(({ id, builder }) => renderCarouselOrMessage(id, [], 'Prédicta analyse tes patterns...', builder));
     try {
       const result = await predictaGeneratePredictions();
+      console.log('[predicta] generate-predictions response', result);
       const msg = 'Prédicta accumule encore tes données pour cette section.';
       MEMORY_SECTIONS.forEach(({ id, key, builder }) => {
         renderCarouselOrMessage(id, result.notEnoughData ? [] : result[key], msg, builder);
@@ -935,6 +942,90 @@
       const msg = 'Analyse momentanément indisponible.';
       MEMORY_SECTIONS.forEach(({ id, builder }) => renderCarouselOrMessage(id, [], msg, builder));
     }
+  }
+
+  // "Ton évolution": 3 stat cards computed client-side from `sessions`
+  // — durée moyenne (semaine actuelle vs première semaine), taux de
+  // complétion (idem), et les 14 derniers jours en points colorés.
+  function renderMemoryStatsCards(sessions) {
+    const createdAt = new Date(currentProfile.created_at);
+    const firstWeekEnd = new Date(createdAt.getTime() + 7 * 86400000);
+    const currentWeekStart = new Date(Date.now() - 7 * 86400000);
+
+    const firstWeekSessions = sessions.filter((s) => {
+      const d = new Date(s.started_at);
+      return d >= createdAt && d < firstWeekEnd;
+    });
+    const currentWeekSessions = sessions.filter((s) => new Date(s.started_at) >= currentWeekStart);
+
+    document.getElementById('memoryStatsCards').innerHTML = `
+      <div class="stat-cards-row">
+        ${buildDurationCard(firstWeekSessions, currentWeekSessions)}
+        ${buildCompletionCard(firstWeekSessions, currentWeekSessions)}
+        ${buildActiveDaysCard(sessions)}
+      </div>`;
+  }
+
+  function avgCompletedDuration(sessions) {
+    const completed = sessions.filter((s) => s.status === 'completed' && s.duration_min != null);
+    if (completed.length === 0) return null;
+    return Math.round(completed.reduce((sum, s) => sum + s.duration_min, 0) / completed.length);
+  }
+
+  function completionRatePct(sessions) {
+    if (sessions.length === 0) return null;
+    return Math.round((sessions.filter((s) => s.status === 'completed').length / sessions.length) * 100);
+  }
+
+  function buildDurationCard(firstWeekSessions, currentWeekSessions) {
+    const current = avgCompletedDuration(currentWeekSessions);
+    const first = avgCompletedDuration(firstWeekSessions);
+    const arrow = current != null && first != null && current !== first
+      ? (current > first ? `<span class="stat-trend-up">↑</span>` : `<span class="stat-trend-down">↓</span>`)
+      : '';
+    return `
+      <div class="stat-card">
+        <p class="stat-card-value">${current != null ? `Tu tiens en moyenne ${current} min` : 'Pas encore de données'}</p>
+        ${first != null ? `<p class="stat-card-compare">${arrow} contre ${first} min à J1</p>` : ''}
+      </div>`;
+  }
+
+  function buildCompletionCard(firstWeekSessions, currentWeekSessions) {
+    const current = completionRatePct(currentWeekSessions);
+    const first = completionRatePct(firstWeekSessions);
+    return `
+      <div class="stat-card">
+        <div class="stat-progress-track"><div class="stat-progress-fill" style="width:${current ?? 0}%"></div></div>
+        <p class="stat-card-value">${current != null ? `${current}%` : '—'}</p>
+        ${first != null ? `<p class="stat-card-compare">contre ${first}% à J1</p>` : ''}
+      </div>`;
+  }
+
+  function buildActiveDaysCard(sessions) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const days = [];
+    for (let i = 13; i >= 0; i--) {
+      days.push({ time: today.getTime() - i * 86400000, completed: false, interrupted: false });
+    }
+    sessions.forEach((s) => {
+      const d = new Date(s.started_at);
+      d.setHours(0, 0, 0, 0);
+      const bucket = days.find((day) => day.time === d.getTime());
+      if (!bucket) return;
+      if (s.status === 'completed') bucket.completed = true;
+      else if (s.status === 'interrupted') bucket.interrupted = true;
+    });
+    const activeCount = days.filter((d) => d.completed || d.interrupted).length;
+    const dots = days.map((d) => {
+      const cls = d.completed ? 'dot-green' : (d.interrupted ? 'dot-orange' : 'dot-gray');
+      return `<span class="active-day-dot ${cls}"></span>`;
+    }).join('');
+    return `
+      <div class="stat-card">
+        <div class="active-days-dots">${dots}</div>
+        <p class="stat-card-compare">Tu as travaillé ${activeCount} jours sur les 14 derniers</p>
+      </div>`;
   }
 
   // Shows either the message card (loading/empty/error — items is
