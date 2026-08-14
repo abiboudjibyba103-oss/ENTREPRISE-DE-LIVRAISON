@@ -318,21 +318,35 @@ update public.predictions p
   from ranked
   where p.id = ranked.id;
 
-delete from public.predictions where prediction_index > 3;
+-- kind distinguishes the 4 things generate-predictions now produces
+-- per day: 'pattern' (patterns détectés), 'prediction' (prédictions),
+-- 'memoire' (mémoire personnalisée), 'anticipation'. Each kind has
+-- its own 0-based prediction_index sequence, capped at 2 (the
+-- largest group — patterns/mémoire — holds at most 3 items).
+alter table public.predictions add column if not exists kind text;
+update public.predictions set kind = 'memoire' where kind is null;
+alter table public.predictions alter column kind set default 'memoire';
+alter table public.predictions alter column kind set not null;
+alter table public.predictions drop constraint if exists predictions_kind_check;
+alter table public.predictions add constraint predictions_kind_check
+  check (kind in ('pattern', 'prediction', 'memoire', 'anticipation'));
+
+delete from public.predictions where prediction_index > 2;
 
 alter table public.predictions alter column prediction_index set default 0;
 alter table public.predictions alter column prediction_index set not null;
 alter table public.predictions drop constraint if exists predictions_prediction_index_check;
 alter table public.predictions add constraint predictions_prediction_index_check
-  check (prediction_index between 0 and 3);
+  check (prediction_index between 0 and 2);
 
 -- Real number of times the underlying pattern was actually observed
 -- in the user's sessions (shown as "Observé N fois" on the card) —
 -- computed in code, never left to the LLM to invent.
 alter table public.predictions add column if not exists occurrence_count smallint;
 
-create unique index if not exists predictions_one_set_per_user_per_day
-  on public.predictions (user_id, prediction_date, prediction_index);
+drop index if exists predictions_one_set_per_user_per_day;
+create unique index if not exists predictions_one_set_per_kind_per_day
+  on public.predictions (user_id, prediction_date, kind, prediction_index);
 
 
 -- ------------------------------------------------------------

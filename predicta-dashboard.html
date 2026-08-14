@@ -211,6 +211,40 @@
     margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(234,88,12,0.18);
   }
 
+  /* ===== MA MÉMOIRE: carousels ===== */
+  .section-memoire { margin-bottom: 28px; }
+  .section-titre { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; color: var(--text); margin-bottom: 12px; }
+  .carousel-container { position: relative; overflow: hidden; width: 100%; }
+  .carousel-track { display: flex; transition: transform 0.4s ease; gap: 16px; }
+  .carousel-card {
+    min-width: 100%; background: #fff; border-radius: 16px; padding: 24px;
+    border: 1px solid rgba(108,92,231,0.12);
+  }
+  .carousel-card-icon { font-size: 18px; margin-bottom: 8px; display: block; }
+  .carousel-card-title {
+    font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--violet); margin-bottom: 8px;
+  }
+  .carousel-card-text { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 15px; line-height: 1.55; color: var(--text); }
+  .carousel-card-footer {
+    font-family: 'Space Mono', monospace; font-size: 11.5px; color: var(--text-sec);
+    margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border);
+  }
+  .carousel-prev, .carousel-next {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: #fff; border: 1px solid rgba(108,92,231,0.2); border-radius: 50%;
+    width: 36px; height: 36px; cursor: pointer; z-index: 10; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .carousel-prev { left: 8px; }
+  .carousel-next { right: 8px; }
+  .carousel-dots { display: flex; justify-content: center; gap: 6px; margin-top: 12px; }
+  .carousel-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: rgba(108,92,231,0.2);
+    cursor: pointer; transition: background 0.2s;
+  }
+  .carousel-dot.active { background: var(--violet); }
+
   /* ===== SETTINGS ===== */
   .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
   .settings-row:last-child { border-bottom: none; }
@@ -433,14 +467,49 @@
 
         <!-- État J7+ -->
         <div id="memoryMain" style="display:none;">
-          <p class="section-label">Ton évolution</p>
-          <div id="memoryStatsCards"><div class="card"><p class="muted-text">Chargement...</p></div></div>
+          <div class="section-memoire" id="carousel-patterns">
+            <h3 class="section-titre">Patterns détectés</h3>
+            <div class="card carousel-message"><p class="muted-text">Chargement...</p></div>
+            <div class="carousel-container" style="display:none;">
+              <button class="carousel-prev" onclick="precedent(this)">←</button>
+              <div class="carousel-track"></div>
+              <button class="carousel-next" onclick="suivant(this)">→</button>
+            </div>
+            <div class="carousel-dots"></div>
+          </div>
 
-          <p class="section-label">Mémoire personnalisée</p>
-          <div id="memorySection3"><div class="card"><p class="muted-text">Chargement...</p></div></div>
+          <div class="section-memoire" id="carousel-predictions">
+            <h3 class="section-titre">Prédictions</h3>
+            <div class="card carousel-message"><p class="muted-text">Chargement...</p></div>
+            <div class="carousel-container" style="display:none;">
+              <button class="carousel-prev" onclick="precedent(this)">←</button>
+              <div class="carousel-track"></div>
+              <button class="carousel-next" onclick="suivant(this)">→</button>
+            </div>
+            <div class="carousel-dots"></div>
+          </div>
 
-          <p class="section-label">Ce que Prédicta anticipe pour toi</p>
-          <div id="predictionsSection"><div class="card"><p class="muted-text">Chargement...</p></div></div>
+          <div class="section-memoire" id="carousel-memoire">
+            <h3 class="section-titre">Mémoire personnalisée</h3>
+            <div class="card carousel-message"><p class="muted-text">Chargement...</p></div>
+            <div class="carousel-container" style="display:none;">
+              <button class="carousel-prev" onclick="precedent(this)">←</button>
+              <div class="carousel-track"></div>
+              <button class="carousel-next" onclick="suivant(this)">→</button>
+            </div>
+            <div class="carousel-dots"></div>
+          </div>
+
+          <div class="section-memoire" id="carousel-anticipation">
+            <h3 class="section-titre">Anticipation</h3>
+            <div class="card carousel-message"><p class="muted-text">Chargement...</p></div>
+            <div class="carousel-container" style="display:none;">
+              <button class="carousel-prev" onclick="precedent(this)">←</button>
+              <div class="carousel-track"></div>
+              <button class="carousel-next" onclick="suivant(this)">→</button>
+            </div>
+            <div class="carousel-dots"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -511,7 +580,6 @@
 
   let memoryLoaded = false;
   let settingsLoaded = false;
-  let memorySessions = [];
 
   // ===== Utilities =====
   function escapeHtml(str) {
@@ -828,6 +896,13 @@
   }
 
   // ===== MA MÉMOIRE =====
+  const MEMORY_SECTIONS = [
+    { id: 'carousel-patterns', key: 'patterns', builder: buildStatCard },
+    { id: 'carousel-predictions', key: 'predictions', builder: buildStatCard },
+    { id: 'carousel-memoire', key: 'memoire', builder: buildMemoireCard },
+    { id: 'carousel-anticipation', key: 'anticipation', builder: buildAnticipationCard },
+  ];
+
   async function loadMemory() {
     memoryLoaded = true;
     const dayJ = dayNumberSince(currentProfile.created_at);
@@ -842,139 +917,124 @@
       return;
     }
 
-    const sessions = await predictaGetRecentSessions(1000);
-    memorySessions = sessions.filter((s) => s.status !== 'in_progress');
-    renderMemoryStatsCards(memorySessions);
-
     if (dayJ < 14) {
-      document.getElementById('memorySection3').innerHTML = `<div class="card"><p class="muted-text">Pas encore assez de répétitions pour identifier ce qui marche vraiment pour toi. Continue tes sessions.</p></div>`;
-      document.getElementById('predictionsSection').innerHTML = `<div class="card"><p class="muted-text">Prédicta accumule encore tes données. Tes premières prédictions apparaîtront après J14.</p></div>`;
+      const msg = 'Prédicta accumule encore tes données. Cette section apparaîtra après J14.';
+      MEMORY_SECTIONS.forEach(({ id, builder }) => renderCarouselOrMessage(id, [], msg, builder));
       return;
     }
 
-    document.getElementById('memorySection3').innerHTML = `<div class="card"><p class="muted-text">Prédicta analyse tes patterns...</p></div>`;
-    document.getElementById('predictionsSection').innerHTML = `<div class="card"><p class="muted-text">Prédicta analyse tes patterns...</p></div>`;
+    MEMORY_SECTIONS.forEach(({ id, builder }) => renderCarouselOrMessage(id, [], 'Prédicta analyse tes patterns...', builder));
     try {
-      const { memories, insights, notEnoughData } = await predictaGeneratePredictions();
-      renderMemorySection3(memories, notEnoughData);
-      renderPredictionsSection(insights, notEnoughData);
+      const result = await predictaGeneratePredictions();
+      const msg = 'Prédicta accumule encore tes données pour cette section.';
+      MEMORY_SECTIONS.forEach(({ id, key, builder }) => {
+        renderCarouselOrMessage(id, result.notEnoughData ? [] : result[key], msg, builder);
+      });
     } catch (err) {
       console.error('[predicta] generate-predictions error', err.message);
-      document.getElementById('memorySection3').innerHTML = `<div class="card"><p class="muted-text">Mémoires momentanément indisponibles.</p></div>`;
-      document.getElementById('predictionsSection').innerHTML = `<div class="card"><p class="muted-text">Prédictions momentanément indisponibles.</p></div>`;
+      const msg = 'Analyse momentanément indisponible.';
+      MEMORY_SECTIONS.forEach(({ id, builder }) => renderCarouselOrMessage(id, [], msg, builder));
     }
   }
 
-  // "Ton évolution": 3 stat cards computed client-side from `sessions`
-  // — durée moyenne (semaine actuelle vs première semaine), taux de
-  // complétion (idem), et les 14 derniers jours en points colorés.
-  function renderMemoryStatsCards(sessions) {
-    const createdAt = new Date(currentProfile.created_at);
-    const firstWeekEnd = new Date(createdAt.getTime() + 7 * 86400000);
-    const currentWeekStart = new Date(Date.now() - 7 * 86400000);
+  // Shows either the message card (loading/empty/error — items is
+  // null-ish or empty) or a populated, auto-scrolling carousel.
+  function renderCarouselOrMessage(sectionId, items, message, cardBuilder) {
+    const section = document.getElementById(sectionId);
+    const msgWrap = section.querySelector('.carousel-message');
+    const container = section.querySelector('.carousel-container');
+    const track = section.querySelector('.carousel-track');
+    const dots = section.querySelector('.carousel-dots');
 
-    const firstWeekSessions = sessions.filter((s) => {
-      const d = new Date(s.started_at);
-      return d >= createdAt && d < firstWeekEnd;
-    });
-    const currentWeekSessions = sessions.filter((s) => new Date(s.started_at) >= currentWeekStart);
-
-    document.getElementById('memoryStatsCards').innerHTML = `
-      <div class="stat-cards-row">
-        ${buildDurationCard(firstWeekSessions, currentWeekSessions)}
-        ${buildCompletionCard(firstWeekSessions, currentWeekSessions)}
-        ${buildActiveDaysCard(sessions)}
-      </div>`;
-  }
-
-  function avgCompletedDuration(sessions) {
-    const completed = sessions.filter((s) => s.status === 'completed' && s.duration_min != null);
-    if (completed.length === 0) return null;
-    return Math.round(completed.reduce((sum, s) => sum + s.duration_min, 0) / completed.length);
-  }
-
-  function completionRatePct(sessions) {
-    if (sessions.length === 0) return null;
-    return Math.round((sessions.filter((s) => s.status === 'completed').length / sessions.length) * 100);
-  }
-
-  function buildDurationCard(firstWeekSessions, currentWeekSessions) {
-    const current = avgCompletedDuration(currentWeekSessions);
-    const first = avgCompletedDuration(firstWeekSessions);
-    const arrow = current != null && first != null && current !== first
-      ? (current > first ? `<span class="stat-trend-up">↑</span>` : `<span class="stat-trend-down">↓</span>`)
-      : '';
-    return `
-      <div class="stat-card">
-        <p class="stat-card-value">${current != null ? `Tu tiens en moyenne ${current} min` : 'Pas encore de données'}</p>
-        ${first != null ? `<p class="stat-card-compare">${arrow} contre ${first} min à J1</p>` : ''}
-      </div>`;
-  }
-
-  function buildCompletionCard(firstWeekSessions, currentWeekSessions) {
-    const current = completionRatePct(currentWeekSessions);
-    const first = completionRatePct(firstWeekSessions);
-    return `
-      <div class="stat-card">
-        <div class="stat-progress-track"><div class="stat-progress-fill" style="width:${current ?? 0}%"></div></div>
-        <p class="stat-card-value">${current != null ? `${current}%` : '—'}</p>
-        ${first != null ? `<p class="stat-card-compare">contre ${first}% à J1</p>` : ''}
-      </div>`;
-  }
-
-  function buildActiveDaysCard(sessions) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const days = [];
-    for (let i = 13; i >= 0; i--) {
-      days.push({ time: today.getTime() - i * 86400000, completed: false, interrupted: false });
+    if (!items || items.length === 0) {
+      container.style.display = 'none';
+      track.innerHTML = '';
+      dots.innerHTML = '';
+      msgWrap.querySelector('p').textContent = message;
+      msgWrap.style.display = 'block';
+      return;
     }
-    sessions.forEach((s) => {
-      const d = new Date(s.started_at);
-      d.setHours(0, 0, 0, 0);
-      const bucket = days.find((day) => day.time === d.getTime());
-      if (!bucket) return;
-      if (s.status === 'completed') bucket.completed = true;
-      else if (s.status === 'interrupted') bucket.interrupted = true;
+
+    msgWrap.style.display = 'none';
+    container.style.display = 'block';
+    dots.innerHTML = '';
+    track.innerHTML = items.map(cardBuilder).join('');
+    initialiserCarousel(section);
+  }
+
+  // Shared card shape for "patterns détectés" and "prédictions" — both
+  // are { text, count } with a plain "Basé sur N sessions" footer.
+  function buildStatCard(item) {
+    return `<div class="carousel-card">
+      <p class="carousel-card-text">${escapeHtml(item.text)}</p>
+      <p class="carousel-card-footer">Basé sur ${item.count} session${item.count > 1 ? 's' : ''}</p>
+    </div>`;
+  }
+
+  function buildMemoireCard(item) {
+    return `<div class="carousel-card">
+      <span class="carousel-card-icon">🧠</span>
+      <p class="carousel-card-title">Mémoire personnalisée</p>
+      <p class="carousel-card-text">${escapeHtml(item.text)}</p>
+      <p class="carousel-card-footer">Observé ${item.count} fois</p>
+    </div>`;
+  }
+
+  function buildAnticipationCard(item) {
+    return `<div class="carousel-card">
+      <span class="carousel-card-icon">⚡</span>
+      <p class="carousel-card-title">Anticipation</p>
+      <p class="carousel-card-text">${escapeHtml(item.text)}</p>
+    </div>`;
+  }
+
+  // Generic horizontal carousel: auto-advances every 5s, manual
+  // arrows, dot indicators. `container` here is a .section-memoire
+  // element already populated with .carousel-card children.
+  function initialiserCarousel(container) {
+    const track = container.querySelector('.carousel-track');
+    const dots = container.querySelector('.carousel-dots');
+    const cards = track.querySelectorAll('.carousel-card');
+    let index = 0;
+    let interval;
+
+    cards.forEach((_, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+      dot.onclick = () => allerA(i);
+      dots.appendChild(dot);
     });
-    const activeCount = days.filter((d) => d.completed || d.interrupted).length;
-    const dots = days.map((d) => {
-      const cls = d.completed ? 'dot-green' : (d.interrupted ? 'dot-orange' : 'dot-gray');
-      return `<span class="active-day-dot ${cls}"></span>`;
-    }).join('');
-    return `
-      <div class="stat-card">
-        <div class="active-days-dots">${dots}</div>
-        <p class="stat-card-compare">Tu as travaillé ${activeCount} jours sur les 14 derniers</p>
-      </div>`;
-  }
 
-  // Mémoire personnalisée: up to 3 positive patterns from generate-predictions.
-  function renderMemorySection3(memories, notEnoughData) {
-    const el = document.getElementById('memorySection3');
-    el.innerHTML = notEnoughData || memories.length === 0
-      ? `<div class="card"><p class="muted-text">Prédicta accumule encore tes données. Tes premières mémoires apparaîtront après J14.</p></div>`
-      : memories.map((m) => `
-          <div class="prediction-card-hero">
-            <div class="memory-card-header">
-              <span class="memory-card-icon">🧠</span>
-              <span class="memory-card-title">Mémoire personnalisée</span>
-            </div>
-            <p class="prediction-text">${escapeHtml(m.text)}</p>
-            <p class="memory-card-footer">Observé ${m.count} fois</p>
-          </div>`).join('');
-  }
+    function allerA(n) {
+      index = n;
+      track.style.transform = `translateX(-${index * 100}%)`;
+      dots.querySelectorAll('.carousel-dot').forEach((d, i) => {
+        d.classList.toggle('active', i === index);
+      });
+    }
 
-  // "Ce que Prédicta anticipe pour toi": forward-looking stats from generate-predictions.
-  function renderPredictionsSection(insights, notEnoughData) {
-    const el = document.getElementById('predictionsSection');
-    el.innerHTML = notEnoughData || insights.length === 0
-      ? `<div class="card"><p class="muted-text">Prédicta accumule encore tes données. Tes premières prédictions apparaîtront après J14.</p></div>`
-      : insights.map((p) => `
-          <div class="insight-card">
-            <p class="insight-text"><span class="insight-card-icon">🔮</span>${escapeHtml(p.text)}</p>
-            <p class="insight-card-footer">Basé sur ${p.basis} sessions</p>
-          </div>`).join('');
+    function suivant() {
+      allerA((index + 1) % cards.length);
+    }
+
+    function precedent() {
+      allerA((index - 1 + cards.length) % cards.length);
+    }
+
+    container.querySelector('.carousel-next').onclick = () => {
+      clearInterval(interval);
+      suivant();
+      if (cards.length > 1) interval = setInterval(suivant, 5000);
+    };
+    container.querySelector('.carousel-prev').onclick = () => {
+      clearInterval(interval);
+      precedent();
+      if (cards.length > 1) interval = setInterval(suivant, 5000);
+    };
+
+    if (cards.length > 1) {
+      interval = setInterval(suivant, 5000);
+    }
   }
 
   // ===== RÉGLAGES =====

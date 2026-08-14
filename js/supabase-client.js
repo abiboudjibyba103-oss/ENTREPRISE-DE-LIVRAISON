@@ -273,15 +273,12 @@ async function predictaDailyLesson() {
 
 /**
  * Asks Prédicta to generate (or fetch the cached version of) today's
- * personalized memories and predictions from the user's session
- * history (Supabase edge function `generate-predictions`). Returns
- * { memories, insights, notEnoughData }:
- * - `memories`: up to 3 POSITIVE repeated patterns, as { text, count }
- *   (count = real number of times the pattern was observed).
- * - `insights`: forward-looking statistics, as { text, basis }
- *   (basis = real number of sessions the stat is computed from).
- * Both are empty when there isn't enough data or no pattern repeats
- * often enough yet.
+ * 4 kinds of session-based content (Supabase edge function
+ * `generate-predictions`). Returns
+ * { patterns, predictions, memoire, anticipation, notEnoughData }:
+ * each of the 4 is an array of { text, count } (count = real number
+ * of sessions/occurrences behind that item — never invented by the
+ * LLM). All empty when there isn't enough data yet.
  */
 async function predictaGeneratePredictions() {
   const session = await predictaGetSession();
@@ -302,12 +299,14 @@ async function predictaGeneratePredictions() {
     if (error.context?.status === 401) {
       throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
     }
-    throw error;
+    throw new Error(await predictaFunctionErrorMessage(error));
   }
   if (data?.error) throw new Error(data.error);
   return {
-    memories: Array.isArray(data.memories) ? data.memories : [],
-    insights: Array.isArray(data.insights) ? data.insights : [],
+    patterns: Array.isArray(data.patterns) ? data.patterns : [],
+    predictions: Array.isArray(data.predictions) ? data.predictions : [],
+    memoire: Array.isArray(data.memoire) ? data.memoire : [],
+    anticipation: Array.isArray(data.anticipation) ? data.anticipation : [],
     notEnoughData: !!data.notEnoughData,
   };
 }
