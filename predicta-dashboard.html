@@ -236,8 +236,9 @@
     width: 36px; height: 36px; cursor: pointer; z-index: 10; font-size: 16px;
     display: flex; align-items: center; justify-content: center;
   }
-  .carousel-prev { left: 8px; }
-  .carousel-next { right: 8px; }
+  .carousel-prev { left: -16px; }
+  .carousel-next { right: -16px; }
+  .carousel-container { margin: 0 20px; }
   .carousel-dots { display: flex; justify-content: center; gap: 6px; margin-top: 12px; }
   .carousel-dot {
     width: 6px; height: 6px; border-radius: 50%; background: rgba(108,92,231,0.2);
@@ -483,17 +484,6 @@
 
           <div class="section-memoire" id="carousel-predictions">
             <h3 class="section-titre">Prédictions</h3>
-            <div class="card carousel-message"><p class="muted-text">Chargement...</p></div>
-            <div class="carousel-container" style="display:none;">
-              <button class="carousel-prev" onclick="precedent(this)">←</button>
-              <div class="carousel-track"></div>
-              <button class="carousel-next" onclick="suivant(this)">→</button>
-            </div>
-            <div class="carousel-dots"></div>
-          </div>
-
-          <div class="section-memoire" id="carousel-memoire">
-            <h3 class="section-titre">Mémoire personnalisée</h3>
             <div class="card carousel-message"><p class="muted-text">Chargement...</p></div>
             <div class="carousel-container" style="display:none;">
               <button class="carousel-prev" onclick="precedent(this)">←</button>
@@ -902,7 +892,6 @@
   const MEMORY_SECTIONS = [
     { id: 'carousel-patterns', key: 'patterns', builder: buildStatCard },
     { id: 'carousel-predictions', key: 'predictions', builder: buildStatCard },
-    { id: 'carousel-memoire', key: 'memoire', builder: buildMemoireCard },
     { id: 'carousel-anticipation', key: 'anticipation', builder: buildAnticipationCard },
   ];
 
@@ -1059,15 +1048,6 @@
     return `<div class="carousel-card">
       <p class="carousel-card-text">${escapeHtml(item.text)}</p>
       <p class="carousel-card-footer">Basé sur ${item.count} session${item.count > 1 ? 's' : ''}</p>
-    </div>`;
-  }
-
-  function buildMemoireCard(item) {
-    return `<div class="carousel-card">
-      <span class="carousel-card-icon">🧠</span>
-      <p class="carousel-card-title">Mémoire personnalisée</p>
-      <p class="carousel-card-text">${escapeHtml(item.text)}</p>
-      <p class="carousel-card-footer">Observé ${item.count} fois</p>
     </div>`;
   }
 

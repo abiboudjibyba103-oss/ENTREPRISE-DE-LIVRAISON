@@ -125,16 +125,19 @@ function computePatternCandidates(sessions: SessionRow[]): Candidate[] {
   return candidates.sort((a, b) => b.count - a.count).slice(0, PATTERNS_MAX);
 }
 
-// ---- TYPE 2: prédictions — forward-looking, real percentages ----
+// ---- TYPE 2: prédictions — forward-looking risk alerts. The real
+// rate/count behind each candidate only ever gates whether it's
+// worth surfacing — it never appears in the description text, since
+// predictions must never state a percentage or a statistic. ----
 function computePredictionCandidates(sessions: SessionRow[]): Candidate[] {
   const candidates: Candidate[] = [];
   const countable = sessions.filter((s) => s.status !== 'in_progress');
 
   const beforeTen = countable.filter((s) => new Date(s.started_at).getHours() < 10);
   if (beforeTen.length >= 3) {
-    const rate = Math.round((beforeTen.filter((s) => s.status === 'completed').length / beforeTen.length) * 100);
-    if (rate >= 60) {
-      candidates.push({ count: beforeTen.length, description: `si tu lances ta session avant 10h, tu as ${rate}% de chances de la compléter (calculé sur ${beforeTen.length} sessions)` });
+    const rate = beforeTen.filter((s) => s.status === 'completed').length / beforeTen.length;
+    if (rate >= 0.6) {
+      candidates.push({ count: beforeTen.length, description: 'si tu ne lances pas ta session avant 10h aujourd\'hui, tu risques de ne pas la terminer' });
     }
   }
 
@@ -157,7 +160,7 @@ function computePredictionCandidates(sessions: SessionRow[]): Candidate[] {
     }
   }
   if (worstWeekday) {
-    candidates.push({ count: worstWeekday.weeks, description: `le ${worstWeekday.day} est une journée à risque pour toi — interruption observée ${worstWeekday.weeks} semaines de suite` });
+    candidates.push({ count: worstWeekday.weeks, description: `le ${worstWeekday.day} est une journée à risque pour toi, tu as tendance à interrompre tes sessions ce jour-là` });
   }
 
   const bySlot = new Map<string, { total: number; interrupted: number }>();
@@ -177,7 +180,7 @@ function computePredictionCandidates(sessions: SessionRow[]): Candidate[] {
     }
   }
   if (worstSlot) {
-    candidates.push({ count: worstSlot.total, description: `tu décroches plus souvent quand tu travailles ${worstSlot.slot} (${Math.round(worstSlot.rate * 100)}% des sessions concernées)` });
+    candidates.push({ count: worstSlot.total, description: `tu décroches plus souvent quand tu travailles ${worstSlot.slot}` });
   }
 
   return candidates.sort((a, b) => b.count - a.count).slice(0, PREDICTIONS_MAX);
@@ -358,8 +361,11 @@ Format : "Tu [comportement observé] [fréquence/contexte]."
 Exemple : "Tu décroches souvent après une longue période de concentration."
 
 TYPE "predictions" — alertes basées sur les patterns observés.
-Format : "[Contexte aujourd'hui]. Tu as [X]% de chances de [comportement prédit]." (garde le pourcentage fourni tel quel s'il y en a un)
-Exemple : "Aujourd'hui est une journée à risque. Tu as plus de chances de décrocher que d'habitude."
+RÈGLE STRICTE : une prédiction n'est JAMAIS un pourcentage ni une statistique chiffrée. Aucun nombre dans la phrase.
+Format : "Aujourd'hui [contexte]. Tu risques de [comportement]."
+Exemples :
+- "Aujourd'hui est une journée à risque. Tu as plus de chances de décrocher que d'habitude."
+- "Basé sur tes lundis des dernières semaines, tu risques d'interrompre ta première session rapidement."
 
 TYPE "memoire" — ce qui a marché ET ce qui n'a pas marché, mélangés.
 Format : "Les [N] dernières fois que [situation], [ce qui s'est passé]." (N = le nombre fourni)
@@ -373,6 +379,7 @@ RÈGLES STRICTES :
 - N'utilise QUE les observations fournies ci-dessous, dans le même ordre pour chaque type.
 - Une phrase par observation fournie, pas plus, pas moins. Si "Aucune" est indiqué pour un type, réponds un tableau vide pour ce type.
 - Jamais de conseil générique.
+- Pour le type "predictions" : jamais de pourcentage, jamais de nombre, jamais de statistique dans la phrase — uniquement le format "Aujourd'hui [contexte]. Tu risques de [comportement]."
 - Réponds UNIQUEMENT avec un JSON : {"patterns": [...], "predictions": [...], "memoire": [...], "anticipation": [...]}
 
 Observations "patterns" :
