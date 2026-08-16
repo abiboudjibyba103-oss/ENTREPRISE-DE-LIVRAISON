@@ -274,6 +274,7 @@ RÈGLES STRICTES :
 - Termine par UNE action concrète applicable dès la prochaine session
 - Ton direct et chaleureux, jamais condescendant
 - 4 à 6 phrases maximum, texte fluide sans titres ni listes
+- Utilise le profil de l'utilisateur pour personnaliser la leçon — si son déclencheur habituel est le perfectionnisme, parle de perfectionnisme. Si sa tâche urgente est mentionnée, fais le lien avec elle.
 
 CHOIX DU FAIT SCIENTIFIQUE SELON CE QUI S'EST PASSÉ :
 - Session longue complétée (45+ min) → Ann Graybiel (MIT) : neuroplasticité et automatisation des habitudes
