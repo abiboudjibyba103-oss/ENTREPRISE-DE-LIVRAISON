@@ -108,6 +108,54 @@
   }
   .btn-ghost-danger:hover { background: var(--danger-light); }
 
+  /* ===== ONBOARDING ===== */
+  #onboardingGate {
+    display: none; position: fixed; inset: 0; z-index: 2000; background: #fff; overflow-y: auto;
+  }
+  .onboarding-shell {
+    max-width: 480px; width: 100%; margin: 0 auto; padding: 28px 20px 32px;
+    min-height: 100dvh; display: flex; flex-direction: column;
+  }
+  .onboarding-progress-track { height: 6px; background: var(--border); border-radius: 100px; overflow: hidden; margin-bottom: 10px; flex-shrink: 0; }
+  .onboarding-progress-fill { height: 100%; width: 0%; background: var(--violet); border-radius: 100px; transition: width 0.4s cubic-bezier(0.25,1,0.5,1); }
+  .onboarding-step-label {
+    font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-sec);
+    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 28px; flex-shrink: 0;
+  }
+  .onboarding-step-body { flex: 1; }
+  .onboarding-intro { text-align: center; padding-top: 18vh; }
+  .onboarding-intro-icon { font-size: 44px; margin-bottom: 20px; }
+  .onboarding-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 24px; color: var(--text); margin-bottom: 14px; line-height: 1.3; }
+  .onboarding-subtitle { color: var(--text-sec); font-size: 15px; line-height: 1.7; }
+  .onboarding-question { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 21px; color: var(--text); margin-bottom: 6px; line-height: 1.35; }
+  .onboarding-hint {
+    font-family: 'Space Mono', monospace; font-size: 11.5px; color: var(--text-sec);
+    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 22px;
+  }
+  .onboarding-options { display: flex; flex-direction: column; gap: 10px; }
+  .onboarding-option {
+    display: flex; align-items: center; gap: 12px; padding: 15px 16px; border-radius: 14px;
+    border: 1.5px solid var(--border); cursor: pointer; transition: all 0.15s ease; background: #fff;
+    font-size: 15px; color: var(--text); font-weight: 600;
+  }
+  .onboarding-option:active { transform: scale(0.98); }
+  .onboarding-option.selected { background: var(--violet-light); border-color: var(--violet); color: var(--violet-dark); }
+  .onboarding-check {
+    width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    font-size: 13px; color: #fff; font-weight: 700; transition: all 0.15s ease; background: #fff;
+  }
+  .onboarding-option.selected .onboarding-check { background: var(--violet); border-color: var(--violet); }
+  .onboarding-textarea { min-height: 84px; resize: vertical; }
+  .onboarding-error { color: var(--danger); font-size: 13px; margin-top: 12px; display: none; }
+  .onboarding-nav { display: flex; align-items: center; gap: 14px; margin-top: 28px; flex-shrink: 0; }
+  .onboarding-back {
+    background: none; border: none; color: var(--text-sec); font-size: 14px; font-weight: 600;
+    cursor: pointer; padding: 10px 4px; font-family: 'DM Sans', sans-serif; flex-shrink: 0;
+  }
+  .onboarding-back:hover { color: var(--text); }
+  .onboarding-nav .btn-primary { flex: 1; }
+
   /* ===== HOME ===== */
   .home-greeting { margin-bottom: 20px; }
   .eyebrow {
@@ -361,6 +409,21 @@
 
 <div id="authGate"><div class="spinner"></div></div>
 
+<div id="onboardingGate">
+  <div class="onboarding-shell">
+    <div class="onboarding-progress-track"><div class="onboarding-progress-fill" id="onboardingProgressFill"></div></div>
+    <p class="onboarding-step-label" id="onboardingStepLabel"></p>
+
+    <div class="onboarding-step-body" id="onboardingStepBody"></div>
+    <p class="onboarding-error" id="onboardingError"></p>
+
+    <div class="onboarding-nav">
+      <button class="onboarding-back" id="onboardingBackBtn" onclick="onboardingRetour()">← Retour</button>
+      <button class="btn btn-primary" id="onboardingNextBtn" onclick="onboardingSuivant()">Continuer</button>
+    </div>
+  </div>
+</div>
+
 <div id="ecran-blocage" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(15,7,51,0.95);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:24px;padding:48px;max-width:480px;width:90%;text-align:center;">
 
@@ -573,6 +636,303 @@
 
   let memoryLoaded = false;
   let settingsLoaded = false;
+
+  // ===== ONBOARDING =====
+  const ONBOARDING_STEPS = [
+    { type: 'intro' },
+    {
+      type: 'multi', field: 'probleme_principal', other: true,
+      question: "Qu'est-ce qui te pose le plus problème ?",
+      hint: 'Choix multiple possible',
+      options: [
+        'Je repousse à plus tard',
+        "J'abandonne mes projets",
+        'Je commence puis je décroche',
+        'Je me disperse entre plusieurs choses',
+        'Je travaille bien puis je perds complètement mon rythme',
+      ],
+    },
+    {
+      type: 'multi', field: 'comportement_procrastination', other: true,
+      question: "Quand tu procrastines, qu'est-ce que tu fais à la place ?",
+      hint: 'Choix multiple possible',
+      options: [
+        'Réseaux sociaux',
+        'YouTube / vidéos',
+        'Tâches secondaires',
+        'Je dors / je me repose',
+        "Je planifie au lieu d'agir",
+        'Je passe à un autre projet',
+      ],
+    },
+    {
+      type: 'multi', field: 'declencheur', other: false,
+      question: "Qu'est-ce qui arrive le plus souvent juste avant que tu décroches ?",
+      hint: 'Choix multiple possible',
+      options: [
+        'Je suis fatigué',
+        'La tâche devient difficile',
+        'Je ne sais plus quoi faire',
+        'Je veux que ce soit parfait',
+        "Je m'ennuie",
+        'Une autre chose devient plus intéressante',
+        'Je fais une pause qui dure trop longtemps',
+        'Je ne sais pas',
+      ],
+    },
+    {
+      type: 'single', field: 'experience_procrastination', other: false,
+      question: "Depuis combien de temps ça t'arrive ?",
+      hint: 'Choix unique',
+      options: ['Quelques semaines', 'Quelques mois', 'Plusieurs années', 'Depuis toujours'],
+    },
+    {
+      type: 'single', field: 'declencheur_naturel', other: true,
+      question: "La dernière fois que tu as travaillé sans te forcer — qu'est-ce qui t'a aidé à continuer ?",
+      hint: 'Choix unique',
+      options: [
+        "J'ai commencé par quelque chose de très petit — et une fois lancé, j'ai continué naturellement",
+        "Je m'étais fixé une heure précise pour commencer — et je l'ai respectée",
+        "Je ne voulais pas décevoir quelqu'un — ou j'avais une deadline qui me mettait la pression",
+      ],
+    },
+    {
+      type: 'single', field: 'objectif', other: false,
+      question: "Si Prédicta fonctionnait parfaitement pour toi, qu'aimerais-tu changer en premier ?",
+      hint: 'Choix unique',
+      options: [
+        'Finir mes projets',
+        'Arrêter de repousser',
+        'Être plus régulier',
+        'Mieux gérer mon attention',
+        "Arrêter de changer constamment d'objectif",
+        'Comprendre pourquoi je fonctionne comme ça',
+      ],
+    },
+    { type: 'urgent' },
+  ];
+
+  let onboardingIndex = 0;
+  const onboardingAnswers = {
+    probleme_principal: [],
+    comportement_procrastination: [],
+    declencheur: [],
+    experience_procrastination: null,
+    declencheur_naturel: null,
+    objectif: null,
+    tache_urgente: '',
+    tache_urgente_delai: null,
+  };
+  const onboardingOtherText = {};
+  const onboardingOtherActive = {};
+
+  function startOnboarding() {
+    onboardingIndex = 0;
+    document.getElementById('onboardingGate').style.display = 'block';
+    renderOnboardingStep();
+  }
+
+  function showOnboardingError(msg) {
+    const el = document.getElementById('onboardingError');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function hideOnboardingError() {
+    document.getElementById('onboardingError').style.display = 'none';
+  }
+
+  function renderOnboardingStep() {
+    const step = ONBOARDING_STEPS[onboardingIndex];
+    document.getElementById('onboardingProgressFill').style.width = `${(onboardingIndex / 7) * 100}%`;
+    document.getElementById('onboardingStepLabel').textContent = onboardingIndex === 0 ? 'Bienvenue sur Prédicta' : `Étape ${onboardingIndex} sur 7`;
+    document.getElementById('onboardingBackBtn').style.visibility = onboardingIndex === 0 ? 'hidden' : 'visible';
+    hideOnboardingError();
+
+    const body = document.getElementById('onboardingStepBody');
+    const nextBtn = document.getElementById('onboardingNextBtn');
+
+    if (step.type === 'intro') {
+      body.innerHTML = `
+        <div class="onboarding-intro">
+          <div class="onboarding-intro-icon">🧠</div>
+          <h2 class="onboarding-title">Découvrons ce qui te fait décrocher</h2>
+          <p class="onboarding-subtitle">Prédicta va commencer par comprendre comment tu fonctionnes.</p>
+        </div>`;
+      nextBtn.textContent = 'Commencer';
+      return;
+    }
+
+    if (step.type === 'urgent') {
+      body.innerHTML = `
+        <h2 class="onboarding-question">Quelle est la tâche importante que tu repousses en ce moment ?</h2>
+        <textarea id="onboardingTacheUrgente" class="text-input onboarding-textarea" placeholder="Décris ta tâche...">${escapeHtml(onboardingAnswers.tache_urgente || '')}</textarea>
+        <h2 class="onboarding-question" style="margin-top:26px;">Dans combien de jours dois-tu l'avoir faite ?</h2>
+        <input id="onboardingTacheDelai" class="text-input" type="number" min="0" step="1" inputmode="numeric" placeholder="Nombre de jours" value="${onboardingAnswers.tache_urgente_delai != null ? onboardingAnswers.tache_urgente_delai : ''}">
+      `;
+      nextBtn.textContent = 'Terminer';
+      return;
+    }
+
+    const currentValue = onboardingAnswers[step.field];
+    const isSelected = (opt) => step.type === 'multi' ? currentValue.includes(opt) : currentValue === opt;
+
+    const optionsHtml = step.options.map((opt, idx) => `
+      <div class="onboarding-option ${isSelected(opt) ? 'selected' : ''}" data-idx="${idx}">
+        <span class="onboarding-check">${isSelected(opt) ? '✓' : ''}</span>
+        <span>${escapeHtml(opt)}</span>
+      </div>`).join('');
+
+    const otherIsActive = step.other && (step.type === 'multi'
+      ? !!onboardingOtherActive[step.field]
+      : (currentValue != null && !step.options.includes(currentValue)));
+
+    const otherHtml = step.other ? `
+      <div class="onboarding-option ${otherIsActive ? 'selected' : ''}" data-idx="-1">
+        <span class="onboarding-check">${otherIsActive ? '✓' : ''}</span>
+        <span>Autre</span>
+      </div>
+      ${otherIsActive ? `<textarea class="text-input onboarding-textarea onboarding-other-input" placeholder="Précise ici...">${escapeHtml(step.type === 'multi' ? (onboardingOtherText[step.field] || '') : (currentValue || ''))}</textarea>` : ''}
+    ` : '';
+
+    body.innerHTML = `
+      <h2 class="onboarding-question">${escapeHtml(step.question)}</h2>
+      <p class="onboarding-hint">${step.hint}</p>
+      <div class="onboarding-options">${optionsHtml}${otherHtml}</div>
+    `;
+    nextBtn.textContent = 'Continuer';
+
+    body.querySelectorAll('.onboarding-option').forEach((el) => {
+      el.addEventListener('click', () => {
+        const idx = Number(el.dataset.idx);
+        if (idx === -1) {
+          onboardingToggleOther(step.field, step.type);
+        } else {
+          onboardingSelect(step.field, step.type, step.options[idx]);
+        }
+      });
+    });
+
+    const otherInput = body.querySelector('.onboarding-other-input');
+    if (otherInput) {
+      otherInput.addEventListener('input', (e) => onboardingOtherInput(step.field, step.type, e.target.value));
+    }
+  }
+
+  function onboardingSelect(field, type, opt) {
+    if (type === 'multi') {
+      const arr = onboardingAnswers[field];
+      const i = arr.indexOf(opt);
+      if (i === -1) arr.push(opt); else arr.splice(i, 1);
+    } else {
+      onboardingAnswers[field] = opt;
+    }
+    renderOnboardingStep();
+  }
+
+  function onboardingToggleOther(field, type) {
+    if (type === 'multi') {
+      onboardingOtherActive[field] = !onboardingOtherActive[field];
+      const arr = onboardingAnswers[field];
+      const text = onboardingOtherText[field];
+      if (text) {
+        const i = arr.indexOf(text);
+        if (onboardingOtherActive[field]) {
+          if (i === -1) arr.push(text);
+        } else if (i !== -1) {
+          arr.splice(i, 1);
+        }
+      }
+    } else {
+      const step = ONBOARDING_STEPS[onboardingIndex];
+      const currentlyOther = onboardingAnswers[field] != null && !step.options.includes(onboardingAnswers[field]);
+      onboardingAnswers[field] = currentlyOther ? null : (onboardingOtherText[field] || '');
+    }
+    renderOnboardingStep();
+  }
+
+  function onboardingOtherInput(field, type, value) {
+    if (type === 'multi') {
+      const arr = onboardingAnswers[field];
+      const prev = onboardingOtherText[field];
+      if (prev) {
+        const i = arr.indexOf(prev);
+        if (i !== -1) arr.splice(i, 1);
+      }
+      if (value) arr.push(value);
+    } else {
+      onboardingAnswers[field] = value;
+    }
+    onboardingOtherText[field] = value;
+  }
+
+  function onboardingSuivant() {
+    const step = ONBOARDING_STEPS[onboardingIndex];
+    hideOnboardingError();
+
+    if (step.type === 'urgent') {
+      onboardingFinish();
+      return;
+    }
+    if (step.type === 'multi' && onboardingAnswers[step.field].length === 0) {
+      showOnboardingError('Choisis au moins une option pour continuer.');
+      return;
+    }
+    if (step.type === 'single' && !onboardingAnswers[step.field]) {
+      showOnboardingError('Choisis une option pour continuer.');
+      return;
+    }
+
+    onboardingIndex++;
+    renderOnboardingStep();
+  }
+
+  function onboardingRetour() {
+    if (onboardingIndex === 0) return;
+    onboardingIndex--;
+    renderOnboardingStep();
+  }
+
+  async function onboardingFinish() {
+    const btn = document.getElementById('onboardingNextBtn');
+    const tache = document.getElementById('onboardingTacheUrgente').value.trim();
+    if (!tache) {
+      showOnboardingError('Décris la tâche que tu repousses pour continuer.');
+      return;
+    }
+    const delaiRaw = document.getElementById('onboardingTacheDelai').value.trim();
+    const delai = delaiRaw ? parseInt(delaiRaw, 10) : null;
+    if (delaiRaw && (!Number.isFinite(delai) || delai < 0)) {
+      showOnboardingError('Indique un nombre de jours valide.');
+      return;
+    }
+
+    onboardingAnswers.tache_urgente = tache;
+    onboardingAnswers.tache_urgente_delai = delai;
+
+    btn.disabled = true;
+    btn.textContent = 'Enregistrement...';
+    try {
+      currentProfile = await predictaUpdateProfile({
+        onboarding_complete: true,
+        probleme_principal: onboardingAnswers.probleme_principal,
+        comportement_procrastination: onboardingAnswers.comportement_procrastination,
+        declencheur: onboardingAnswers.declencheur,
+        experience_procrastination: onboardingAnswers.experience_procrastination,
+        declencheur_naturel: onboardingAnswers.declencheur_naturel,
+        objectif: onboardingAnswers.objectif,
+        tache_urgente: onboardingAnswers.tache_urgente,
+        tache_urgente_delai: onboardingAnswers.tache_urgente_delai,
+      });
+      document.getElementById('onboardingGate').style.display = 'none';
+      await revealDashboard();
+    } catch (err) {
+      console.error('[predicta] onboarding save error', err.message);
+      showOnboardingError("Impossible d'enregistrer tes réponses, réessaie.");
+      btn.disabled = false;
+      btn.textContent = 'Terminer';
+    }
+  }
 
   // ===== Utilities =====
   function escapeHtml(str) {
@@ -1164,6 +1524,20 @@
     }
 
     document.getElementById('authGate').style.display = 'none';
+
+    if (!currentProfile.onboarding_complete) {
+      startOnboarding();
+      return;
+    }
+
+    await revealDashboard();
+  }
+
+  // Shown once onboarding is confirmed done (either already true on
+  // load, or just completed via onboardingFinish()) — boots the
+  // dashboard itself, previously the tail end of init().
+  async function revealDashboard() {
+    document.getElementById('onboardingGate').style.display = 'none';
     document.getElementById('app').style.display = 'flex';
 
     document.getElementById('sidebarUserName').textContent = currentProfile?.display_name || '';

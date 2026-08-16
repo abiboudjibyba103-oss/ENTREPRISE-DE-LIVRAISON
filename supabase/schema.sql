@@ -45,6 +45,19 @@ alter table public.profiles add column if not exists declencheur_naturel text;
 -- created_at, which is already accurate. Kept for possible future use.
 alter table public.profiles add column if not exists trial_started_at timestamptz default now();
 
+-- Dashboard onboarding (predicta-dashboard.html, shown once per user
+-- before the dashboard is revealed, gated on onboarding_complete).
+-- All user-writable directly — not added to protect_profile_columns().
+alter table public.profiles add column if not exists onboarding_complete boolean default false;
+alter table public.profiles add column if not exists probleme_principal text[];
+alter table public.profiles add column if not exists comportement_procrastination text[];
+alter table public.profiles add column if not exists declencheur text[];
+alter table public.profiles add column if not exists experience_procrastination text;
+alter table public.profiles add column if not exists declencheur_naturel text;
+alter table public.profiles add column if not exists objectif text;
+alter table public.profiles add column if not exists tache_urgente text;
+alter table public.profiles add column if not exists tache_urgente_delai integer;
+
 update public.profiles
   set referral_code = upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8))
   where referral_code is null;

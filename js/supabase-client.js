@@ -219,7 +219,11 @@ async function predictaUpdateProfile(patch) {
   const session = await predictaGetSession();
   if (!session) throw new Error('Not authenticated');
 
-  const allowed = ['display_name', 'default_session_minutes', 'notifications_enabled', 'evening_lesson_hour'];
+  const allowed = [
+    'display_name', 'default_session_minutes', 'notifications_enabled', 'evening_lesson_hour',
+    'onboarding_complete', 'probleme_principal', 'comportement_procrastination', 'declencheur',
+    'experience_procrastination', 'declencheur_naturel', 'objectif', 'tache_urgente', 'tache_urgente_delai',
+  ];
   const safePatch = {};
   for (const key of allowed) {
     if (key in patch) safePatch[key] = patch[key];
