@@ -265,6 +265,41 @@ Deno.serve(async (req) => {
       ? ` Raisons d'interruption données par l'utilisateur : ${interruptionReasons.map((r) => `"${r}"`).join(', ')}.`
       : '');
 
+  // Détecte le pattern longue session → relance rapide → abandon
+  const sessionsCompletees = todaySessions.filter((s) => s.status === 'completed');
+  const sessionsInterrompues = todaySessions.filter((s) => s.status === 'interrupted');
+
+  const longueSessions = sessionsCompletees.filter((s) => (s.duration_min || 0) >= 60);
+
+  let patternEpuisement = false;
+  let tempsAvantDeuxiemeSession: number | null = null;
+
+  if (longueSessions.length > 0 && sessionsInterrompues.length > 0) {
+    // Vérifie si une session interrompue a été lancée peu après une longue session
+    const derniereLogueSession = longueSessions[longueSessions.length - 1];
+    const sessionApres = todaySessions.find((s) =>
+      s.status === 'interrupted' &&
+      derniereLogueSession.ended_at &&
+      new Date(s.started_at).getTime() > new Date(derniereLogueSession.ended_at).getTime()
+    );
+
+    if (sessionApres && derniereLogueSession.ended_at) {
+      const minutesAvant = Math.floor(
+        (new Date(sessionApres.started_at).getTime() - new Date(derniereLogueSession.ended_at).getTime()) / (1000 * 60)
+      );
+      tempsAvantDeuxiemeSession = minutesAvant;
+      patternEpuisement = true;
+    }
+  }
+
+  const deuxLonguesSessionsCompletees = sessionsCompletees.filter((s) => (s.duration_min || 0) >= 60).length >= 2;
+
+  const patternLine = patternEpuisement
+    ? `Pattern détecté : longue session complétée suivie d'une session relancée ${tempsAvantDeuxiemeSession} minutes après et interrompue. Utilise Baumeister sur l'épuisement de l'ego et suggère d'espacer davantage la prochaine fois.`
+    : deuxLonguesSessionsCompletees
+    ? `Pattern détecté : deux longues sessions complétées aujourd'hui. Ne pas mentionner les pauses ou l'épuisement — ce n'est pas son problème. Parle d'autre chose.`
+    : '';
+
   const systemPrompt = `Tu es le moteur d'enseignement de Prédicta. Ta mission : analyser les sessions RÉELLES de l'utilisateur aujourd'hui et générer UN SEUL enseignement scientifique personnalisé de 4 à 6 phrases maximum.
 
 RÈGLES STRICTES :
@@ -275,6 +310,7 @@ RÈGLES STRICTES :
 - Ton direct et chaleureux, jamais condescendant
 - 4 à 6 phrases maximum, texte fluide sans titres ni listes
 - Utilise le profil de l'utilisateur pour personnaliser la leçon — si son déclencheur habituel est le perfectionnisme, parle de perfectionnisme. Si sa tâche urgente est mentionnée, fais le lien avec elle.
+- Si l'utilisateur a enchaîné deux longues sessions (60+ min chacune) ET les deux sont complétées → NE JAMAIS mentionner les pauses ou l'épuisement cognitif. Ce n'est pas son pattern. Parle d'autre chose basé sur ses données.
 
 CHOIX DU FAIT SCIENTIFIQUE SELON CE QUI S'EST PASSÉ :
 - Session longue complétée (45+ min) → Ann Graybiel (MIT) : neuroplasticité et automatisation des habitudes
@@ -285,6 +321,7 @@ CHOIX DU FAIT SCIENTIFIQUE SELON CE QUI S'EST PASSÉ :
 - Aucune session aujourd'hui → BJ Fogg : l'environnement déclenche 80% des comportements avant toute décision consciente
 - Session après une longue absence → Phillippa Lally : formation d'habitude entre 18 et 254 jours, moyenne 66 jours
 - Session très productive → Eleanor Maguire : neuroplasticité active à tout âge
+- Longue session complétée (60+ min) suivie d'une deuxième session lancée rapidement (moins de 20 min après) ET cette deuxième session a été interrompue → Baumeister : épuisement de l'ego. Le cortex préfrontal a besoin de récupérer après un effort intense. Explique que la prochaine fois, après une session de 60+ minutes, il faudrait attendre [temps_avant_session] minutes de plus avant de relancer.
 
 EXEMPLES DE LEÇONS PARFAITES :
 
@@ -311,6 +348,7 @@ Profil de l'utilisateur (utilise ces informations pour personnaliser la leçon) 
 - Objectif : ${profile?.objectif ?? 'non renseigné'}
 - Tâche urgente en cours : ${profile?.tache_urgente ?? 'non renseignée'}
 
+${patternLine}
 ${summaryLine}
 Sessions d'aujourd'hui :
 ${sessionLines}
