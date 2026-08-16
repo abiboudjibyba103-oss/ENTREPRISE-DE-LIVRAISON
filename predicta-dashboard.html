@@ -751,6 +751,10 @@
 
     const body = document.getElementById('onboardingStepBody');
     const nextBtn = document.getElementById('onboardingNextBtn');
+    // renderOnboardingTransition() reassigns these — reset to the
+    // normal step handlers every time a regular step is (re)rendered.
+    nextBtn.onclick = onboardingSuivant;
+    document.getElementById('onboardingBackBtn').onclick = onboardingRetour;
 
     if (step.type === 'intro') {
       body.innerHTML = `
@@ -924,13 +928,59 @@
         tache_urgente: onboardingAnswers.tache_urgente,
         tache_urgente_delai: onboardingAnswers.tache_urgente_delai,
       });
-      document.getElementById('onboardingGate').style.display = 'none';
-      await revealDashboard();
+      renderOnboardingTransition();
     } catch (err) {
       console.error('[predicta] onboarding save error', err.message);
       showOnboardingError("Impossible d'enregistrer tes réponses, réessaie.");
       btn.disabled = false;
       btn.textContent = 'Terminer';
+    }
+  }
+
+  // Shown once onboarding is saved — offers to launch the user's very
+  // first session pre-filled with the "tâche urgente" they just typed,
+  // instead of dropping them on an empty home screen.
+  function renderOnboardingTransition() {
+    document.getElementById('onboardingProgressFill').style.width = '100%';
+    document.getElementById('onboardingStepLabel').textContent = 'Tout est prêt';
+    hideOnboardingError();
+
+    const tache = onboardingAnswers.tache_urgente;
+    const delai = onboardingAnswers.tache_urgente_delai;
+    const delaiText = delai != null ? ` Il te reste ${delai} jour${delai > 1 ? 's' : ''} pour t'y mettre.` : '';
+
+    const body = document.getElementById('onboardingStepBody');
+    body.innerHTML = `
+      <div class="onboarding-intro">
+        <div class="onboarding-intro-icon">🎯</div>
+        <h2 class="onboarding-title">C'est parti${currentProfile?.display_name ? ', ' + escapeHtml(currentProfile.display_name) : ''} !</h2>
+        <p class="onboarding-subtitle">Ta tâche urgente : <strong>${escapeHtml(tache)}</strong>.${escapeHtml(delaiText)}</p>
+      </div>
+    `;
+
+    const nextBtn = document.getElementById('onboardingNextBtn');
+    nextBtn.disabled = false;
+    nextBtn.textContent = 'Lancer ma première session →';
+    nextBtn.onclick = onboardingLaunchFirstSession;
+
+    const backBtn = document.getElementById('onboardingBackBtn');
+    backBtn.style.visibility = 'visible';
+    backBtn.textContent = 'Plus tard, aller au tableau de bord';
+    backBtn.onclick = () => revealDashboard();
+  }
+
+  async function onboardingLaunchFirstSession() {
+    const nextBtn = document.getElementById('onboardingNextBtn');
+    nextBtn.disabled = true;
+    nextBtn.textContent = 'Lancement...';
+    try {
+      await predictaStartSession(onboardingAnswers.tache_urgente);
+      await revealDashboard();
+      showToast('Session lancée. Prédicta observe.', 'success');
+    } catch (err) {
+      console.error('[predicta] onboarding launch session error', err.message);
+      showToast(err.message || 'Impossible de lancer la session.', 'error');
+      renderOnboardingTransition();
     }
   }
 
