@@ -269,7 +269,7 @@ async function predictaDailyLesson() {
     if (error.context?.status === 401) {
       throw new Error('Ta session a expiré, reconnecte-toi pour continuer.');
     }
-    throw error;
+    throw new Error(await predictaFunctionErrorMessage(error));
   }
   if (data?.error) throw new Error(data.error);
   return { lessonText: data.lessonText ?? null, hasSessionToday: !!data.hasSessionToday };
