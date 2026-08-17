@@ -406,6 +406,12 @@ ${anticipationCandidate ? `1. (${anticipationCandidate.count}) ${anticipationCan
         model: PREDICTION_MODEL,
         max_tokens: 700,
         response_format: { type: 'json_object' },
+        // qwen3.6-27b defaults to "thinking mode" — its reasoning
+        // tokens can leak into the response and break JSON validation
+        // (Groq's json_validate_failed). Disabled: this call only
+        // needs a rephrasing of already-computed candidates, not
+        // multi-step reasoning.
+        reasoning_effort: 'none',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: 'Transforme ces observations selon le format de chaque type, dans le même ordre.' },
