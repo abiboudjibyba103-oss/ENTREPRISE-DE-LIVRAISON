@@ -27,7 +27,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
 
-const COACH_MODEL = 'qwen/qwen3-32b';
+const COACH_MODEL = 'openai/gpt-oss-120b';
 
 // Written to lesson_text while a generation is in flight, so a concurrent
 // request can tell "reserved but not done yet" apart from "no row yet".

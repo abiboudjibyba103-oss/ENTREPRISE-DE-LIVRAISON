@@ -44,7 +44,7 @@ function corsHeadersFor(req: Request): Record<string, string> {
 
 const MAX_MESSAGE_LEN = 500;
 const MAX_HISTORY = 10;
-const COACH_MODEL = 'qwen/qwen3-32b';
+const COACH_MODEL = 'openai/gpt-oss-120b';
 
 Deno.serve(async (req) => {
   const CORS_HEADERS = corsHeadersFor(req);
