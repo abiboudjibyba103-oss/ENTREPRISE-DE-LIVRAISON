@@ -37,7 +37,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
 
-const PREDICTION_MODEL = 'openai/gpt-oss-120b';
+const PREDICTION_MODEL = 'qwen/qwen3.6-27b';
 const MIN_SESSIONS = 3;
 
 const PATTERNS_MAX = 3;
