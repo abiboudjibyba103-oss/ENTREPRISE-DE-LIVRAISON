@@ -582,6 +582,32 @@ create policy "paydunya_payments_select_own" on public.paydunya_payments
 
 
 -- ------------------------------------------------------------
+-- 10. paiements_en_attente — manual Wave payment flow for the J15
+--     paywall (#ecran-blocage in predicta-dashboard.html). A user
+--     records their own "I paid" claim here; Abibou checks Wave by
+--     hand and activates the account. No automated webhook, unlike
+--     paydunya_payments above.
+-- ------------------------------------------------------------
+create table if not exists public.paiements_en_attente (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid references auth.users(id) on delete cascade,
+  email       text,
+  montant     integer,
+  statut      text default 'en_attente_verification',
+  created_at  timestamptz default now()
+);
+
+alter table public.paiements_en_attente enable row level security;
+
+create policy "paiements_insert_own" on public.paiements_en_attente
+  for insert with check (auth.uid() = user_id);
+
+-- No select/update/delete policy: only the service_role key can read
+-- or change these once submitted — the user shouldn't be able to
+-- edit their own pending-verification claim after the fact.
+
+
+-- ------------------------------------------------------------
 -- updated_at trigger helper for profiles / daily_lessons
 -- ------------------------------------------------------------
 create or replace function public.set_updated_at()

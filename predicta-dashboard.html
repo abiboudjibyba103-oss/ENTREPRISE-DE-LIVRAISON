@@ -446,11 +446,31 @@
       <p style="font-size:13px;color:#78716C;">par mois · Annulable à tout moment</p>
     </div>
 
-    <button id="passerAuProBtnBlocage" onclick="passerAuPro()" class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:16px;">
-      Continuer avec le Plan Pro →
+    <div style="background:#F5F3FF;border-radius:16px;padding:20px;margin-bottom:24px;text-align:left;">
+      <p style="font-weight:700;font-size:15px;color:#1C1917;margin-bottom:12px;">Comment payer :</p>
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;">
+        <span style="background:#6C5CE7;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">1</span>
+        <p style="font-size:14px;color:#44403C;margin:0;">Ouvre Wave sur ton téléphone</p>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;">
+        <span style="background:#6C5CE7;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">2</span>
+        <p style="font-size:14px;color:#44403C;margin:0;">Envoie <strong>3 900 FCFA</strong> au <strong id="wave-number">+221 70 706 74 28</strong></p>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;">
+        <span style="background:#6C5CE7;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">3</span>
+        <p style="font-size:14px;color:#44403C;margin:0;">Dans la note du paiement, écris exactement : <strong>Prédicta Pro [ton email]</strong></p>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <span style="background:#6C5CE7;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">4</span>
+        <p style="font-size:14px;color:#44403C;margin:0;">Ton accès sera activé dans les <strong>2 heures</strong> suivant le paiement</p>
+      </div>
+    </div>
+
+    <button onclick="confirmerPaiement()" style="width:100%;background:#6C5CE7;color:#fff;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:12px;">
+      J'ai effectué le paiement →
     </button>
 
-    <p style="font-size:13px;color:#78716C;">Paiement sécurisé via Wave ou Orange Money</p>
+    <p style="font-size:13px;color:#78716C;text-align:center;">Une question ? Écris-nous sur WhatsApp</p>
   </div>
 </div>
 
@@ -1637,6 +1657,44 @@
       showToast(err.message || 'Paiement impossible pour le moment.', 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'Continuer avec le Plan Pro →'; }
     }
+  }
+
+  // Manual Wave payment flow: records a pending-verification row so
+  // Abibou can check Wave and activate the account by hand — no
+  // automated webhook for this path (unlike PayDunya's).
+  async function confirmerPaiement() {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    const { error } = await supabaseClient
+      .from('paiements_en_attente')
+      .insert({
+        user_id: user.id,
+        email: user.email,
+        montant: 3900,
+        statut: 'en_attente_verification',
+        created_at: new Date().toISOString(),
+      });
+
+    if (error) {
+      console.error('[predicta] confirmerPaiement error', error.message);
+      showToast("Impossible d'enregistrer ta confirmation, réessaie.", 'error');
+      return;
+    }
+
+    document.getElementById('ecran-blocage').innerHTML = `
+      <div style="background:#fff;border-radius:24px;padding:48px;max-width:480px;width:90%;text-align:center;">
+        <div style="font-size:48px;margin-bottom:20px;">✅</div>
+        <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:22px;margin-bottom:16px;color:#1C1917;">
+          Paiement en cours de vérification
+        </h2>
+        <p style="color:#44403C;font-size:15px;line-height:1.8;">
+          Nous avons bien reçu ta demande. Ton accès Pro sera activé dans les 2 heures suivant la confirmation du paiement Wave.
+        </p>
+        <p style="color:#78716C;font-size:13px;margin-top:16px;">
+          Tu recevras un email de confirmation dès l'activation.
+        </p>
+      </div>
+    `;
   }
 
   init();
