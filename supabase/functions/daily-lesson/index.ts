@@ -365,7 +365,13 @@ ${lessonsHistory}`;
       },
       body: JSON.stringify({
         model: COACH_MODEL,
-        max_tokens: 350,
+        max_tokens: 600,
+        // openai/gpt-oss-120b defaults to "thinking mode" — its
+        // reasoning tokens eat into max_tokens before the actual
+        // lesson text, which can leave content empty or truncated.
+        // This call only needs the final teaching, not multi-step
+        // reasoning.
+        reasoning_effort: 'none',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: "Donne-moi l'enseignement de ce soir, basé sur mes sessions d'aujourd'hui." },
@@ -384,9 +390,18 @@ ${lessonsHistory}`;
   }
 
   const aiData = await aiRes.json();
-  const lessonText: string =
-    aiData.choices?.[0]?.message?.content?.trim() ||
-    "Impossible de générer ton enseignement du jour pour le moment, réessaie plus tard.";
+  const lessonText: string = aiData.choices?.[0]?.message?.content?.trim() || '';
+
+  if (!lessonText) {
+    // Don't cache a placeholder as if it were a real lesson — that
+    // would stick for the rest of the day (the cache check only
+    // regenerates on staleness, not on "content looks like a
+    // fallback"). Leaving the row at RESERVATION_PLACEHOLDER is safe:
+    // the next request just falls through the reservation checks and
+    // tries Groq again.
+    console.error('[daily-lesson] empty content from Groq', JSON.stringify(aiData).slice(0, 500));
+    return json({ error: 'Impossible de générer ton enseignement du jour pour le moment, réessaie plus tard.' }, 502);
+  }
 
   // The row already exists (reserved above, or from an earlier attempt
   // today that failed after reserving) — fill it in rather than upsert.

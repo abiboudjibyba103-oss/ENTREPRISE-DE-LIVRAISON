@@ -193,7 +193,11 @@ ${contextLines.join('\n')}`;
       },
       body: JSON.stringify({
         model: COACH_MODEL,
-        max_tokens: 300,
+        max_tokens: 500,
+        // openai/gpt-oss-120b defaults to "thinking mode" — its
+        // reasoning tokens eat into max_tokens before the actual
+        // reply, which can leave content empty or truncated.
+        reasoning_effort: 'none',
         messages,
       }),
     });
