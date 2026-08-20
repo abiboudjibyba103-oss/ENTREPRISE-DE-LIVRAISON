@@ -369,9 +369,9 @@ ${lessonsHistory}`;
         // openai/gpt-oss-120b defaults to "thinking mode" — its
         // reasoning tokens eat into max_tokens before the actual
         // lesson text, which can leave content empty or truncated.
-        // This call only needs the final teaching, not multi-step
-        // reasoning.
-        reasoning_effort: 'none',
+        // This model only accepts low/medium/high (no 'none'); low
+        // keeps reasoning minimal without erroring.
+        reasoning_effort: 'low',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: "Donne-moi l'enseignement de ce soir, basé sur mes sessions d'aujourd'hui." },

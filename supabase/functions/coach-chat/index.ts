@@ -196,8 +196,10 @@ ${contextLines.join('\n')}`;
         max_tokens: 500,
         // openai/gpt-oss-120b defaults to "thinking mode" — its
         // reasoning tokens eat into max_tokens before the actual
-        // reply, which can leave content empty or truncated.
-        reasoning_effort: 'none',
+        // reply, which can leave content empty or truncated. This
+        // model only accepts low/medium/high (no 'none'); low keeps
+        // reasoning minimal without erroring.
+        reasoning_effort: 'low',
         messages,
       }),
     });
