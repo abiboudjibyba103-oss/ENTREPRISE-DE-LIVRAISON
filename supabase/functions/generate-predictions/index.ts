@@ -238,14 +238,31 @@ function computeMemoryCandidates(sessions: SessionRow[]): Candidate[] {
   return candidates.sort((a, b) => b.count - a.count).slice(0, MEMOIRE_MAX);
 }
 
-// ---- TYPE 4: anticipation — combines the single strongest signal
-// from each of the 3 types above into one candidate ----
+// ---- TYPE 4: anticipation — combines a signal from each of the 3
+// types above into one candidate. Rotates through whichever real,
+// qualifying candidates exist (by day-of-year) instead of always
+// picking index 0 — otherwise the single strongest historical signal
+// (e.g. one very consistent weekday) would win forever and Anticipation
+// would repeat the exact same message every day. Still never invents
+// anything: every candidate here already passed the same real-data
+// thresholds as its own type; this only changes which real one leads. ----
+function dayOfYear(d: Date): number {
+  const start = new Date(d.getFullYear(), 0, 0);
+  return Math.floor((d.getTime() - start.getTime()) / 86400000);
+}
+
+function pickRotating<T>(list: T[], seed: number): T | undefined {
+  return list.length ? list[seed % list.length] : undefined;
+}
+
 function computeAnticipationCandidate(
   patterns: Candidate[],
   predictions: Candidate[],
   memories: Candidate[],
+  seed: number,
 ): Candidate | null {
-  const top = [patterns[0], predictions[0], memories[0]].filter((c): c is Candidate => !!c);
+  const top = [pickRotating(patterns, seed), pickRotating(predictions, seed), pickRotating(memories, seed)]
+    .filter((c): c is Candidate => !!c);
   if (top.length === 0) return null;
   return {
     count: Math.max(...top.map((c) => c.count)),
@@ -308,7 +325,7 @@ Deno.serve(async (req) => {
   const patternCandidates = computePatternCandidates(allSessions);
   const predictionCandidates = computePredictionCandidates(allSessions);
   const memoryCandidates = computeMemoryCandidates(allSessions);
-  const anticipationCandidate = computeAnticipationCandidate(patternCandidates, predictionCandidates, memoryCandidates);
+  const anticipationCandidate = computeAnticipationCandidate(patternCandidates, predictionCandidates, memoryCandidates, dayOfYear(new Date()));
 
   // Cache hit: today's content already exists — return it without
   // spending another Groq call. A kind only counts as cached when its
