@@ -72,6 +72,7 @@ type SessionRow = {
   duration_min: number | null;
   status: string;
   started_at: string;
+  interruption_reason: string | null;
 };
 
 type Candidate = { count: number; description: string };
@@ -83,6 +84,49 @@ function timeSlotOf(hour: number): string {
   return 'tard le soir'; // 20h-5h
 }
 
+// Deterministic per-day rotation seed, used to vary which real
+// candidates get shown/prioritized from one day to the next instead
+// of always the single strongest (which can otherwise repeat
+// identically for weeks if the underlying data doesn't change).
+function dayOfYear(d: Date): number {
+  const start = new Date(d.getFullYear(), 0, 0);
+  return Math.floor((d.getTime() - start.getTime()) / 86400000);
+}
+
+function pickRotating<T>(list: T[], seed: number): T | undefined {
+  return list.length ? list[seed % list.length] : undefined;
+}
+
+// Circularly rotates a list's starting point by `seed` — used to vary
+// WHICH subset of already-qualified real candidates gets kept when a
+// type has more than its max slot count, instead of always keeping
+// the deterministic top-N by count.
+function rotateArray<T>(list: T[], seed: number): T[] {
+  if (list.length <= 1) return list;
+  const offset = seed % list.length;
+  return [...list.slice(offset), ...list.slice(0, offset)];
+}
+
+// Groups interrupted sessions by the exact reason the user gave
+// (sessions.interruption_reason), when they gave one, requiring the
+// same >=3 occurrence threshold used everywhere else in this file.
+// Free-text "autre" reasons rarely repeat verbatim and won't reliably
+// hit that threshold — only the two preset reasons cluster well,
+// which is expected without fuzzy text matching.
+function groupInterruptionsByReason(sessions: SessionRow[]): { reason: string; count: number }[] {
+  const counts = new Map<string, number>();
+  sessions.forEach((s) => {
+    if (s.status === 'interrupted' && s.interruption_reason) {
+      const reason = s.interruption_reason.trim();
+      if (reason) counts.set(reason, (counts.get(reason) ?? 0) + 1);
+    }
+  });
+  return [...counts.entries()]
+    .map(([reason, count]) => ({ reason, count }))
+    .filter((r) => r.count >= 3)
+    .sort((a, b) => b.count - a.count);
+}
+
 // ---- TYPE 1: patterns détectés — factual, no advice, code-computed ----
 function computePatternCandidates(sessions: SessionRow[]): Candidate[] {
   const candidates: Candidate[] = [];
@@ -92,6 +136,16 @@ function computePatternCandidates(sessions: SessionRow[]): Candidate[] {
   if (longThenDrop.length >= 3) {
     candidates.push({ count: longThenDrop.length, description: 'tu décroches souvent après une longue période de concentration' });
   }
+
+  // Recurring interruption reasons (>=3x with the exact same reason
+  // string) — a distinct signal from the duration-based one above,
+  // since a user can have several genuinely different real causes
+  // behind their interruptions, not just "long sessions". Competes on
+  // count with every other candidate below, so the most frequent
+  // reason naturally ranks first if only PATTERNS_MAX get kept.
+  groupInterruptionsByReason(sessions).forEach(({ reason, count }) => {
+    candidates.push({ count, description: `tu interromps souvent tes sessions à cause de : ${reason}` });
+  });
 
   // A weekday with clearly fewer sessions than the others.
   if (sessions.length >= 7) {
@@ -129,7 +183,7 @@ function computePatternCandidates(sessions: SessionRow[]): Candidate[] {
 // rate/count behind each candidate only ever gates whether it's
 // worth surfacing — it never appears in the description text, since
 // predictions must never state a percentage or a statistic. ----
-function computePredictionCandidates(sessions: SessionRow[]): Candidate[] {
+function computePredictionCandidates(sessions: SessionRow[], seed: number): Candidate[] {
   const candidates: Candidate[] = [];
   const countable = sessions.filter((s) => s.status !== 'in_progress');
 
@@ -183,7 +237,20 @@ function computePredictionCandidates(sessions: SessionRow[]): Candidate[] {
     candidates.push({ count: worstSlot.total, description: `tu décroches plus souvent quand tu travailles ${worstSlot.slot}` });
   }
 
-  return candidates.sort((a, b) => b.count - a.count).slice(0, PREDICTIONS_MAX);
+  // Most frequent real interruption reason (>=3x), if any — "priorise
+  // la raison la plus fréquente" is handled naturally below: it only
+  // gets dropped from the final cut if a stronger signal outranks it.
+  const reasonGroups = groupInterruptionsByReason(countable);
+  if (reasonGroups.length > 0) {
+    const top = reasonGroups[0];
+    candidates.push({ count: top.count, description: `tu risques d'interrompre ta session à cause de : ${top.reason}` });
+  }
+
+  // Rotate which qualifying candidates make the final cut instead of
+  // always keeping the deterministic top-N by count — otherwise a
+  // single dominant signal (e.g. always "vendredi") wins forever and
+  // the phrasing sent to Groq barely changes from one day to the next.
+  return rotateArray(candidates.sort((a, b) => b.count - a.count), seed).slice(0, PREDICTIONS_MAX);
 }
 
 // ---- TYPE 3: mémoire personnalisée — mixes what worked and what
@@ -235,6 +302,13 @@ function computeMemoryCandidates(sessions: SessionRow[]): Candidate[] {
     }
   }
 
+  // Negative: recurring interruption reason (>=3x), regardless of
+  // when it happened — a distinct, more specific memory than the
+  // time/day-based ones above when the user has actually told us why.
+  groupInterruptionsByReason(sessions).forEach(({ reason, count }) => {
+    candidates.push({ count, description: `tu as été interrompu plusieurs fois à cause de : ${reason}` });
+  });
+
   return candidates.sort((a, b) => b.count - a.count).slice(0, MEMOIRE_MAX);
 }
 
@@ -246,15 +320,6 @@ function computeMemoryCandidates(sessions: SessionRow[]): Candidate[] {
 // would repeat the exact same message every day. Still never invents
 // anything: every candidate here already passed the same real-data
 // thresholds as its own type; this only changes which real one leads. ----
-function dayOfYear(d: Date): number {
-  const start = new Date(d.getFullYear(), 0, 0);
-  return Math.floor((d.getTime() - start.getTime()) / 86400000);
-}
-
-function pickRotating<T>(list: T[], seed: number): T | undefined {
-  return list.length ? list[seed % list.length] : undefined;
-}
-
 function computeAnticipationCandidate(
   patterns: Candidate[],
   predictions: Candidate[],
@@ -314,7 +379,7 @@ Deno.serve(async (req) => {
   // client-submitted session list, which could be tampered with.
   const { data: allSessions } = await supabaseAdmin
     .from('sessions')
-    .select('duration_min, status, started_at')
+    .select('duration_min, status, started_at, interruption_reason')
     .eq('user_id', user.id)
     .order('started_at', { ascending: true });
 
@@ -322,10 +387,11 @@ Deno.serve(async (req) => {
     return json({ ...EMPTY, notEnoughData: true });
   }
 
+  const seed = dayOfYear(new Date());
   const patternCandidates = computePatternCandidates(allSessions);
-  const predictionCandidates = computePredictionCandidates(allSessions);
+  const predictionCandidates = computePredictionCandidates(allSessions, seed);
   const memoryCandidates = computeMemoryCandidates(allSessions);
-  const anticipationCandidate = computeAnticipationCandidate(patternCandidates, predictionCandidates, memoryCandidates, dayOfYear(new Date()));
+  const anticipationCandidate = computeAnticipationCandidate(patternCandidates, predictionCandidates, memoryCandidates, seed);
 
   // Cache hit: today's content already exists — return it without
   // spending another Groq call. A kind only counts as cached when its
