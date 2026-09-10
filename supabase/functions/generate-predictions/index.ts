@@ -183,7 +183,7 @@ function computePatternCandidates(sessions: SessionRow[]): Candidate[] {
 // rate/count behind each candidate only ever gates whether it's
 // worth surfacing — it never appears in the description text, since
 // predictions must never state a percentage or a statistic. ----
-function computePredictionCandidates(sessions: SessionRow[], seed: number): Candidate[] {
+function computePredictionCandidates(sessions: SessionRow[], seed: number, todayWeekday: number): Candidate[] {
   const candidates: Candidate[] = [];
   const countable = sessions.filter((s) => s.status !== 'in_progress');
 
@@ -195,26 +195,32 @@ function computePredictionCandidates(sessions: SessionRow[], seed: number): Cand
     }
   }
 
-  const byWeekday = new Map<number, { weeks: Set<string> }>();
+  // Real interruption RATE per weekday (not raw occurrence count), same
+  // minimum-sample and threshold convention as worstSlot below — a
+  // weekday with 2 interruptions out of 20 sessions should never
+  // qualify just because those 2 happened on different weeks. Only
+  // surfaced when today actually IS that weekday: this candidate is
+  // always phrased as "Aujourd'hui [...]" (see the prompt format
+  // below), so showing "vendredi" on a Tuesday would be a factual
+  // mismatch between the prediction and the day it's shown on.
+  const byWeekday = new Map<number, { total: number; interrupted: number }>();
   countable.forEach((s) => {
-    if (s.status !== 'interrupted') return;
-    const d = new Date(s.started_at);
-    const wd = d.getDay();
-    const entry = byWeekday.get(wd) ?? { weeks: new Set<string>() };
-    const first = new Date(d.getFullYear(), 0, 1);
-    const days = Math.floor((d.getTime() - first.getTime()) / 86400000);
-    const week = Math.ceil((days + first.getDay() + 1) / 7);
-    entry.weeks.add(`${d.getFullYear()}-W${week}`);
+    const wd = new Date(s.started_at).getDay();
+    const entry = byWeekday.get(wd) ?? { total: 0, interrupted: 0 };
+    entry.total += 1;
+    if (s.status === 'interrupted') entry.interrupted += 1;
     byWeekday.set(wd, entry);
   });
-  let worstWeekday: { day: string; weeks: number } | null = null;
+  let worstWeekday: { day: string; wd: number; rate: number; total: number } | null = null;
   for (const [wd, entry] of byWeekday) {
-    if (entry.weeks.size >= 2 && (!worstWeekday || entry.weeks.size > worstWeekday.weeks)) {
-      worstWeekday = { day: DAY_NAMES[wd], weeks: entry.weeks.size };
+    if (entry.total < 3) continue;
+    const rate = entry.interrupted / entry.total;
+    if (rate >= 0.5 && (!worstWeekday || rate > worstWeekday.rate)) {
+      worstWeekday = { day: DAY_NAMES[wd], wd, rate, total: entry.total };
     }
   }
-  if (worstWeekday) {
-    candidates.push({ count: worstWeekday.weeks, description: `le ${worstWeekday.day} est une journée à risque pour toi, tu as tendance à interrompre tes sessions ce jour-là` });
+  if (worstWeekday && worstWeekday.wd === todayWeekday) {
+    candidates.push({ count: worstWeekday.total, description: `le ${worstWeekday.day} est une journée à risque pour toi, tu as tendance à interrompre tes sessions ce jour-là` });
   }
 
   const bySlot = new Map<string, { total: number; interrupted: number }>();
@@ -387,9 +393,10 @@ Deno.serve(async (req) => {
     return json({ ...EMPTY, notEnoughData: true });
   }
 
-  const seed = dayOfYear(new Date());
+  const now = new Date();
+  const seed = dayOfYear(now);
   const patternCandidates = computePatternCandidates(allSessions);
-  const predictionCandidates = computePredictionCandidates(allSessions, seed);
+  const predictionCandidates = computePredictionCandidates(allSessions, seed, now.getDay());
   const memoryCandidates = computeMemoryCandidates(allSessions);
   const anticipationCandidate = computeAnticipationCandidate(patternCandidates, predictionCandidates, memoryCandidates, seed);
 

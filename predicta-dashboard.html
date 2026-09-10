@@ -1370,6 +1370,11 @@
     const createdAt = new Date(currentProfile.created_at);
     const firstWeekEnd = new Date(createdAt.getTime() + 7 * 86400000);
     const currentWeekStart = new Date(Date.now() - 7 * 86400000);
+    // Before J14, "7 derniers jours" and "première semaine" overlap —
+    // comparing them would partly compare the same data to itself, so
+    // the comparison line only appears once the two windows are
+    // genuinely disjoint.
+    const canCompare = currentWeekStart >= firstWeekEnd;
 
     const firstWeekSessions = sessions.filter((s) => {
       const d = new Date(s.started_at);
@@ -1379,8 +1384,8 @@
 
     document.getElementById('memoryStatsCards').innerHTML = `
       <div class="stat-cards-row">
-        ${buildDurationCard(firstWeekSessions, currentWeekSessions)}
-        ${buildCompletionCard(firstWeekSessions, currentWeekSessions)}
+        ${buildDurationCard(firstWeekSessions, currentWeekSessions, canCompare)}
+        ${buildCompletionCard(firstWeekSessions, currentWeekSessions, canCompare)}
         ${buildActiveDaysCard(sessions)}
       </div>`;
   }
@@ -1396,27 +1401,27 @@
     return Math.round((sessions.filter((s) => s.status === 'completed').length / sessions.length) * 100);
   }
 
-  function buildDurationCard(firstWeekSessions, currentWeekSessions) {
+  function buildDurationCard(firstWeekSessions, currentWeekSessions, canCompare) {
     const current = avgCompletedDuration(currentWeekSessions);
-    const first = avgCompletedDuration(firstWeekSessions);
+    const first = canCompare ? avgCompletedDuration(firstWeekSessions) : null;
     const arrow = current != null && first != null && current !== first
       ? (current > first ? `<span class="stat-trend-up">↑</span>` : `<span class="stat-trend-down">↓</span>`)
       : '';
     return `
       <div class="stat-card">
         <p class="stat-card-value">${current != null ? `Tu tiens en moyenne ${current} min` : 'Pas encore de données'}</p>
-        ${first != null ? `<p class="stat-card-compare">${arrow} contre ${first} min à J1</p>` : ''}
+        ${first != null ? `<p class="stat-card-compare">${arrow} contre ${first} min à ta première semaine</p>` : ''}
       </div>`;
   }
 
-  function buildCompletionCard(firstWeekSessions, currentWeekSessions) {
+  function buildCompletionCard(firstWeekSessions, currentWeekSessions, canCompare) {
     const current = completionRatePct(currentWeekSessions);
-    const first = completionRatePct(firstWeekSessions);
+    const first = canCompare ? completionRatePct(firstWeekSessions) : null;
     return `
       <div class="stat-card">
         <div class="stat-progress-track"><div class="stat-progress-fill" style="width:${current ?? 0}%"></div></div>
         <p class="stat-card-value">${current != null ? `${current}%` : '—'}</p>
-        ${first != null ? `<p class="stat-card-compare">contre ${first}% à J1</p>` : ''}
+        ${first != null ? `<p class="stat-card-compare">contre ${first}% à ta première semaine</p>` : ''}
       </div>`;
   }
 
