@@ -107,6 +107,10 @@
     background: transparent; color: var(--danger); border: 1.5px solid var(--danger-light);
   }
   .btn-ghost-danger:hover { background: var(--danger-light); }
+  .btn-ghost {
+    background: transparent; color: var(--violet); border: 1.5px solid rgba(108,92,231,0.25);
+  }
+  .btn-ghost:hover { background: var(--violet-light); }
 
   /* ===== ONBOARDING ===== */
   #onboardingGate {
@@ -502,14 +506,25 @@
           <div class="timer-display" id="timerDisplay">00:00</div>
           <div class="session-actions">
             <button id="finishSessionBtn" class="btn btn-primary btn-block" onclick="finishSession()">Terminer la session</button>
+            <button id="pauseSessionBtn" class="btn btn-ghost btn-block" onclick="pauseSession()">Pause</button>
             <button id="interruptSessionBtn" class="btn btn-ghost-danger btn-block" onclick="interruptSession()">Interrompre</button>
           </div>
+          <p id="pauseLimitNote" class="muted-text" style="display:none;text-align:center;margin-top:10px;">Tu as déjà utilisé tes 2 pauses pour cette session.</p>
+        </div>
+
+        <!-- État "pause" : compte à rebours de 5 minutes -->
+        <div id="homeStatePaused" class="card" style="display:none;">
+          <p class="session-task-label" id="pausedTaskLabel"></p>
+          <p class="home-subtitle">En pause. Reprends avant la fin du compte à rebours, sinon ta session sera automatiquement interrompue.</p>
+          <div class="timer-display" id="pauseCountdownDisplay">05:00</div>
+          <button id="resumeSessionBtn" class="btn btn-primary btn-block" onclick="resumeSession()">Reprendre</button>
         </div>
 
         <!-- État 3 : session interrompue, choix de la raison -->
         <div id="homeState3" class="card" style="display:none;">
           <p class="state3-title">Ta session s'est arrêtée. Qu'est-ce qui s'est passé ?</p>
           <div id="reasonOptions">
+            <button type="button" class="reason-btn" id="reasonPauseOption" data-reason="Je me suis laissé distraire pendant ma pause" style="display:none;">Je me suis laissé distraire pendant ma pause</button>
             <button type="button" class="reason-btn" data-reason="Une pensée ou une tâche extérieure a capté mon attention">Une pensée ou une tâche extérieure a capté mon attention</button>
             <button type="button" class="reason-btn" data-reason="Je n'arrivais plus à rester concentré sur ce que je faisais">Je n'arrivais plus à rester concentré sur ce que je faisais</button>
             <button type="button" class="reason-btn" data-reason="__other__">Autre chose →</button>
@@ -642,11 +657,19 @@
   let currentProfile = null;
   let todaySessionsCache = [];
 
-  let activeSession = null;          // { id, notes, started_at } — the live Supabase row
-  let homeState = 'idle';            // idle | running | interrupting | interrupted-done | completed
+  let activeSession = null;          // { id, notes, started_at, pause_count, paused_at, total_paused_sec } — the live Supabase row
+  let homeState = 'idle';            // idle | running | paused | interrupting | interrupted-done | completed
   let interruptDurationMin = null;
   let lastCompletedDurationMin = null;
   let timerIntervalId = null;
+  let pauseCountdownIntervalId = null;
+  const PAUSE_LIMIT_SEC = 5 * 60;
+  // Set to the session id while the reason picker is shown for a
+  // session that's ALREADY been auto-interrupted by a pause timeout
+  // (finalizeAutoInterruptFromPause) — confirmInterruption() then only
+  // needs to attach the reason, not re-run the full interrupt update.
+  // null for a normal manual "Interrompre" click.
+  let awaitingReasonForAlreadyInterruptedSessionId = null;
   // Guards against duplicate INSERTs/UPDATEs from rapid repeated clicks
   // (e.g. a user tapping "Lancer une session" several times while an
   // earlier request is still in flight) — this is what previously
@@ -1036,8 +1059,9 @@
     el.style.display = 'none';
     el.textContent = '';
   }
-  function computeElapsedMinutes(startedAtIso) {
-    return Math.max(1, Math.round((Date.now() - new Date(startedAtIso).getTime()) / 60000));
+  function computeElapsedMinutes(startedAtIso, totalPausedSec) {
+    const elapsedSec = (Date.now() - new Date(startedAtIso).getTime()) / 1000 - (totalPausedSec || 0);
+    return Math.max(1, Math.round(elapsedSec / 60));
   }
   function animateProgressFill(el, targetPct) {
     if (!el) return;
@@ -1085,18 +1109,27 @@
     const firstName = (currentProfile?.display_name || '').trim().split(' ')[0];
     document.getElementById('homeGreeting').textContent = firstName ? `Bonjour ${firstName}.` : 'Bonjour.';
 
-    ['homeState1', 'homeState2', 'homeState3', 'homeStateInterruptedDone', 'homeState4'].forEach((id) => {
+    ['homeState1', 'homeState2', 'homeState3', 'homeStateInterruptedDone', 'homeState4', 'homeStatePaused'].forEach((id) => {
       document.getElementById(id).style.display = 'none';
     });
     stopTimerLoop();
+    stopPauseCountdown();
 
     if (homeState === 'running' && activeSession) {
       document.getElementById('homeState2').style.display = 'block';
       document.getElementById('sessionTaskLabel').textContent = activeSession.notes || 'Session de focus';
-      startTimerLoop(activeSession.started_at);
+      startTimerLoop(activeSession.started_at, activeSession.total_paused_sec);
+      const pauseCount = activeSession.pause_count || 0;
+      document.getElementById('pauseSessionBtn').style.display = pauseCount >= 2 ? 'none' : 'block';
+      document.getElementById('pauseLimitNote').style.display = pauseCount >= 2 ? 'block' : 'none';
+    } else if (homeState === 'paused' && activeSession) {
+      document.getElementById('homeStatePaused').style.display = 'block';
+      document.getElementById('pausedTaskLabel').textContent = activeSession.notes || 'Session de focus';
+      startPauseCountdown();
     } else if (homeState === 'interrupting') {
       document.getElementById('homeState3').style.display = 'block';
       resetReasonPicker();
+      document.getElementById('reasonPauseOption').style.display = awaitingReasonForAlreadyInterruptedSessionId ? 'block' : 'none';
     } else if (homeState === 'interrupted-done') {
       document.getElementById('homeStateInterruptedDone').style.display = 'block';
       document.getElementById('interruptedDoneMessage').textContent = declencheurMessage();
@@ -1148,11 +1181,13 @@
 
   // Timer always displays now() - started_at (never a plain JS counter),
   // so it resumes exactly where it left off after a closed tab or a
-  // phone that was switched off.
-  function startTimerLoop(startedAtIso) {
+  // phone that was switched off. totalPausedSec is subtracted so paused
+  // time never counts toward the visible session duration.
+  function startTimerLoop(startedAtIso, totalPausedSec) {
     const startedAt = new Date(startedAtIso).getTime();
+    const paused = totalPausedSec || 0;
     function tick() {
-      const elapsedSec = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+      const elapsedSec = Math.max(0, Math.floor((Date.now() - startedAt) / 1000) - paused);
       const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
       const ss = String(elapsedSec % 60).padStart(2, '0');
       const el = document.getElementById('timerDisplay');
@@ -1160,6 +1195,33 @@
     }
     tick();
     timerIntervalId = setInterval(tick, 1000);
+  }
+
+  // Pause countdown always derives its remaining time from paused_at
+  // (never a plain JS counter either), so reopening the app mid-pause
+  // shows the correct time left instead of resetting to 5:00. Reaching
+  // zero while the tab is open finalizes the auto-interrupt right away;
+  // reconciliation on the next app open covers the tab-closed case.
+  function startPauseCountdown() {
+    const pausedAt = new Date(activeSession.paused_at).getTime();
+    function tick() {
+      const remainingSec = PAUSE_LIMIT_SEC - Math.floor((Date.now() - pausedAt) / 1000);
+      const el = document.getElementById('pauseCountdownDisplay');
+      if (remainingSec <= 0) {
+        if (el) el.textContent = '00:00';
+        stopPauseCountdown();
+        finalizeAutoInterruptFromPause();
+        return;
+      }
+      const mm = String(Math.floor(remainingSec / 60)).padStart(2, '0');
+      const ss = String(remainingSec % 60).padStart(2, '0');
+      if (el) el.textContent = `${mm}:${ss}`;
+    }
+    tick();
+    pauseCountdownIntervalId = setInterval(tick, 1000);
+  }
+  function stopPauseCountdown() {
+    if (pauseCountdownIntervalId) { clearInterval(pauseCountdownIntervalId); pauseCountdownIntervalId = null; }
   }
   function stopTimerLoop() {
     if (timerIntervalId) { clearInterval(timerIntervalId); timerIntervalId = null; }
@@ -1169,7 +1231,7 @@
     if (sessionActionInFlight || !activeSession) return;
     stopTimerLoop();
     clearHomeError();
-    const durationMin = computeElapsedMinutes(activeSession.started_at);
+    const durationMin = computeElapsedMinutes(activeSession.started_at, activeSession.total_paused_sec);
     const sessionId = activeSession.id;
 
     sessionActionInFlight = true;
@@ -1213,9 +1275,76 @@
   function interruptSession() {
     if (sessionActionInFlight || !activeSession) return;
     stopTimerLoop();
-    interruptDurationMin = computeElapsedMinutes(activeSession.started_at);
+    awaitingReasonForAlreadyInterruptedSessionId = null;
+    interruptDurationMin = computeElapsedMinutes(activeSession.started_at, activeSession.total_paused_sec);
     homeState = 'interrupting';
     renderHome();
+  }
+
+  async function pauseSession() {
+    if (sessionActionInFlight || !activeSession) return;
+    if ((activeSession.pause_count || 0) >= 2) return; // defensive — button is hidden past the limit
+    clearHomeError();
+    sessionActionInFlight = true;
+    const btn = document.getElementById('pauseSessionBtn');
+    if (btn) btn.disabled = true;
+    try {
+      activeSession = await predictaPauseSession(activeSession.id, (activeSession.pause_count || 0) + 1);
+      homeState = 'paused';
+      renderHome();
+    } catch (err) {
+      showHomeError(err);
+    } finally {
+      sessionActionInFlight = false;
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function resumeSession() {
+    if (sessionActionInFlight || !activeSession || !activeSession.paused_at) return;
+    clearHomeError();
+    sessionActionInFlight = true;
+    const btn = document.getElementById('resumeSessionBtn');
+    if (btn) btn.disabled = true;
+    try {
+      const pauseDurationSec = Math.max(0, Math.floor((Date.now() - new Date(activeSession.paused_at).getTime()) / 1000));
+      const newTotalPausedSec = (activeSession.total_paused_sec || 0) + pauseDurationSec;
+      activeSession = await predictaResumeSession(activeSession.id, newTotalPausedSec);
+      homeState = 'running';
+      renderHome();
+      showToast('Session reprise.', 'success');
+    } catch (err) {
+      showHomeError(err);
+    } finally {
+      sessionActionInFlight = false;
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  // Called either by the live countdown reaching zero (tab stayed
+  // open) or by revealDashboard() on reload when paused_at is already
+  // past the 5-minute limit (tab was closed). Finalizes the interrupt
+  // in the database right away — interruption_reason is deliberately
+  // left unset here, captured afterward via the reason picker (which
+  // may not happen until the user comes back).
+  async function finalizeAutoInterruptFromPause() {
+    if (!activeSession || !activeSession.paused_at) return;
+    stopPauseCountdown();
+    stopTimerLoop();
+    const pauseDurationSec = Math.max(0, Math.floor((Date.now() - new Date(activeSession.paused_at).getTime()) / 1000));
+    const newTotalPausedSec = (activeSession.total_paused_sec || 0) + pauseDurationSec;
+    const durationMin = computeElapsedMinutes(activeSession.started_at, newTotalPausedSec);
+    const sessionId = activeSession.id;
+    try {
+      activeSession = await predictaAutoInterruptFromPause(sessionId, durationMin, newTotalPausedSec);
+      awaitingReasonForAlreadyInterruptedSessionId = sessionId;
+      homeState = 'interrupting';
+      renderHome();
+    } catch (err) {
+      // Leave state as-is — the next reconciliation attempt (reload,
+      // or the countdown itself if it's still ticking) will retry.
+      console.error('[predicta] finalizeAutoInterruptFromPause error', err.message);
+    }
   }
 
   function resetReasonPicker() {
@@ -1257,7 +1386,14 @@
     const btn = document.getElementById('confirmInterruptionBtn');
     if (btn) btn.disabled = true;
     try {
-      await predictaInterruptActiveSession(sessionId, interruptDurationMin, reason);
+      if (awaitingReasonForAlreadyInterruptedSessionId === sessionId) {
+        // Already marked interrupted by finalizeAutoInterruptFromPause —
+        // this only attaches the reason, nothing else to update.
+        await predictaSetInterruptionReason(sessionId, reason);
+        awaitingReasonForAlreadyInterruptedSessionId = null;
+      } else {
+        await predictaInterruptActiveSession(sessionId, interruptDurationMin, reason);
+      }
       activeSession = null;
       todaySessionsCache = await predictaGetTodaySessions();
       homeState = 'interrupted-done';
@@ -1625,12 +1761,26 @@
       predictaGetTodaySessions(),
     ]);
     todaySessionsCache = today;
+    let handledByPauseFinalize = false;
     if (active) {
       activeSession = active;
-      homeState = 'running';
+      if (active.paused_at) {
+        // Still shows as 'in_progress' with a stale paused_at — nothing
+        // could auto-interrupt it server-side while the tab was closed,
+        // so reconcile it now instead.
+        const pauseAgeSec = Math.floor((Date.now() - new Date(active.paused_at).getTime()) / 1000);
+        if (pauseAgeSec >= PAUSE_LIMIT_SEC) {
+          await finalizeAutoInterruptFromPause();
+          handledByPauseFinalize = true;
+        } else {
+          homeState = 'paused';
+        }
+      } else {
+        homeState = 'running';
+      }
     }
 
-    renderHome();
+    if (!handledByPauseFinalize) renderHome();
     // verifierPeriodeEssai(); — disabled for now while PayDunya sandbox
     // testing/config is sorted out (return_url, test account funding).
     // Re-enable this call once that's working; nothing else below was

@@ -588,7 +588,7 @@ async function predictaGetActiveSession() {
 
   const { data, error } = await supabaseClient
     .from('sessions')
-    .select('id, notes, started_at, status')
+    .select('id, notes, started_at, status, pause_count, paused_at, total_paused_sec')
     .eq('user_id', session.user.id)
     .eq('status', 'in_progress')
     .order('started_at', { ascending: false })
@@ -643,6 +643,105 @@ async function predictaInterruptActiveSession(sessionId, durationMin, interrupti
       duration_min: duration,
       interruption_reason: String(interruptionReason || '').slice(0, 500),
     })
+    .eq('id', sessionId)
+    .eq('user_id', session.user.id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Pauses an in-progress session: records when the pause started and
+ * bumps the pause count (client-known value + 1, clamped to the same
+ * 0-2 range the pause_count check constraint enforces — safe since
+ * only the session's own owner can ever pause their own single active
+ * session, no concurrent-writer scenario here).
+ */
+async function predictaPauseSession(sessionId, newPauseCount) {
+  const session = await predictaGetSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const { data, error } = await supabaseClient
+    .from('sessions')
+    .update({ paused_at: new Date().toISOString(), pause_count: Math.max(0, Math.min(2, Math.round(Number(newPauseCount) || 0))) })
+    .eq('id', sessionId)
+    .eq('user_id', session.user.id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Resumes a paused session: adds this pause's duration to the running
+ * total and clears paused_at. newTotalPausedSec is computed by the
+ * caller (previous total_paused_sec + this pause's elapsed seconds).
+ */
+async function predictaResumeSession(sessionId, newTotalPausedSec) {
+  const session = await predictaGetSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const { data, error } = await supabaseClient
+    .from('sessions')
+    .update({ paused_at: null, total_paused_sec: Math.max(0, Math.round(Number(newTotalPausedSec) || 0)) })
+    .eq('id', sessionId)
+    .eq('user_id', session.user.id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Auto-interrupts a session whose pause ran past the 5-minute limit
+ * without the user resuming — triggered either by a live client-side
+ * timeout (tab stayed open) or by reconciliation on the next app open
+ * (tab was closed). Deliberately does NOT set interruption_reason:
+ * that's captured afterward when the user sees the reason picker
+ * (predictaSetInterruptionReason), since it may not happen until they
+ * reopen the app.
+ */
+async function predictaAutoInterruptFromPause(sessionId, durationMin, newTotalPausedSec) {
+  const session = await predictaGetSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const duration = Math.max(1, Math.min(240, Math.round(Number(durationMin) || 0)));
+
+  const { data, error } = await supabaseClient
+    .from('sessions')
+    .update({
+      status: 'interrupted',
+      ended_at: new Date().toISOString(),
+      duration_min: duration,
+      total_paused_sec: Math.max(0, Math.round(Number(newTotalPausedSec) || 0)),
+      paused_at: null,
+    })
+    .eq('id', sessionId)
+    .eq('user_id', session.user.id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Attaches a reason to a session that's already been auto-interrupted
+ * by predictaAutoInterruptFromPause — only updates interruption_reason,
+ * since status/duration_min/ended_at were already finalized at the
+ * moment the pause timed out.
+ */
+async function predictaSetInterruptionReason(sessionId, interruptionReason) {
+  const session = await predictaGetSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const { data, error } = await supabaseClient
+    .from('sessions')
+    .update({ interruption_reason: String(interruptionReason || '').slice(0, 500) })
     .eq('id', sessionId)
     .eq('user_id', session.user.id)
     .select()

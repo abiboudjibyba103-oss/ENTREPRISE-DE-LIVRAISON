@@ -187,6 +187,17 @@ alter table public.sessions drop constraint if exists sessions_duration_min_chec
 alter table public.sessions add constraint sessions_duration_min_check
   check (duration_min is null or (duration_min > 0 and duration_min <= 240));
 
+-- "Pause" button during an active session (predicta-dashboard.html):
+-- freezes the visible timer and excludes the pause duration from
+-- duration_min, unlike interrupt+relaunch which stays two rows.
+alter table public.sessions add column if not exists pause_count integer not null default 0;
+alter table public.sessions add column if not exists paused_at timestamptz;
+alter table public.sessions add column if not exists total_paused_sec integer not null default 0;
+
+alter table public.sessions drop constraint if exists sessions_pause_count_check;
+alter table public.sessions add constraint sessions_pause_count_check
+  check (pause_count between 0 and 2);
+
 alter table public.sessions enable row level security;
 
 create policy "sessions_select_own" on public.sessions
