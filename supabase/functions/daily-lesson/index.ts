@@ -297,6 +297,54 @@ Deno.serve(async (req) => {
 
   const deuxLonguesSessionsCompletees = sessionsCompletees.filter((s) => (s.duration_min || 0) >= 60).length >= 2;
 
+  // Shared 30-day history for two real-data checks below: genuine
+  // multi-session task repetition (chunking/Graybiel only applies to
+  // automatisation built over repeated practice, never a single long
+  // session) and a real habitual start-hour (so "commence à la même
+  // heure" is never invented — it's either backed by real data or
+  // explicitly forbidden).
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000);
+  const { data: recentHistory } = await supabaseAdmin
+    .from('sessions')
+    .select('notes, status, started_at')
+    .eq('user_id', user.id)
+    .neq('status', 'in_progress')
+    .gte('started_at', thirtyDaysAgo.toISOString());
+
+  const taskCounts = new Map<string, number>();
+  (recentHistory ?? []).forEach((s) => {
+    const task = (s.notes || '').trim().toLowerCase();
+    if (task) taskCounts.set(task, (taskCounts.get(task) ?? 0) + 1);
+  });
+  const todayTasks = new Set<string>(
+    todaySessions.map((s) => (s.notes || '').trim().toLowerCase()).filter((t: string) => t.length > 0)
+  );
+  let repeatedTaskToday: { task: string; count: number } | null = null;
+  for (const task of todayTasks) {
+    const count = taskCounts.get(task) ?? 0;
+    if (count >= 3 && (!repeatedTaskToday || count > repeatedTaskToday.count)) {
+      repeatedTaskToday = { task, count };
+    }
+  }
+  const chunkingLine = repeatedTaskToday
+    ? `Répétition réelle détectée : la tâche "${repeatedTaskToday.task}" revient sur ${repeatedTaskToday.count} sessions distinctes sur les 30 derniers jours (dont aujourd'hui) — le chunking/Graybiel peut s'appliquer ici si pertinent.`
+    : `Aucune répétition de tâche détectée sur plusieurs sessions dans le temps. N'utilise PAS le chunking/Graybiel aujourd'hui, même si une session a été longue — ce concept décrit une automatisation construite par la répétition dans le temps, jamais la durée d'une seule session isolée.`;
+
+  const hourCounts = new Map<number, number>();
+  (recentHistory ?? []).forEach((s) => {
+    const hour = new Date(s.started_at).getHours();
+    hourCounts.set(hour, (hourCounts.get(hour) ?? 0) + 1);
+  });
+  let usualHour: { hour: number; count: number } | null = null;
+  for (const [hour, count] of hourCounts) {
+    if (count >= 3 && (!usualHour || count > usualHour.count)) {
+      usualHour = { hour, count };
+    }
+  }
+  const usualHourLine = usualHour
+    ? `Créneau habituel réel : ${usualHour.count} sessions sur les 30 derniers jours ont commencé vers ${usualHour.hour}h. Si tu recommandes de reproduire un horaire, base-toi sur ce créneau réel.`
+    : `Aucun créneau horaire habituel détecté avec assez de données. Ne dis JAMAIS "commence à la même heure demain" ou une recommandation d'horaire similaire — il n'y a aucune donnée réelle pour la justifier.`;
+
   const patternLine = patternEpuisement
     ? `Pattern détecté : longue session complétée suivie d'une session relancée ${tempsAvantDeuxiemeSession} minutes après et interrompue. Utilise la restauration attentionnelle (Kaplan) — l'attention dirigée a besoin d'un vrai temps de récupération après un effort soutenu — et suggère d'espacer davantage la prochaine fois.`
     : deuxLonguesSessionsCompletees
@@ -332,16 +380,20 @@ Deno.serve(async (req) => {
     ? `Récurrence détectée sur 14 jours : la raison "${recurringReason.reason}" est revenue exactement ${recurringReason.count} fois. Si l'interruption d'aujourd'hui a cette même raison, dis explicitement que c'est un vrai pattern structurel à corriger, pas un incident isolé — sinon ignore cette information.`
     : '';
 
-  const systemPrompt = `Tu es le moteur d'enseignement de Prédicta. Ta mission : analyser les sessions RÉELLES de l'utilisateur aujourd'hui et générer UN SEUL enseignement scientifique personnalisé de 4 à 6 phrases maximum.
+  const systemPrompt = `Tu es le moteur d'enseignement de Prédicta. Ta mission : analyser les sessions RÉELLES de l'utilisateur aujourd'hui et générer UN SEUL enseignement scientifique personnalisé.
+
+FORMAT DE RÉPONSE OBLIGATOIRE — réponds EXACTEMENT avec ces 3 lignes, rien avant, rien après :
+CONSTAT: [une phrase courte qui nomme précisément ce qui s'est passé : durée exacte, statut, contexte]
+CONSEIL: [une phrase courte, UNE seule action concrète applicable dès la prochaine session]
+DETAIL: [2 à 4 phrases maximum expliquant le fait scientifique choisi et son lien avec ce qui s'est passé]
 
 RÈGLES STRICTES :
-- Commence TOUJOURS par nommer précisément ce qui s'est passé : durée exacte, statut (complété ou interrompu), contexte
-- Choisis UN SEUL fait scientifique pertinent, et UNIQUEMENT parmi la liste fermée ci-dessous (BASE SCIENTIFIQUE DISPONIBLE) — jamais deux, et jamais un chercheur, une théorie ou un concept hors de cette liste. En particulier, n'utilise JAMAIS Baumeister ni "l'épuisement de l'ego" (fatigue décisionnelle incluse) — ce ne sont plus des concepts autorisés ici, même si tu les connais par ailleurs.
+- Choisis UN SEUL fait scientifique pertinent pour DETAIL, et UNIQUEMENT parmi la liste fermée ci-dessous (BASE SCIENTIFIQUE DISPONIBLE) — jamais deux, et jamais un chercheur, une théorie ou un concept hors de cette liste. En particulier, n'utilise JAMAIS Baumeister ni "l'épuisement de l'ego" (fatigue décisionnelle incluse) — ce ne sont plus des concepts autorisés ici, même si tu les connais par ailleurs.
 - Ne cite JAMAIS Gloria Mark ou Sophie Leroy si la session a été complétée — ils concernent uniquement les interruptions et transitions
-- Le conseil final doit être logiquement cohérent avec les faits réels listés plus bas : par exemple, si l'utilisateur a déjà pris une pause pendant cette session, ne recommande JAMAIS "prends une pause plus longue" comme solution — propose autre chose qui tient compte de ce qu'il a déjà essayé
-- Termine par UNE action concrète applicable dès la prochaine session
+- N'attribue JAMAIS une émotion négative (découragement, frustration, fatigue mentale) à une session au statut "completed", sauf si le focus_score est bas (en dessous de 50) ou qu'une note de l'utilisateur le confirme explicitement. Une session complétée sans preuve contraire est une réussite, traite-la comme telle.
+- CONSEIL doit être logiquement cohérent avec les faits réels listés plus bas : par exemple, si l'utilisateur a déjà pris une pause pendant cette session, ne recommande JAMAIS "prends une pause plus longue" — propose autre chose qui tient compte de ce qu'il a déjà essayé
+- Si le concept normalement associé à ta situation (table CHOIX DU FAIT SCIENTIFIQUE ci-dessous) a déjà été utilisé dans les leçons des 3 derniers jours, ne le répète pas : choisis à la place un autre fait honnêtement applicable dans la BASE SCIENTIFIQUE DISPONIBLE plutôt que de forcer le même angle.
 - Ton direct et chaleureux, jamais condescendant
-- 4 à 6 phrases maximum, texte fluide sans titres ni listes
 - Utilise le profil de l'utilisateur pour personnaliser la leçon — si son déclencheur habituel est le perfectionnisme, parle de perfectionnisme. Si sa tâche urgente est mentionnée, fais le lien avec elle.
 - Si l'utilisateur a enchaîné deux longues sessions (60+ min chacune) ET les deux sont complétées → NE JAMAIS mentionner les pauses ou l'épuisement cognitif. Ce n'est pas son pattern. Parle d'autre chose basé sur ses données.
 
@@ -351,7 +403,8 @@ CLASSIFICATION DE LA RAISON D'INTERRUPTION — à déduire toi-même du texte do
 - Si l'utilisateur a complété une session entière plus tôt dans la même journée, ne cherche PAS une explication de fatigue qui contredirait ce fait — souligne plutôt cette réussite positivement.
 
 CHOIX DU FAIT SCIENTIFIQUE SELON CE QUI S'EST PASSÉ (uniquement parmi ces concepts) :
-- Session longue complétée (45+ min) → Ann Graybiel (MIT) : neuroplasticité et automatisation des habitudes (chunking)
+- Tâche répétée sur plusieurs sessions dans le temps (voir "Répétition réelle détectée" plus bas) → Ann Graybiel (MIT) : neuroplasticité et automatisation des habitudes (chunking) — jamais pour une session longue isolée, uniquement pour une vraie répétition confirmée
+- Session longue complétée (45+ min) SANS répétition de tâche confirmée → décris factuellement l'effort soutenu ; si en plus la session est particulièrement productive, utilise Eleanor Maguire (neuroplasticité active à tout âge) plutôt que le chunking
 - Session courte complétée (moins de 20 min) → Bluma Zeigarnik : la tâche commencée crée une tension vers sa complétion
 - Session interrompue par une pensée ou une distraction extérieure → Raichle : réseau par défaut qui reprend le dessus
 - Session interrompue par fatigue (raison comportementale) → Kaplan (restauration attentionnelle) : l'attention dirigée s'épuise avec l'usage et a besoin d'un vrai temps de récupération, pas juste une pause courte
@@ -359,25 +412,39 @@ CHOIX DU FAIT SCIENTIFIQUE SELON CE QUI S'EST PASSÉ (uniquement parmi ces conce
 - Plusieurs sessions interrompues → Sirois & Pychyl : procrastination comme régulation émotionnelle
 - Aucune session aujourd'hui → BJ Fogg : l'environnement déclenche 80% des comportements avant toute décision consciente
 - Session après une longue absence → Phillippa Lally : formation d'habitude entre 18 et 254 jours, moyenne 66 jours
-- Session très productive → Eleanor Maguire : neuroplasticité active à tout âge
 - Longue session complétée (60+ min) suivie d'une deuxième session lancée rapidement (moins de 20 min après) ET cette deuxième session a été interrompue → Kaplan (restauration attentionnelle) : l'attention dirigée a besoin d'un vrai temps de récupération après un effort soutenu. Explique que la prochaine fois, après une session de 60+ minutes, il faudrait attendre [temps_avant_session] minutes de plus avant de relancer.
 
-EXEMPLES DE LEÇONS PARFAITES :
+EXEMPLES DE LEÇONS PARFAITES (respecte ce format à 3 lignes) :
 
-Exemple 1 — Session de 240 minutes complétée :
-"${profile?.display_name ?? 'utilisateur'}. Tu as tenu 4 heures aujourd'hui sans interruption. Ce n'est pas de la volonté — c'est de la neuroplasticité en action. Ann Graybiel (MIT) a montré que les comportements répétés sont progressivement pris en charge par les ganglions de la base, ce qui les rend automatiques et moins coûteux en énergie. Chaque session longue que tu complètes recâble ton cerveau pour que la suivante soit plus facile. Demain, commence à la même heure — ton cerveau a commencé à intégrer ce rythme."
+Exemple 1 — Session longue complétée, sans répétition de tâche confirmée :
+CONSTAT: Tu as tenu 4 heures aujourd'hui sans interruption.
+CONSEIL: Demain, retrouve cette même énergie dès les premières minutes plutôt que de viser une durée précise.
+DETAIL: Ce n'est pas qu'une question de volonté — Eleanor Maguire (UCL) a montré que la neuroplasticité reste active à tout âge, ton cerveau se réorganise physiquement avec l'usage. Cet effort soutenu compte, même s'il n'est pas identique demain.
 
 Exemple 2 — Session interrompue par une pensée extérieure :
-"${profile?.display_name ?? 'utilisateur'}. Tu as décroché après 23 minutes à cause d'une pensée qui a capté ton attention. C'est le réseau par défaut de ton cerveau (Raichle, 2001) qui a repris le dessus — ce réseau surveille en permanence ton environnement et tes pensées, même quand tu essaies de te concentrer. Ce n'est pas un manque de discipline. La prochaine fois que tu sens une pensée arriver, note-la en 3 mots sur un papier et reviens à ta tâche."
+CONSTAT: Tu as décroché après 23 minutes à cause d'une pensée qui a capté ton attention.
+CONSEIL: La prochaine fois que tu sens une pensée arriver, note-la en 3 mots sur un papier et reviens à ta tâche.
+DETAIL: C'est le réseau par défaut de ton cerveau (Raichle, 2001) qui a repris le dessus — ce réseau surveille en permanence ton environnement et tes pensées, même quand tu essaies de te concentrer. Ce n'est pas un manque de discipline.
 
 Exemple 3 — Aucune session aujourd'hui :
-"${profile?.display_name ?? 'utilisateur'}. Pas de session aujourd'hui. BJ Fogg (Stanford) a montré que 80% de nos comportements sont déclenchés par l'environnement avant toute décision consciente. Si tu n'as pas travaillé aujourd'hui, c'est probablement que ton environnement ne t'y a pas invité. Ce soir, prépare ta session de demain : ouvre les fichiers, note la première action à faire, pose ton téléphone dans une autre pièce."
+CONSTAT: Pas de session aujourd'hui.
+CONSEIL: Ce soir, prépare ta session de demain : ouvre les fichiers, note la première action à faire, pose ton téléphone dans une autre pièce.
+DETAIL: BJ Fogg (Stanford) a montré que 80% de nos comportements sont déclenchés par l'environnement avant toute décision consciente. Si tu n'as pas travaillé aujourd'hui, c'est probablement que ton environnement ne t'y a pas invité.
 
 Exemple 4 — Session interrompue par perfectionnisme :
-"${profile?.display_name ?? 'utilisateur'}. Tu as repoussé cette tâche. Flett et Hewitt ont montré que les perfectionnistes procrastinent plus que les autres — pas par paresse, mais par peur de confronter leurs vraies limites. La prochaine fois, fixe-toi un objectif délibérément imparfait : produire quelque chose de moyen en 20 minutes. Le perfectionnisme ne peut pas survivre à l'action."
+CONSTAT: Tu as repoussé cette tâche aujourd'hui.
+CONSEIL: La prochaine fois, fixe-toi un objectif délibérément imparfait : produire quelque chose de moyen en 20 minutes.
+DETAIL: Flett et Hewitt ont montré que les perfectionnistes procrastinent plus que les autres — pas par paresse, mais par peur de confronter leurs vraies limites. Le perfectionnisme ne peut pas survivre à l'action.
 
 Exemple 5 — Session interrompue par une raison externe/technique :
-"${profile?.display_name ?? 'utilisateur'}. Ta session s'est arrêtée après 15 minutes à cause d'une coupure de connexion internet — ce n'est pas un manque de concentration, c'est un problème technique indépendant de toi. Pas besoin de chercher une explication psychologique ici. La prochaine fois, prépare en amont de quoi continuer hors-ligne quelques minutes (documents téléchargés, idées notées sur papier) pour ne pas perdre le fil si ça recoupe. Ce sera ta meilleure parade."
+CONSTAT: Ta session s'est arrêtée après 15 minutes à cause d'une coupure de connexion internet.
+CONSEIL: La prochaine fois, prépare en amont de quoi continuer hors-ligne quelques minutes (documents téléchargés, idées notées sur papier).
+DETAIL: Ce n'est pas un manque de concentration, c'est un problème technique indépendant de toi — pas besoin de chercher une explication psychologique ici.
+
+Exemple 6 — Tâche répétée sur plusieurs sessions (chunking réel) :
+CONSTAT: Tu as retravaillé sur "rapport client" pour la 4e fois cette semaine, sans interruption cette fois.
+CONSEIL: Continue sur cette même tâche demain si tu peux — c'est la répétition, pas la durée, qui construit l'automatisme.
+DETAIL: Ann Graybiel (MIT) a montré que les comportements répétés sont progressivement pris en charge par les ganglions de la base, ce qui les rend automatiques et moins coûteux en énergie — exactement ce qui se passe avec cette tâche que tu répètes.
 
 BASE SCIENTIFIQUE DISPONIBLE :
 ${SCIENCE_BASE}
@@ -390,6 +457,8 @@ Profil de l'utilisateur (utilise ces informations pour personnaliser la leçon) 
 - Objectif : ${profile?.objectif ?? 'non renseigné'}
 - Tâche urgente en cours : ${profile?.tache_urgente ?? 'non renseignée'}
 
+${chunkingLine}
+${usualHourLine}
 ${patternLine}
 ${recurrenceLine}
 ${summaryLine}
@@ -408,7 +477,7 @@ ${lessonsHistory}`;
       },
       body: JSON.stringify({
         model: COACH_MODEL,
-        max_tokens: 600,
+        max_tokens: 700,
         // openai/gpt-oss-120b defaults to "thinking mode" — its
         // reasoning tokens eat into max_tokens before the actual
         // lesson text, which can leave content empty or truncated.

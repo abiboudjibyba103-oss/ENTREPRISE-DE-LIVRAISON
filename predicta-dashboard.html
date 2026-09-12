@@ -203,6 +203,17 @@
     letter-spacing: 0.08em; opacity: 0.85; margin-bottom: 14px;
   }
   .evening-lesson-text { font-size: 14.5px; line-height: 1.7; }
+  .evening-lesson-conseil {
+    font-size: 14.5px; line-height: 1.6; font-weight: 700; margin-top: 12px;
+    padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.2);
+  }
+  .evening-lesson-toggle {
+    background: rgba(255,255,255,0.15); color: #fff; border: none; border-radius: 100px;
+    padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 14px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .evening-lesson-toggle:hover { background: rgba(255,255,255,0.25); }
+  .evening-lesson-detail { font-size: 13.5px; line-height: 1.7; opacity: 0.9; margin-top: 10px; }
   .evening-lesson-note {
     font-size: 12px; opacity: 0.85; margin-top: 14px; padding-top: 12px;
     border-top: 1px solid rgba(255,255,255,0.2);
@@ -1445,12 +1456,48 @@
   }
 
   // Violet "hero" card once today's lesson exists.
+  // daily-lesson replies with 3 labeled lines (CONSTAT/CONSEIL/DETAIL)
+  // so the constat + action show immediately and the scientific detail
+  // stays folded away. Falls back to showing the raw text as one block
+  // if the model didn't follow the format — never a broken render.
+  function parseLessonSections(lessonText) {
+    const constatMatch = lessonText.match(/CONSTAT\s*:\s*([\s\S]*?)(?=\n?CONSEIL\s*:|$)/i);
+    const conseilMatch = lessonText.match(/CONSEIL\s*:\s*([\s\S]*?)(?=\n?DETAIL\s*:|$)/i);
+    const detailMatch = lessonText.match(/DETAIL\s*:\s*([\s\S]*)/i);
+    if (!constatMatch || !conseilMatch || !detailMatch) return null;
+    const constat = constatMatch[1].trim();
+    const conseil = conseilMatch[1].trim();
+    const detail = detailMatch[1].trim();
+    if (!constat || !conseil || !detail) return null;
+    return { constat, conseil, detail };
+  }
+
+  function toggleLessonDetail(btn) {
+    const detail = btn.nextElementSibling;
+    const isHidden = detail.style.display === 'none';
+    detail.style.display = isHidden ? 'block' : 'none';
+    btn.textContent = isHidden ? 'Masquer le détail scientifique ▴' : 'Voir le détail scientifique ▾';
+  }
+
   function renderEveningLessonHero(el, lessonText) {
+    const sections = parseLessonSections(lessonText);
+    if (!sections) {
+      el.innerHTML = `
+        <div class="evening-lesson-hero">
+          <p class="evening-lesson-title">Enseignement du soir</p>
+          <p class="evening-lesson-subtitle">Tiré de ta journée d'aujourd'hui</p>
+          <p class="evening-lesson-text">${escapeHtml(lessonText)}</p>
+        </div>`;
+      return;
+    }
     el.innerHTML = `
       <div class="evening-lesson-hero">
         <p class="evening-lesson-title">Enseignement du soir</p>
         <p class="evening-lesson-subtitle">Tiré de ta journée d'aujourd'hui</p>
-        <p class="evening-lesson-text">${escapeHtml(lessonText)}</p>
+        <p class="evening-lesson-text">${escapeHtml(sections.constat)}</p>
+        <p class="evening-lesson-conseil">${escapeHtml(sections.conseil)}</p>
+        <button type="button" class="evening-lesson-toggle" onclick="toggleLessonDetail(this)">Voir le détail scientifique ▾</button>
+        <p class="evening-lesson-detail" style="display:none;">${escapeHtml(sections.detail)}</p>
       </div>`;
   }
 
