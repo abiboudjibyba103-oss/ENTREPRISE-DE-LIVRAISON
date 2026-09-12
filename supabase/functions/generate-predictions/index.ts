@@ -42,8 +42,15 @@ const MIN_SESSIONS = 3;
 const RECENT_WINDOW_DAYS = 30;
 
 const PATTERNS_MAX = 3;
-const PREDICTIONS_MAX = 2;
+const PREDICTIONS_MAX = 3;
 const MEMOIRE_MAX = 3;
+
+// If the same prediction signal (see Candidate.key) was shown on each
+// of the last PREDICTION_REPEAT_LOOKBACK_DAYS calendar days in a row,
+// it's excluded from today's pool so a weaker-but-qualified signal can
+// surface instead — otherwise a single dominant signal (e.g. beforeTen,
+// which has no day-of-week gate) can occupy every slot indefinitely.
+const PREDICTION_REPEAT_LOOKBACK_DAYS = 3;
 
 // Comma-separated list of allowed frontend origins, e.g.
 // "https://predicta.example.com,https://www.predicta.example.com".
@@ -76,7 +83,11 @@ type SessionRow = {
   interruption_reason: string | null;
 };
 
-type Candidate = { count: number; description: string };
+// `key` identifies which real signal produced a "prediction"-kind
+// candidate (e.g. 'beforeTen', 'worstWeekday', 'worstSlot', or
+// `reason:<exact reason text>`) — used only for the anti-repetition
+// lookback below. Patterns/mémoire candidates leave it undefined.
+type Candidate = { count: number; description: string; key?: string };
 
 function timeSlotOf(hour: number): string {
   if (hour >= 5 && hour < 12) return 'le matin';
@@ -115,6 +126,12 @@ function rotateArray<T>(list: T[], seed: number): T[] {
 function withinLastDays(sessions: SessionRow[], days: number, now: Date): SessionRow[] {
   const cutoff = now.getTime() - days * 86400000;
   return sessions.filter((s) => new Date(s.started_at).getTime() >= cutoff);
+}
+
+// 'YYYY-MM-DD' for `daysAgo` days before `now`, matching the same UTC
+// calendar-day convention as `today`/`prediction_date` elsewhere here.
+function isoDateDaysAgo(now: Date, daysAgo: number): string {
+  return new Date(now.getTime() - daysAgo * 86400000).toISOString().slice(0, 10);
 }
 
 // Groups interrupted sessions by the exact reason the user gave
@@ -193,7 +210,10 @@ function computePatternCandidates(sessions: SessionRow[]): Candidate[] {
 // rate/count behind each candidate only ever gates whether it's
 // worth surfacing — it never appears in the description text, since
 // predictions must never state a percentage or a statistic. ----
-function computePredictionCandidates(sessions: SessionRow[], seed: number, todayWeekday: number, now: Date): Candidate[] {
+// Returns ALL qualifying candidates, sorted strongest-first — rotation
+// and the anti-repetition exclusion both happen in the caller, which is
+// where the last few days' already-generated signals can be looked up.
+function computePredictionCandidates(sessions: SessionRow[], todayWeekday: number, now: Date): Candidate[] {
   const candidates: Candidate[] = [];
   const countable = sessions.filter((s) => s.status !== 'in_progress');
   // beforeTen and worstSlot use only the last RECENT_WINDOW_DAYS days —
@@ -209,7 +229,7 @@ function computePredictionCandidates(sessions: SessionRow[], seed: number, today
   if (beforeTen.length >= 3) {
     const rate = beforeTen.filter((s) => s.status === 'completed').length / beforeTen.length;
     if (rate >= 0.6) {
-      candidates.push({ count: beforeTen.length, description: 'si tu ne lances pas ta session avant 10h aujourd\'hui, tu risques de ne pas la terminer' });
+      candidates.push({ count: beforeTen.length, description: 'si tu ne lances pas ta session avant 10h aujourd\'hui, tu risques de ne pas la terminer', key: 'beforeTen' });
     }
   }
 
@@ -238,7 +258,7 @@ function computePredictionCandidates(sessions: SessionRow[], seed: number, today
     }
   }
   if (worstWeekday && worstWeekday.wd === todayWeekday) {
-    candidates.push({ count: worstWeekday.total, description: `le ${worstWeekday.day} est une journée à risque pour toi, tu as tendance à interrompre tes sessions ce jour-là` });
+    candidates.push({ count: worstWeekday.total, description: `le ${worstWeekday.day} est une journée à risque pour toi, tu as tendance à interrompre tes sessions ce jour-là`, key: 'worstWeekday' });
   }
 
   const bySlot = new Map<string, { total: number; interrupted: number }>();
@@ -258,7 +278,7 @@ function computePredictionCandidates(sessions: SessionRow[], seed: number, today
     }
   }
   if (worstSlot) {
-    candidates.push({ count: worstSlot.total, description: `tu décroches plus souvent quand tu travailles ${worstSlot.slot}` });
+    candidates.push({ count: worstSlot.total, description: `tu décroches plus souvent quand tu travailles ${worstSlot.slot}`, key: 'worstSlot' });
   }
 
   // Most frequent real interruption reason (>=3x), if any — "priorise
@@ -267,14 +287,10 @@ function computePredictionCandidates(sessions: SessionRow[], seed: number, today
   const reasonGroups = groupInterruptionsByReason(countable);
   if (reasonGroups.length > 0) {
     const top = reasonGroups[0];
-    candidates.push({ count: top.count, description: `tu risques d'interrompre ta session à cause de : ${top.reason}` });
+    candidates.push({ count: top.count, description: `tu risques d'interrompre ta session à cause de : ${top.reason}`, key: `reason:${top.reason}` });
   }
 
-  // Rotate which qualifying candidates make the final cut instead of
-  // always keeping the deterministic top-N by count — otherwise a
-  // single dominant signal (e.g. always "vendredi") wins forever and
-  // the phrasing sent to Groq barely changes from one day to the next.
-  return rotateArray(candidates.sort((a, b) => b.count - a.count), seed).slice(0, PREDICTIONS_MAX);
+  return candidates.sort((a, b) => b.count - a.count);
 }
 
 // ---- TYPE 3: mémoire personnalisée — mixes what worked and what
@@ -414,8 +430,49 @@ Deno.serve(async (req) => {
   const now = new Date();
   const seed = dayOfYear(now);
   const patternCandidates = computePatternCandidates(allSessions);
-  const predictionCandidates = computePredictionCandidates(allSessions, seed, now.getDay(), now);
   const memoryCandidates = computeMemoryCandidates(allSessions);
+
+  const allPredictionCandidates = computePredictionCandidates(allSessions, now.getDay(), now);
+
+  // Anti-repetition: if one signal (by key) was already shown on each of
+  // the last PREDICTION_REPEAT_LOOKBACK_DAYS calendar days in a row,
+  // exclude it from today's pool so a weaker-but-qualified signal gets a
+  // chance to surface instead — unless excluding it would leave nothing
+  // qualified at all, in which case it's kept (something real beats
+  // nothing). Only worth a lookup when there's more than one candidate,
+  // since with 0-1 candidates the outcome can't change either way.
+  let predictionPool = allPredictionCandidates;
+  if (allPredictionCandidates.length > 1) {
+    const lookbackDates = Array.from(
+      { length: PREDICTION_REPEAT_LOOKBACK_DAYS },
+      (_, i) => isoDateDaysAgo(now, i + 1),
+    );
+    const { data: recentPredictionRows } = await supabaseAdmin
+      .from('predictions')
+      .select('prediction_date, signal_key')
+      .eq('user_id', user.id)
+      .eq('kind', 'prediction')
+      .in('prediction_date', lookbackDates)
+      .not('signal_key', 'is', null);
+
+    const keysByDate = new Map<string, Set<string>>();
+    (recentPredictionRows ?? []).forEach((r) => {
+      const set = keysByDate.get(r.prediction_date) ?? new Set<string>();
+      set.add(r.signal_key as string);
+      keysByDate.set(r.prediction_date, set);
+    });
+
+    if (lookbackDates.every((d) => keysByDate.has(d))) {
+      const [mostRecent, ...olderDates] = lookbackDates.map((d) => keysByDate.get(d)!);
+      const overusedKey = [...mostRecent].find((k) => olderDates.every((set) => set.has(k)));
+      if (overusedKey) {
+        const withoutOverused = allPredictionCandidates.filter((c) => c.key !== overusedKey);
+        if (withoutOverused.length > 0) predictionPool = withoutOverused;
+      }
+    }
+  }
+
+  const predictionCandidates = rotateArray(predictionPool, seed).slice(0, PREDICTIONS_MAX);
   const anticipationCandidate = computeAnticipationCandidate(patternCandidates, predictionCandidates, memoryCandidates, seed);
 
   // Cache hit: today's content already exists — return it without
@@ -547,13 +604,13 @@ ${anticipationCandidate ? `1. (${anticipationCandidate.count}) ${anticipationCan
     console.error('[generate-predictions] JSON parse error', err, rawContent);
   }
 
-  function pairWithCandidates(key: string, candidates: Candidate[]): { text: string; count: number }[] {
-    const arr = Array.isArray(parsed[key]) ? (parsed[key] as unknown[]) : [];
+  function pairWithCandidates(kindKey: string, candidates: Candidate[]): { text: string; count: number; signalKey: string | null }[] {
+    const arr = Array.isArray(parsed[kindKey]) ? (parsed[kindKey] as unknown[]) : [];
     const texts = arr
       .filter((t): t is string => typeof t === 'string' && t.trim().length > 0)
       .map((t) => t.trim().slice(0, 500))
       .slice(0, candidates.length);
-    return texts.map((text, i) => ({ text, count: candidates[i].count }));
+    return texts.map((text, i) => ({ text, count: candidates[i].count, signalKey: candidates[i].key ?? null }));
   }
 
   const patterns = pairWithCandidates('patterns', patternCandidates);
@@ -568,7 +625,7 @@ ${anticipationCandidate ? `1. (${anticipationCandidate.count}) ${anticipationCan
 
   // Clear any stale rows per kind beyond today's new counts, in case
   // an earlier call today produced more items than this one.
-  const groups: { kind: string; items: { text: string; count: number }[] }[] = [
+  const groups: { kind: string; items: { text: string; count: number; signalKey: string | null }[] }[] = [
     { kind: 'pattern', items: patterns },
     { kind: 'prediction', items: predictions },
     { kind: 'memoire', items: memoire },
@@ -592,6 +649,7 @@ ${anticipationCandidate ? `1. (${anticipationCandidate.count}) ${anticipationCan
     kind,
     prediction_index: i,
     occurrence_count: item.count,
+    signal_key: item.signalKey,
   })));
 
   if (rows.length > 0) {

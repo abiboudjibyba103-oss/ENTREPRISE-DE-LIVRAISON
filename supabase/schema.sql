@@ -368,6 +368,14 @@ alter table public.predictions add constraint predictions_prediction_index_check
 -- computed in code, never left to the LLM to invent.
 alter table public.predictions add column if not exists occurrence_count smallint;
 
+-- Identifies which real signal produced a kind='prediction' row (e.g.
+-- 'beforeTen', 'worstWeekday', 'worstSlot', 'reason:<texte>') so
+-- generate-predictions can look back a few days and detect the same
+-- signal repeating, instead of comparing Groq's rephrased text (which
+-- varies even for the same underlying signal). Null for every other
+-- kind, which don't need this anti-repetition check.
+alter table public.predictions add column if not exists signal_key text;
+
 drop index if exists predictions_one_set_per_user_per_day;
 create unique index if not exists predictions_one_set_per_kind_per_day
   on public.predictions (user_id, prediction_date, kind, prediction_index);
