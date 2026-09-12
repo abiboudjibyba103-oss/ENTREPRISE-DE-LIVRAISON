@@ -1458,17 +1458,20 @@
   // Violet "hero" card once today's lesson exists.
   // daily-lesson replies with 3 labeled lines (CONSTAT/CONSEIL/DETAIL)
   // so the constat + action show immediately and the scientific detail
-  // stays folded away. Falls back to showing the raw text as one block
-  // if the model didn't follow the format — never a broken render.
+  // stays folded away. DETAIL is allowed to be empty (the model skips
+  // it on purpose when no scientific fact is warranted) — only CONSTAT
+  // and CONSEIL are required. Falls back to showing the raw text as
+  // one block if the model didn't follow the format at all — never a
+  // broken render.
   function parseLessonSections(lessonText) {
     const constatMatch = lessonText.match(/CONSTAT\s*:\s*([\s\S]*?)(?=\n?CONSEIL\s*:|$)/i);
     const conseilMatch = lessonText.match(/CONSEIL\s*:\s*([\s\S]*?)(?=\n?DETAIL\s*:|$)/i);
     const detailMatch = lessonText.match(/DETAIL\s*:\s*([\s\S]*)/i);
-    if (!constatMatch || !conseilMatch || !detailMatch) return null;
+    if (!constatMatch || !conseilMatch) return null;
     const constat = constatMatch[1].trim();
     const conseil = conseilMatch[1].trim();
-    const detail = detailMatch[1].trim();
-    if (!constat || !conseil || !detail) return null;
+    const detail = detailMatch ? detailMatch[1].trim() : '';
+    if (!constat || !conseil) return null;
     return { constat, conseil, detail };
   }
 
@@ -1490,14 +1493,19 @@
         </div>`;
       return;
     }
+    // DETAIL is intentionally empty when no scientific fact was
+    // warranted for today's message — no toggle/section to show then.
+    const detailHtml = sections.detail
+      ? `<button type="button" class="evening-lesson-toggle" onclick="toggleLessonDetail(this)">Voir le détail scientifique ▾</button>
+         <p class="evening-lesson-detail" style="display:none;">${escapeHtml(sections.detail)}</p>`
+      : '';
     el.innerHTML = `
       <div class="evening-lesson-hero">
         <p class="evening-lesson-title">Enseignement du soir</p>
         <p class="evening-lesson-subtitle">Tiré de ta journée d'aujourd'hui</p>
         <p class="evening-lesson-text">${escapeHtml(sections.constat)}</p>
         <p class="evening-lesson-conseil">${escapeHtml(sections.conseil)}</p>
-        <button type="button" class="evening-lesson-toggle" onclick="toggleLessonDetail(this)">Voir le détail scientifique ▾</button>
-        <p class="evening-lesson-detail" style="display:none;">${escapeHtml(sections.detail)}</p>
+        ${detailHtml}
       </div>`;
   }
 

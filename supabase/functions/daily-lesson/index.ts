@@ -244,6 +244,42 @@ Deno.serve(async (req) => {
     ? pastLessons.map((l) => `${l.lesson_date}: ${l.lesson_text.slice(0, 100)}...`).join('\n')
     : 'Aucune leçon précédente';
 
+  // Real frequency count of each scientific concept over the last 14
+  // days (same spirit as recurrenceLine below, applied to lesson_text
+  // instead of interruption_reason) — a soft preference against
+  // reusing whichever concept already dominates, never a hard block.
+  const fourteenDaysAgoStr = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
+  const { data: recentLessonsForScience } = await supabaseAdmin
+    .from('daily_lessons')
+    .select('lesson_text')
+    .eq('user_id', user.id)
+    .neq('lesson_date', today)
+    .gte('lesson_date', fourteenDaysAgoStr);
+
+  const CONCEPT_KEYWORDS: { label: string; pattern: RegExp }[] = [
+    { label: 'Ann Graybiel / chunking', pattern: /graybiel/i },
+    { label: 'Bluma Zeigarnik', pattern: /zeigarnik/i },
+    { label: 'Raichle (réseau par défaut)', pattern: /raichle/i },
+    { label: 'Kaplan (restauration attentionnelle)', pattern: /kaplan/i },
+    { label: 'Yerkes-Dodson', pattern: /yerkes-dodson/i },
+    { label: 'Sirois & Pychyl', pattern: /sirois|pychyl/i },
+    { label: 'BJ Fogg', pattern: /\bfogg\b/i },
+    { label: 'Phillippa Lally', pattern: /lally/i },
+    { label: 'Eleanor Maguire', pattern: /maguire/i },
+    { label: 'Flett & Hewitt', pattern: /flett|hewitt/i },
+    { label: 'Gloria Mark / Sophie Leroy', pattern: /gloria mark|sophie leroy/i },
+  ];
+  const scienceCounts = CONCEPT_KEYWORDS
+    .map(({ label, pattern }) => ({
+      label,
+      count: (recentLessonsForScience ?? []).filter((l) => l.lesson_text && pattern.test(l.lesson_text)).length,
+    }))
+    .filter((c) => c.count > 0)
+    .sort((a, b) => b.count - a.count);
+  const scienceFrequencyLine = scienceCounts.length > 0
+    ? `Fréquence des concepts scientifiques utilisés sur les 14 derniers jours : ${scienceCounts.map((c) => `${c.label} (${c.count}x)`).join(', ')}. Si tu choisis d'inclure un fait scientifique, préfère un concept qui n'a pas été utilisé récemment, sauf s'il est vraiment le plus pertinent pour la situation d'aujourd'hui.`
+    : '';
+
   const totalSessions = todaySessions.length;
   const completedSessions = todaySessions.filter((s) => s.status === 'completed').length;
   const interruptedSessions = todaySessions.filter((s) => s.status === 'interrupted').length;
@@ -380,19 +416,20 @@ Deno.serve(async (req) => {
     ? `Récurrence détectée sur 14 jours : la raison "${recurringReason.reason}" est revenue exactement ${recurringReason.count} fois. Si l'interruption d'aujourd'hui a cette même raison, dis explicitement que c'est un vrai pattern structurel à corriger, pas un incident isolé — sinon ignore cette information.`
     : '';
 
-  const systemPrompt = `Tu es le moteur d'enseignement de Prédicta. Ta mission : analyser les sessions RÉELLES de l'utilisateur aujourd'hui et générer UN SEUL enseignement scientifique personnalisé.
+  const systemPrompt = `Tu es le moteur d'enseignement de Prédicta. Ta mission : analyser les sessions RÉELLES de l'utilisateur aujourd'hui et dire ce dont cette personne a vraiment besoin d'entendre ce soir.
 
 FORMAT DE RÉPONSE OBLIGATOIRE — réponds EXACTEMENT avec ces 3 lignes, rien avant, rien après :
 CONSTAT: [une phrase courte qui nomme précisément ce qui s'est passé : durée exacte, statut, contexte]
 CONSEIL: [une phrase courte, UNE seule action concrète applicable dès la prochaine session]
-DETAIL: [2 à 4 phrases maximum expliquant le fait scientifique choisi et son lien avec ce qui s'est passé]
+DETAIL: [optionnel — 2 à 4 phrases maximum expliquant un fait scientifique, UNIQUEMENT si tu en inclus un (voir règle ci-dessous) ; sinon laisse ce champ vide, juste "DETAIL:" sans rien après]
 
 RÈGLES STRICTES :
-- Choisis UN SEUL fait scientifique pertinent pour DETAIL, et UNIQUEMENT parmi la liste fermée ci-dessous (BASE SCIENTIFIQUE DISPONIBLE) — jamais deux, et jamais un chercheur, une théorie ou un concept hors de cette liste. En particulier, n'utilise JAMAIS Baumeister ni "l'épuisement de l'ego" (fatigue décisionnelle incluse) — ce ne sont plus des concepts autorisés ici, même si tu les connais par ailleurs.
+- Un fait scientifique de la liste fermée ci-dessous (BASE SCIENTIFIQUE DISPONIBLE) est OPTIONNEL, pas obligatoire. N'en inclus un dans DETAIL QUE s'il apporte une vraie valeur explicative à la situation précise du jour. Si le plus utile pour cette personne ce soir est un message direct et personnel sans détour académique (par exemple une réussite à féliciter simplement, ou une raison externe qui ne nécessite aucune explication psychologique), privilégie ce message direct et laisse DETAIL vide plutôt que de forcer une référence scientifique.
+- Si tu choisis d'inclure un fait scientifique, prends-en UN SEUL, et UNIQUEMENT parmi la liste fermée ci-dessous — jamais deux, et jamais un chercheur, une théorie ou un concept hors de cette liste. En particulier, n'utilise JAMAIS Baumeister ni "l'épuisement de l'ego" (fatigue décisionnelle incluse) — ce ne sont plus des concepts autorisés ici, même si tu les connais par ailleurs.
 - Ne cite JAMAIS Gloria Mark ou Sophie Leroy si la session a été complétée — ils concernent uniquement les interruptions et transitions
 - N'attribue JAMAIS une émotion négative (découragement, frustration, fatigue mentale) à une session au statut "completed", sauf si le focus_score est bas (en dessous de 50) ou qu'une note de l'utilisateur le confirme explicitement. Une session complétée sans preuve contraire est une réussite, traite-la comme telle.
 - CONSEIL doit être logiquement cohérent avec les faits réels listés plus bas : par exemple, si l'utilisateur a déjà pris une pause pendant cette session, ne recommande JAMAIS "prends une pause plus longue" — propose autre chose qui tient compte de ce qu'il a déjà essayé
-- Si le concept normalement associé à ta situation (table CHOIX DU FAIT SCIENTIFIQUE ci-dessous) a déjà été utilisé dans les leçons des 3 derniers jours, ne le répète pas : choisis à la place un autre fait honnêtement applicable dans la BASE SCIENTIFIQUE DISPONIBLE plutôt que de forcer le même angle.
+- Si tu inclus un fait scientifique et que le concept normalement associé à ta situation (table CHOIX DU FAIT SCIENTIFIQUE ci-dessous) a déjà été utilisé dans les leçons des 3 derniers jours, ne le répète pas : choisis à la place un autre fait honnêtement applicable dans la BASE SCIENTIFIQUE DISPONIBLE plutôt que de forcer le même angle. Regarde aussi la fréquence sur 14 jours donnée plus bas pour éviter celui qui revient le plus souvent, sauf s'il est vraiment le plus pertinent aujourd'hui.
 - Ton direct et chaleureux, jamais condescendant
 - Utilise le profil de l'utilisateur pour personnaliser la leçon — si son déclencheur habituel est le perfectionnisme, parle de perfectionnisme. Si sa tâche urgente est mentionnée, fais le lien avec elle.
 - Si l'utilisateur a enchaîné deux longues sessions (60+ min chacune) ET les deux sont complétées → NE JAMAIS mentionner les pauses ou l'épuisement cognitif. Ce n'est pas son pattern. Parle d'autre chose basé sur ses données.
@@ -436,15 +473,20 @@ CONSTAT: Tu as repoussé cette tâche aujourd'hui.
 CONSEIL: La prochaine fois, fixe-toi un objectif délibérément imparfait : produire quelque chose de moyen en 20 minutes.
 DETAIL: Flett et Hewitt ont montré que les perfectionnistes procrastinent plus que les autres — pas par paresse, mais par peur de confronter leurs vraies limites. Le perfectionnisme ne peut pas survivre à l'action.
 
-Exemple 5 — Session interrompue par une raison externe/technique :
+Exemple 5 — Session interrompue par une raison externe/technique (pas de fait scientifique nécessaire) :
 CONSTAT: Ta session s'est arrêtée après 15 minutes à cause d'une coupure de connexion internet.
 CONSEIL: La prochaine fois, prépare en amont de quoi continuer hors-ligne quelques minutes (documents téléchargés, idées notées sur papier).
-DETAIL: Ce n'est pas un manque de concentration, c'est un problème technique indépendant de toi — pas besoin de chercher une explication psychologique ici.
+DETAIL:
 
 Exemple 6 — Tâche répétée sur plusieurs sessions (chunking réel) :
 CONSTAT: Tu as retravaillé sur "rapport client" pour la 4e fois cette semaine, sans interruption cette fois.
 CONSEIL: Continue sur cette même tâche demain si tu peux — c'est la répétition, pas la durée, qui construit l'automatisme.
 DETAIL: Ann Graybiel (MIT) a montré que les comportements répétés sont progressivement pris en charge par les ganglions de la base, ce qui les rend automatiques et moins coûteux en énergie — exactement ce qui se passe avec cette tâche que tu répètes.
+
+Exemple 7 — Réussite simple à féliciter, sans détour académique :
+CONSTAT: Tu as terminé ta session de 30 minutes exactement comme prévu, sans aucune interruption.
+CONSEIL: Continue comme ça demain — pas besoin de changer quoi que ce soit.
+DETAIL:
 
 BASE SCIENTIFIQUE DISPONIBLE :
 ${SCIENCE_BASE}
@@ -461,6 +503,7 @@ ${chunkingLine}
 ${usualHourLine}
 ${patternLine}
 ${recurrenceLine}
+${scienceFrequencyLine}
 ${summaryLine}
 Sessions d'aujourd'hui :
 ${sessionLines}
