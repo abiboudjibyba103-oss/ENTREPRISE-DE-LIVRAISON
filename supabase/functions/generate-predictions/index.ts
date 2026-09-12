@@ -39,6 +39,7 @@ const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
 
 const PREDICTION_MODEL = 'qwen/qwen3.6-27b';
 const MIN_SESSIONS = 3;
+const RECENT_WINDOW_DAYS = 30;
 
 const PATTERNS_MAX = 3;
 const PREDICTIONS_MAX = 2;
@@ -105,6 +106,15 @@ function rotateArray<T>(list: T[], seed: number): T[] {
   if (list.length <= 1) return list;
   const offset = seed % list.length;
   return [...list.slice(offset), ...list.slice(0, offset)];
+}
+
+// Cuts a session list down to the last N days relative to `now` —
+// without this, a signal's `count` only ever grows over the account's
+// entire lifetime and can end up permanently dominant/qualified by pure
+// age rather than by what the user has actually been doing lately.
+function withinLastDays(sessions: SessionRow[], days: number, now: Date): SessionRow[] {
+  const cutoff = now.getTime() - days * 86400000;
+  return sessions.filter((s) => new Date(s.started_at).getTime() >= cutoff);
 }
 
 // Groups interrupted sessions by the exact reason the user gave
@@ -183,11 +193,19 @@ function computePatternCandidates(sessions: SessionRow[]): Candidate[] {
 // rate/count behind each candidate only ever gates whether it's
 // worth surfacing — it never appears in the description text, since
 // predictions must never state a percentage or a statistic. ----
-function computePredictionCandidates(sessions: SessionRow[], seed: number, todayWeekday: number): Candidate[] {
+function computePredictionCandidates(sessions: SessionRow[], seed: number, todayWeekday: number, now: Date): Candidate[] {
   const candidates: Candidate[] = [];
   const countable = sessions.filter((s) => s.status !== 'in_progress');
+  // beforeTen and worstSlot use only the last RECENT_WINDOW_DAYS days —
+  // both had no time window before and could stay qualified forever
+  // once their all-time count crossed the threshold once, regardless of
+  // recent behavior. worstWeekday already self-limits via its own
+  // todayWeekday gate below, and reasonGroups stays exact-text-match
+  // limited — neither has this unbounded-growth problem, so both keep
+  // using the full `countable` history untouched.
+  const recentCountable = withinLastDays(countable, RECENT_WINDOW_DAYS, now);
 
-  const beforeTen = countable.filter((s) => new Date(s.started_at).getHours() < 10);
+  const beforeTen = recentCountable.filter((s) => new Date(s.started_at).getHours() < 10);
   if (beforeTen.length >= 3) {
     const rate = beforeTen.filter((s) => s.status === 'completed').length / beforeTen.length;
     if (rate >= 0.6) {
@@ -224,7 +242,7 @@ function computePredictionCandidates(sessions: SessionRow[], seed: number, today
   }
 
   const bySlot = new Map<string, { total: number; interrupted: number }>();
-  countable.forEach((s) => {
+  recentCountable.forEach((s) => {
     const slot = timeSlotOf(new Date(s.started_at).getHours());
     const entry = bySlot.get(slot) ?? { total: 0, interrupted: 0 };
     entry.total += 1;
@@ -396,7 +414,7 @@ Deno.serve(async (req) => {
   const now = new Date();
   const seed = dayOfYear(now);
   const patternCandidates = computePatternCandidates(allSessions);
-  const predictionCandidates = computePredictionCandidates(allSessions, seed, now.getDay());
+  const predictionCandidates = computePredictionCandidates(allSessions, seed, now.getDay(), now);
   const memoryCandidates = computeMemoryCandidates(allSessions);
   const anticipationCandidate = computeAnticipationCandidate(patternCandidates, predictionCandidates, memoryCandidates, seed);
 
